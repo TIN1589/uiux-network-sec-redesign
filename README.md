@@ -26,8 +26,10 @@ Bạn có thể chạy dự án bằng **1 trong 2 cách** tùy vào nhu cầu:
    ```bash
    python run.py
    ```
-   *(Hoặc chạy lệnh: `uvicorn app:app --host 127.0.0.1 --port 8000 --reload`)*
-4. **Truy cập**: **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
+   *Script `run.py` sẽ tự động xác định địa chỉ IP mạng nội bộ (LAN IPv4) và khởi chạy trên `0.0.0.0:8000`, cho phép kiểm thử đồng thời trên máy tính và thiết bị di động (iPhone / iPad / Android) cùng mạng Wi-Fi.*
+4. **Truy cập**:
+   - Máy tính cá nhân (Localhost): **[http://127.0.0.1:8000](http://127.0.0.1:8000)** (hoặc `/login`)
+   - Thiết bị di động / LAN: **`http://<LAN-IP>:8000/?guest=1`** (hoặc `/login`)
 
 ---
 
@@ -189,6 +191,8 @@ Dự án sử dụng kiến trúc Hypermedia-Driven hiệu năng cao, giảm thi
   - Sử dụng CSS Grid, Flexbox, `@container` queries và fluid typography (`clamp()`).
 - **Vanilla JavaScript ES6+**: Kiến trúc module rõ ràng ([`app.js`](static/js/app.js), [`charts.js`](static/js/charts.js), [`toast.js`](static/js/toast.js)), hook trực tiếp vào vòng đời của HTMX và Chart.js.
 - **[Chart.js 4.x](https://www.chartjs.org/)**: Biểu đồ phân tích thị giác (Severity Mix Doughnut, 24-Hour Stacked Bar, Sparkline KPI).
+- **PWA & WebKit Standalone**: Web App Manifest, Service Worker v1.0.2 (Cache-First cho Assets & Native Direct Fetch), 11 kích thước Apple Touch Startup Image khử giật màn hình khi mở từ Springboard.
+- **Topology Constellation Micro-Motion Engine**: Hệ thống hoạt họa chuyển động vi mô 3 tầng GPU Compositing (60 FPS), nhịp thở Core Beacon 4.0s, đốm sáng Twinkle lệch pha và tuân thủ `prefers-reduced-motion`.
 - **FastAPI (Python 3.10+)**: Backend bất đồng bộ hiệu năng cao, in-memory state store, CSV streaming export có bảo vệ chống Formula Injection.
 
 ---
@@ -209,13 +213,19 @@ redesign/
 │   │   ├── signin.css          # Bố cục 50/50 CSS grid, form fields, bottom sheet mobile
 │   │   ├── motion.css          # Keyframes packet travel, log slide-in, prefers-reduced-motion
 │   │   ├── variables.css       # Design tokens dashboard (màu nền ấm #f3f1ec, dark sidebar)
-│   │   ├── reset.css           # CSS Reset chuẩn, tùy biến scrollbar, focus ring
+│   │   ├── reset.css           # CSS Reset chuẩn, tùy biến scrollbar, focus ring, font 16px iOS
 │   │   ├── layout.css          # Responsive shell (Desktop 248px, Tablet 72px rail, Mobile drawer)
-│   │   ├── components.css      # Cards, badges, bảng dữ liệu, nút bấm, drawer
+│   │   ├── components.css      # Cards, badges, bảng dữ liệu, nút bấm, drawer, rules min-width 680px
 │   │   ├── charts.css          # Kích thước khung vẽ biểu đồ & custom legend
 │   │   └── style.css           # Master stylesheet tổng hợp
 │   ├── fonts/                  # Font tự host chuẩn woff2 (Inter Variable, JetBrains Mono)
+│   ├── img/
+│   │   ├── favicon/            # Bộ icon hệ thống (SVG, ICO, PNG 32x32, 180x180, 192x192, 512x512)
+│   │   └── splash/             # 11 ảnh Apple Touch Startup Splash Screens cho PWA iOS WebKit
 │   ├── vendor/                 # Thư viện vendored cục bộ (htmx.min.js, chart.umd.min.js)
+│   ├── manifest.webmanifest    # Web App Manifest chuẩn PWA (standalone, icon, theme-color)
+│   ├── offline.html            # Giao diện thông báo mất kết nối mạng (PWA Offline Fallback)
+│   ├── sw.js                   # Service Worker v1.0.2 (Cache-First Assets, Native Direct Fetch)
 │   └── js/
 │       ├── signin.js           # Entry point trang đăng nhập ES6+ modules
 │       ├── password-toggle.js  # Toggle ẩn/hiện mật khẩu & hoán đổi SVG
@@ -224,10 +234,10 @@ redesign/
 │       ├── feed-scheduler.js   # 1 timer duy nhất, visibility guard (Zero RAM accumulation)
 │       ├── htmx-glue.js        # Hook sự kiện HTMX 422 swap và quản lý focus
 │       ├── app.js              # Coordinator chính, điều phối drawer, dropdown & auth guard
-│       ├── charts.js           # Quản lý khởi tạo & hủy biểu đồ Chart.js (Memory leak guard)
+│       ├── charts.js           # Quản lý khởi tạo & hủy biểu đồ Chart.js (Memory leak guard, DPR <= 2)
 │       └── toast.js            # Hệ thống thông báo nổi (Accessible Toasts)
 ├── templates/
-│   ├── base.html               # Layout khung ứng dụng SOC Dashboard
+│   ├── base.html               # Layout khung ứng dụng SOC Dashboard (PWA links, splash overlay)
 │   ├── base_public.html        # Layout trang đăng nhập công khai (No Chart.js, CSP nonce)
 │   ├── auth/                   # Templates trang Sign-in độc lập chuẩn SOC N4.2
 │   │   ├── sign_in.html        # Bố cục 50/50 split panel
@@ -243,13 +253,13 @@ redesign/
 │   │   └── _status_pill.html   # Status pill trạng thái hệ thống
 │   ├── macros/
 │   │   └── fields.html         # Macro Jinja2 render form fields kèm icon
-│   ├── components/             # Các thành phần tái sử dụng dashboard
+│   ├── components/             # Các thành phần tái sử dụng dashboard (kèm pwa_prompt.html)
 │   ├── pages/                  # Các trang đầy đủ dashboard
 │   └── partials/               # Fragment HTML phục vụ HTMX swapping
-├── tests/                      # Bộ kiểm thử tự động Pytest (14/14 passed)
-├── evidence/                   # Thư mục lưu minh chứng ngoài Git
+├── tests/                      # Bộ kiểm thử tự động Pytest (21/21 passed)
+├── evidence/                   # 6 phân nhóm minh chứng ngoài Git (77 tệp minh chứng)
 ├── app.py                      # FastAPI app, API endpoints & in-memory state store
-├── run.py                      # Script khởi chạy server một chạm
+├── run.py                      # Script khởi chạy server hỗ trợ LAN IP cho mobile
 ├── index.html                  # Bản preview tĩnh độc lập (Standalone Preview)
 ├── requirements.txt            # Danh sách dependencies
 └── README.md                   # Tài liệu hướng dẫn & quy chuẩn
@@ -288,6 +298,8 @@ Hệ thống quy chuẩn thiết kế được định nghĩa tập trung qua c�
 4. **Lab kiểm thử kịch bản tấn công**: Đo lường SLA delta độ trễ phát hiện so với ngưỡng 5.0 giây, hỗ trợ lưu trữ và xuất file CSV.
 5. **Biểu đồ phân tích trực quan**: Tích hợp Chart.js theo dõi tỷ lệ phân bổ nguy cơ và chu kỳ phát hiện 24 giờ.
 6. **Trang Đăng nhập độc lập chuẩn SOC N4.2**: Thiết kế Full-page 50/50 CSS Grid với 2 hiệu ứng nền (Topology SVG packet animation và Live log feed HTMX), Progressive Enhancement hoạt động cả khi tắt JS, và bảo mật CSP Strict nonce.
+7. **PWA & Trải nghiệm Di động iOS Safari WebKit (Standalone Mode)**: Hỗ trợ cài đặt màn hình chính (Add to Home Screen - A2HS), khử chớp màn hình trắng với 11 kích thước Apple Touch Startup Splash Screens, đệm Safe-Area Inset cho Dynamic Island và Status Bar Notch, chống phóng to tự động (Auto-zoom font 16px) và trang thông báo ngoại tuyến (Offline fallback).
+8. **Hệ thống Hoạt họa Vi mô Topology Constellation (Micro-Motion Engine)**: 3 tầng hiệu ứng chuyển động GPU đạt 60 FPS (Constellation Drift 28s, Edge Breathing 8s, Node Twinkle & Core Beacon Glow 4s), khắc phục triệt để lỗi đứng hình trên Google Chrome Windows qua thuộc tính `data-motion="on"`, và tuân thủ tuyệt đối chuẩn Accessibility (`prefers-reduced-motion: reduce`).
 
 ---
 
@@ -305,7 +317,7 @@ Hệ thống được thiết kế theo nguyên lý **Minimal Footprint Architec
 | **Client-side Browser Tab (Desktop)** | 150 – 300 MB RAM (Virtual DOM tree, bundle JS phình to) | **Chỉ 20 – 30 MB RAM** trên mỗi tab | **Tiết kiệm 85% RAM**, hoạt động ổn định trong ca trực 24/7 |
 | **Tốc độ khởi động (Cold Start)** | 5 – 15 giây (Build, compile, hydrate) | **< 1.0 giây** | **0.6 – 0.8 giây** khởi động hoàn tất |
 
-### 2. Bốn cơ chế triệt tiêu rò rỉ bộ nhớ (Zero Memory Leak Guarantees)
+### 2. Năm cơ chế triệt tiêu rò rỉ bộ nhớ (Zero Memory Leak Guarantees)
 
 1. **Khử rò rỉ đồ họa Canvas (Chart.js Context Cleanup)**:
    - Trong quá trình HTMX hoán đổi nội dung `#main-content`, script tự động kích hoạt `chart.destroy()` trên mọi biểu đồ cũ trước khi render lại canvas mới. Triệt tiêu hoàn toàn lỗi "Canvas is already in use" và ngăn tích lũy WebGL/2D contexts trong RAM.
@@ -317,6 +329,9 @@ Hệ thống được thiết kế theo nguyên lý **Minimal Footprint Architec
 4. **Hiệu ứng đồ họa thuần CSS (Zero JS Animation Loop)**:
    - Hiệu ứng gói tin mạng di chuyển dọc đường nối topology được thực thi 100% bằng CSS Modern `@keyframes` kết hợp `offset-path: path(...)`. Trình duyệt tính toán trực tiếp trên GPU Compositor mà không tiêu hao CPU/RAM của JavaScript main thread.
    - Khi người dùng bật `prefers-reduced-motion: reduce`, toàn bộ hoạt họa và packet SVG tự động chuyển thành `display: none;`, triệt tiêu 100% tài nguyên tính toán.
+5. **Tối ưu RAM Canvas & Phòng chống tiêu diệt tiến trình iOS Jetsam**:
+   - Trên màn hình Apple Super Retina XDR (3x pixel ratio), thuộc tính `Chart.defaults.devicePixelRatio` được giới hạn tối đa là `2`. Giải pháp này giảm hơn 50% dung lượng bộ nhớ đệm bitmap canvas trong khi vẫn duy trì độ sắc nét hoàn mỹ.
+   - Trình nghe sự kiện `visibilitychange` tự động ngắt chu kỳ auto-refresh khi tab chuyển sang trạng thái ẩn (`document.hidden`), bảo vệ thời lượng pin và ngăn chặn hệ điều hành iOS kích hoạt cơ chế Jetsam dọn dẹp tab nền.
 
 ### 3. Danh mục 5 Giả định Kỹ thuật (Assumptions Reference)
 
