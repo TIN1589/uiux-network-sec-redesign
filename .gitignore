@@ -58,3 +58,21 @@ desktop.ini
 
 .agents/
 AGENTS.md
+
+# Testing and evidence artifacts ignored from git
+.pytest_cache/
+.pytest_temp_cache/
+scripts/
+evidence/
+.evidence/
+test-results/
+playwright-report/
+*.trace.zip
+*_evidence.png
+*_evidence.jpg
+*_evidence.webp
+*.test.log
+
+# Directory junctions in app package
+app/static
+app/templates
