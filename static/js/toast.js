@@ -3,6 +3,16 @@
  * Lightweight, accessible Vanilla ES6+ toast system
  */
 
+/**
+ * Hiển thị thông báo nổi (Accessible Toast Notification) ở góc màn hình.
+ * 
+ * Tự động khởi tạo container stack nếu chưa tồn tại trong DOM với thuộc tính
+ * role="status" và aria-live="polite" để hỗ trợ trình đọc màn hình (Screen Readers).
+ *
+ * @param {'dark'|'light'|'error'|'success'} style - Phong cách hiển thị của toast item.
+ * @param {string} message - Nội dung thông báo cần hiển thị đến người dùng.
+ * @returns {void}
+ */
 export function showToast(style = 'dark', message = '') {
   let stack = document.getElementById('toast-stack');
   if (!stack) {
