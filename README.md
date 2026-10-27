@@ -5,7 +5,7 @@
 
 ---
 
-## ⚡ Quick Preview (Dành cho người thẩm định & Thành viên)
+## Quick Preview (Dành cho người thẩm định & Thành viên)
 
 Bạn có thể chạy dự án bằng **1 trong 2 cách** tùy vào nhu cầu:
 
@@ -31,7 +31,7 @@ Bạn có thể chạy dự án bằng **1 trong 2 cách** tùy vào nhu cầu:
 
 ---
 
-## 🛠 Tech Stack & Kiến trúc
+## Tech Stack & Kiến trúc
 
 Dự án sử dụng kiến trúc Hypermedia-Driven hiệu năng cao, giảm thiểu phụ thuộc framework cồng kềnh:
 
@@ -47,7 +47,7 @@ Dự án sử dụng kiến trúc Hypermedia-Driven hiệu năng cao, giảm thi
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 redesign/
@@ -92,7 +92,7 @@ redesign/
 
 ---
 
-## 🎨 Quy chuẩn UI/UX & Thiết kế (Design Guidelines)
+## Quy chuẩn UI/UX & Thiết kế (Design Guidelines)
 
 Hệ thống quy chuẩn thiết kế được định nghĩa tập trung qua các Design Tokens trong file [`static/css/variables.css`](file:///d:/AllCourse/Học%20Kì%20Doanh%20Nghiệp_10-1(26-27)/UIUX-NetWorkSec/redesign/static/css/variables.css):
 
@@ -115,7 +115,7 @@ Hệ thống quy chuẩn thiết kế được định nghĩa tập trung qua c�
 
 ---
 
-## 🚀 Các tính năng cốt lõi
+## Các tính năng cốt lõi
 
 1. **Trải nghiệm không tải lại trang**: HTMX hoán đổi nội dung `#main-content` đồng thời cập nhật đúng URL trình duyệt (`hx-push-url="true"`), hỗ trợ F5 refresh và nút Back/Forward tự nhiên.
 2. **Bộ lọc tìm kiếm tức thì**: Lọc theo từ khóa, mức độ nghiêm trọng (Severity), khung thời gian và bộ lọc nâng cao (Rule ID, Source IP, Asset, Status).
