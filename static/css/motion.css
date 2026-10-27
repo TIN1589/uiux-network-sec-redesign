@@ -1,26 +1,284 @@
 @layer motion;
 
 @layer motion {
-  /* Topology node & edge visual styles */
-  .edge {
-    stroke: rgba(255, 255, 255, 0.14);
-    stroke-width: 1;
+  /* Hieu ung troi khong gian topology toi uu GPU bang will-change */
+  .topology-svg {
+    will-change: transform;
   }
 
+  .topology-svg--desktop {
+    animation: constellation-drift-desktop 8.0s ease-in-out infinite alternate;
+  }
+
+  .topology-svg--mobile {
+    animation: constellation-drift-mobile 6.5s ease-in-out infinite alternate;
+  }
+
+  /* Keyframe dao dong cum mang desktop trong dai bien do quy dinh */
+  @keyframes constellation-drift-desktop {
+    0% {
+      transform: translate3d(-3.5px, -6px, 0) rotate(-0.35deg);
+    }
+    50% {
+      transform: translate3d(1px, -1px, 0) rotate(0.1deg);
+    }
+    100% {
+      transform: translate3d(4px, 3.5px, 0) rotate(0.4deg);
+    }
+  }
+
+  /* Keyframe dao dong cum mang mobile thu hep bien do triet tieu nguy co tran vien */
+  @keyframes constellation-drift-mobile {
+    0% {
+      transform: translate3d(-1.5px, -2.5px, 0) rotate(-0.15deg);
+    }
+    50% {
+      transform: translate3d(0.5px, -0.5px, 0) rotate(0.05deg);
+    }
+    100% {
+      transform: translate3d(2px, 2px, 0) rotate(0.15deg);
+    }
+  }
+
+  /* Thanh noi cap quang voi chu ky tho nhip nhang */
+  .edge {
+    stroke: rgba(255, 255, 255, 0.12);
+    stroke-width: 1;
+    animation: edge-breathe 4.8s ease-in-out infinite;
+  }
+
+  /* Keyframe tho soi cap quang luan phien giua trang thai nghi va xung tin hieu lime */
+  @keyframes edge-breathe {
+    0%, 100% {
+      stroke: rgba(255, 255, 255, 0.12);
+    }
+    50% {
+      stroke: rgba(198, 241, 53, 0.32);
+    }
+  }
+
+  /* Dinh vi tam phong to va toi uu phan cung GPU cho cac tram mang */
   .node {
     fill: #1C1E18;
-    stroke: rgba(255, 255, 255, 0.3);
+    stroke: rgba(255, 255, 255, 0.22);
     stroke-width: 1.2;
+    transform-box: fill-box;
+    transform-origin: center;
+    will-change: opacity, filter, transform;
+    animation: node-twinkle-desktop 3.4s ease-in-out infinite both;
   }
 
   .node--core {
     fill: var(--accent);
     stroke: none;
+    animation: node-core-beacon-desktop 4.0s ease-in-out infinite both;
   }
 
   .node--alert {
     fill: var(--warn);
     stroke: none;
+    animation: node-alert-double-flash-desktop 3.4s ease-in-out infinite both;
+  }
+
+  /* Keyframe loe sang cho tram mang thong thuong tren desktop */
+  @keyframes node-twinkle-desktop {
+    0%, 100% {
+      opacity: 0.55;
+      fill: #1C1E18;
+      stroke: rgba(255, 255, 255, 0.22);
+      transform: scale(1);
+      filter: drop-shadow(0 0 0 transparent) brightness(1);
+    }
+    48.5%, 51.5% {
+      opacity: 1;
+      fill: var(--accent);
+      stroke: var(--accent);
+      transform: scale(1.22);
+      filter: drop-shadow(0 0 7px var(--accent)) drop-shadow(0 0 14px var(--accent)) brightness(1.25);
+    }
+  }
+
+  /* Keyframe loe sang cho tram mang thong thuong tren mobile */
+  @keyframes node-twinkle-mobile {
+    0%, 100% {
+      opacity: 0.55;
+      fill: #1C1E18;
+      stroke: rgba(255, 255, 255, 0.22);
+      transform: scale(1);
+      filter: drop-shadow(0 0 0 transparent) brightness(1);
+    }
+    48.5%, 51.5% {
+      opacity: 1;
+      fill: var(--accent);
+      stroke: var(--accent);
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 4px var(--accent)) drop-shadow(0 0 8px var(--accent)) brightness(1.25);
+    }
+  }
+
+  /* Keyframe xung nhip beacon 2 tang hao quang cho tram trung tam core tren desktop */
+  @keyframes node-core-beacon-desktop {
+    0%, 100% {
+      opacity: 0.85;
+      transform: scale(1);
+      filter: drop-shadow(0 0 4px var(--accent));
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.18);
+      filter: drop-shadow(0 0 10px var(--accent)) drop-shadow(0 0 20px rgba(198, 241, 53, 0.35));
+    }
+  }
+
+  /* Keyframe xung nhip beacon 1 tang hao quang cho tram trung tam core tren mobile */
+  @keyframes node-core-beacon-mobile {
+    0%, 100% {
+      opacity: 0.85;
+      transform: scale(1);
+      filter: drop-shadow(0 0 3px var(--accent));
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.12);
+      filter: drop-shadow(0 0 8px var(--accent));
+    }
+  }
+
+  /* Keyframe chop kep canh bao mau cam ho phach cho tram alert tren desktop */
+  @keyframes node-alert-double-flash-desktop {
+    0%, 38%, 52%, 100% {
+      opacity: 0.55;
+      fill: rgba(255, 176, 32, 0.5);
+      transform: scale(1);
+      filter: drop-shadow(0 0 0 transparent);
+    }
+    41% {
+      opacity: 1;
+      fill: var(--warn);
+      transform: scale(1.2);
+      filter: drop-shadow(0 0 8px var(--warn)) drop-shadow(0 0 16px rgba(255, 176, 32, 0.5));
+    }
+    44% {
+      opacity: 0.6;
+      fill: rgba(255, 176, 32, 0.6);
+      transform: scale(1.05);
+      filter: drop-shadow(0 0 2px var(--warn));
+    }
+    47% {
+      opacity: 1;
+      fill: var(--warn);
+      transform: scale(1.2);
+      filter: drop-shadow(0 0 8px var(--warn)) drop-shadow(0 0 16px rgba(255, 176, 32, 0.5));
+    }
+  }
+
+  /* Keyframe chop kep canh bao cho tram alert tren mobile */
+  @keyframes node-alert-double-flash-mobile {
+    0%, 38%, 52%, 100% {
+      opacity: 0.55;
+      fill: rgba(255, 176, 32, 0.5);
+      transform: scale(1);
+      filter: drop-shadow(0 0 0 transparent);
+    }
+    41% {
+      opacity: 1;
+      fill: var(--warn);
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 6px var(--warn)) drop-shadow(0 0 12px rgba(255, 176, 32, 0.4));
+    }
+    44% {
+      opacity: 0.6;
+      fill: rgba(255, 176, 32, 0.6);
+      transform: scale(1.04);
+      filter: drop-shadow(0 0 2px var(--warn));
+    }
+    47% {
+      opacity: 1;
+      fill: var(--warn);
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 6px var(--warn)) drop-shadow(0 0 12px rgba(255, 176, 32, 0.4));
+    }
+  }
+
+  /* Phan phoi animation phu hop theo container SVG mobile */
+  .topology-svg--mobile .node {
+    animation-name: node-twinkle-mobile;
+  }
+
+  .topology-svg--mobile .node--core {
+    animation-name: node-core-beacon-mobile;
+  }
+
+  .topology-svg--mobile .node--alert {
+    animation-name: node-alert-double-flash-mobile;
+  }
+
+  @media (width < 640px) {
+    .node {
+      animation-name: node-twinkle-mobile;
+    }
+    .node--core {
+      animation-name: node-core-beacon-mobile;
+    }
+    .node--alert {
+      animation-name: node-alert-double-flash-mobile;
+    }
+  }
+
+  /* Co che lech pha so le (Staggered Delays) tren Desktop (8 tram) */
+  .topology-svg--desktop .node--core,
+  .topology-svg--desktop .node:nth-child(1 of .node) {
+    animation-delay: 0s;
+  }
+  .topology-svg--desktop .node--n1,
+  .topology-svg--desktop .node:nth-child(2 of .node) {
+    animation-delay: 0.2s;
+  }
+  .topology-svg--desktop .node--n2,
+  .topology-svg--desktop .node:nth-child(3 of .node) {
+    animation-delay: 1.4s;
+  }
+  .topology-svg--desktop .node--n3,
+  .topology-svg--desktop .node:nth-child(4 of .node) {
+    animation-delay: 2.5s;
+  }
+  .topology-svg--desktop .node--n4,
+  .topology-svg--desktop .node:nth-child(5 of .node) {
+    animation-delay: 0.7s;
+  }
+  .topology-svg--desktop .node--n5,
+  .topology-svg--desktop .node:nth-child(6 of .node) {
+    animation-delay: 3.1s;
+  }
+  .topology-svg--desktop .node--n6,
+  .topology-svg--desktop .node:nth-child(7 of .node) {
+    animation-delay: 1.8s;
+  }
+  .topology-svg--desktop .node--alert,
+  .topology-svg--desktop .node:nth-child(8 of .node) {
+    animation-delay: 2.9s;
+  }
+
+  /* Co che lech pha so le (Staggered Delays) tren Mobile (5 tram) */
+  .topology-svg--mobile .node--core,
+  .topology-svg--mobile .node:nth-child(1 of .node) {
+    animation-delay: 0s;
+  }
+  .topology-svg--mobile .node--n1,
+  .topology-svg--mobile .node:nth-child(2 of .node) {
+    animation-delay: 0.9s;
+  }
+  .topology-svg--mobile .node--n2,
+  .topology-svg--mobile .node:nth-child(3 of .node) {
+    animation-delay: 1.8s;
+  }
+  .topology-svg--mobile .node--n4,
+  .topology-svg--mobile .node:nth-child(4 of .node) {
+    animation-delay: 2.7s;
+  }
+  .topology-svg--mobile .node--alert,
+  .topology-svg--mobile .node:nth-child(5 of .node) {
+    animation-delay: 1.3s;
   }
 
   /* Packet animation along topology edge path */
@@ -28,7 +286,7 @@
     .packet {
       fill: var(--accent);
       offset-rotate: 0deg;
-      animation: packet-travel var(--dur, 3.6s) linear var(--delay, 0s) infinite;
+      animation: packet-travel calc(var(--dur, 3.6s) * 1.6) linear var(--delay, 0s) infinite;
     }
 
     .packet--warn {
@@ -60,7 +318,7 @@
     stroke-width: 1.4;
     transform-box: fill-box;
     transform-origin: center;
-    animation: pulse 2.6s ease-out infinite;
+    animation: pulse 3.4s ease-out infinite;
   }
 
   .pulse--warn {
@@ -93,7 +351,7 @@
     overflow: hidden;
   }
 
-  /* Ẩn hoàn toàn log 5 dòng trên mobile để ngắt chu kỳ feed-scheduler polling */
+  /* An hoan toan log 5 dong tren mobile de ngat chu ky feed-scheduler polling */
   @media (width < 640px) {
     .live-log,
     .auth-panel__log {
@@ -153,15 +411,25 @@
     }
   }
 
-  /* Tuân thủ tiêu chuẩn Accessibility cho người dùng nhạy cảm chuyển động */
+  /* Tuan thu tieu chuan Accessibility cho nguoi dung nhay cam chuyen dong */
   @media (prefers-reduced-motion: reduce) {
-    .pulse,
-    .packet,
-    .cursor,
-    .log-row.is-new {
+    :root:not([data-motion="on"]) .topology-svg,
+    :root:not([data-motion="on"]) .topology-svg--desktop,
+    :root:not([data-motion="on"]) .topology-svg--mobile,
+    :root:not([data-motion="on"]) .edge,
+    :root:not([data-motion="on"]) .node,
+    :root:not([data-motion="on"]) .node--core,
+    :root:not([data-motion="on"]) .node--alert,
+    :root:not([data-motion="on"]) .pulse,
+    :root:not([data-motion="on"]) .packet,
+    :root:not([data-motion="on"]) .cursor,
+    :root:not([data-motion="on"]) .log-row.is-new {
       animation: none !important;
+      opacity: 1 !important;
+      filter: none !important;
+      transform: none !important;
     }
-    .packet {
+    :root:not([data-motion="on"]) .packet {
       display: none !important;
     }
   }

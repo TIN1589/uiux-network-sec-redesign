@@ -32,7 +32,7 @@
           {% elif node.kind == 'alert' %}
             <circle class="pulse pulse--warn" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
           {% endif %}
-          <circle class="node node--{{ node.kind }}" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
+          <circle class="node node--{{ node.kind }}{% if key != node.kind %} node--{{ key }}{% endif %}" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
         {% endfor %}
       {% endif %}
     </g>
@@ -64,7 +64,7 @@
           {% elif node.kind == 'alert' %}
             <circle class="pulse pulse--warn" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
           {% endif %}
-          <circle class="node node--{{ node.kind }}" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
+          <circle class="node node--{{ node.kind }}{% if key != node.kind %} node--{{ key }}{% endif %}" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
         {% endfor %}
       {% endif %}
     </g>

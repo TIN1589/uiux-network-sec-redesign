@@ -63,3 +63,68 @@ def test_topology_css_contains_offset_paths_and_durations():
     assert ".tp-d-1 { offset-path: path(" in css
     assert "--dur: 3.4s; --delay: 0.0s;" in css
     assert ".tp-m-1 { offset-path: path(" in css
+
+
+def test_motion_css_multi_tier_topology_animations():
+    """Mục tiêu: Đảm bảo motion.css chứa đầy đủ 3 tầng hiệu ứng chuyển động vi mô.
+
+    Kịch bản:
+        1. Đọc nội dung tệp static/css/motion.css.
+        2. Kiểm tra Tầng 1 (Constellation Drift): will-change, keyframes desktop và mobile.
+        3. Kiểm tra Tầng 2A (Edge Breathing): keyframe edge-breathe với stroke lime.
+        4. Kiểm tra Tầng 2B (Light Twinkle & Beacon Glow): node-twinkle, node-core-beacon, node-alert-double-flash.
+        5. Kiểm tra Cơ chế Staggered Delays và Accessibility prefers-reduced-motion.
+    """
+    import os
+    css_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "css", "motion.css")
+    with open(css_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Tầng 1: Constellation Drift
+    assert "will-change: transform" in content
+    assert "@keyframes constellation-drift-desktop" in content
+    assert "@keyframes constellation-drift-mobile" in content
+    assert "translate3d" in content
+
+    # Tầng 2A: Micro Edge Breathing
+    assert "@keyframes edge-breathe" in content
+    assert "rgba(198, 241, 53, 0.32)" in content
+
+    # Tầng 2B: Light Twinkle & Beacon Glow
+    assert "transform-box: fill-box;" in content
+    assert "transform-origin: center;" in content
+    assert "will-change: opacity, filter, transform;" in content
+
+    # Node twinkle (đốm thường)
+    assert "@keyframes node-twinkle-desktop" in content
+    assert "@keyframes node-twinkle-mobile" in content
+    assert "drop-shadow(0 0 7px var(--accent))" in content
+    assert "brightness(1.25)" in content
+
+    # Node core (máy chủ trung tâm 2 tầng hào quang trên desktop)
+    assert "@keyframes node-core-beacon-desktop" in content
+    assert "@keyframes node-core-beacon-mobile" in content
+    assert "drop-shadow(0 0 10px var(--accent)) drop-shadow(0 0 20px rgba(198, 241, 53, 0.35))" in content
+
+    # Node alert (chớp kép double flash)
+    assert "@keyframes node-alert-double-flash-desktop" in content
+    assert "@keyframes node-alert-double-flash-mobile" in content
+    assert "drop-shadow(0 0 8px var(--warn))" in content
+
+    # Staggered Delays trên Desktop (8 trạm)
+    assert ".node--core" in content
+    assert "animation-delay: 0.2s;" in content
+    assert "animation-delay: 1.4s;" in content
+    assert "animation-delay: 2.5s;" in content
+    assert "animation-delay: 0.7s;" in content
+    assert "animation-delay: 3.1s;" in content
+    assert "animation-delay: 1.8s;" in content
+    assert "animation-delay: 2.9s;" in content
+
+    # Staggered Delays trên Mobile (5 trạm)
+    assert "animation-delay: 0.9s;" in content
+    assert "animation-delay: 2.7s;" in content
+    assert "animation-delay: 1.3s;" in content
+
+    # Accessibility: prefers-reduced-motion
+    assert "prefers-reduced-motion: reduce" in content
