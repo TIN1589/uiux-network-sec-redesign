@@ -1,0 +1,72 @@
+{# Sơ đồ mạng Topology tự động phát sinh từ app/ui/topology.py #}
+<div class="auth-panel__topology-bg" aria-hidden="true">
+  {% if topology and topology.css %}
+    <style nonce="{{ csp_nonce }}">
+      {{ topology.css | safe }}
+    </style>
+  {% endif %}
+
+  <!-- Desktop Topology SVG (>= 640px) -->
+  <svg class="topology-svg topology-svg--desktop" viewBox="0 0 720 900" preserveAspectRatio="xMaxYMin slice" aria-hidden="true" focusable="false">
+    <g class="topology-edges">
+      {% if topology and topology.desktop %}
+        {% for edge in topology.desktop.edges %}
+          <path class="edge" d="{{ edge.path }}" />
+        {% endfor %}
+      {% endif %}
+    </g>
+
+    <g class="topology-packets">
+      {% if topology and topology.desktop %}
+        {% for p in topology.desktop.packets %}
+          <circle class="packet packet--{{ p.kind }} {{ p.cls }}" cx="0" cy="0" r="2.8" />
+        {% endfor %}
+      {% endif %}
+    </g>
+
+    <g class="topology-nodes">
+      {% if topology and topology.desktop %}
+        {% for key, node in topology.desktop.nodes.items() %}
+          {% if node.kind == 'core' %}
+            <circle class="pulse" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
+          {% elif node.kind == 'alert' %}
+            <circle class="pulse pulse--warn" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
+          {% endif %}
+          <circle class="node node--{{ node.kind }}" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
+        {% endfor %}
+      {% endif %}
+    </g>
+  </svg>
+
+  <!-- Mobile Topology SVG (< 640px) -->
+  <svg class="topology-svg topology-svg--mobile topology--mobile" viewBox="0 0 390 300" preserveAspectRatio="xMaxYMin meet" aria-hidden="true" focusable="false">
+    <g class="topology-edges">
+      {% if topology and topology.mobile %}
+        {% for edge in topology.mobile.edges %}
+          <path class="edge" d="{{ edge.path }}" />
+        {% endfor %}
+      {% endif %}
+    </g>
+
+    <g class="topology-packets">
+      {% if topology and topology.mobile %}
+        {% for p in topology.mobile.packets %}
+          <circle class="packet packet--{{ p.kind }} {{ p.cls }}" cx="0" cy="0" r="2.4" />
+        {% endfor %}
+      {% endif %}
+    </g>
+
+    <g class="topology-nodes">
+      {% if topology and topology.mobile %}
+        {% for key, node in topology.mobile.nodes.items() %}
+          {% if node.kind == 'core' %}
+            <circle class="pulse" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
+          {% elif node.kind == 'alert' %}
+            <circle class="pulse pulse--warn" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
+          {% endif %}
+          <circle class="node node--{{ node.kind }}" cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" />
+        {% endfor %}
+      {% endif %}
+    </g>
+  </svg>
+</div>

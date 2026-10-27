@@ -1,0 +1,4 @@
+{# Macro Jinja hiển thị biểu tượng nhận diện thương hiệu chính thức Network Security Monitor (NSM). #}
+{% macro brand_mark(size=48) %}
+<img class="brand-mark" src="{{ url_for('static', path='img/favicon/nsm-favicon.svg') }}" width="{{ size }}" height="{{ size }}" alt="Network Security Monitor logo" />
+{% endmacro %}

@@ -1,0 +1,15 @@
+{# Bộ chỉ số thống kê hiệu năng SOC trên panel tối #}
+<div class="auth-stats stats" role="group" aria-label="SOC Key Performance Indicators">
+  <div class="auth-stat-col">
+    <span class="auth-stat__label">Alerts · 24h</span>
+    <span class="auth-stat__value">{{ stats.alerts_24h if stats is defined and stats.alerts_24h is defined else 128 }}</span>
+  </div>
+  <div class="auth-stat-col">
+    <span class="auth-stat__label">Critical</span>
+    <span class="auth-stat__value auth-stat__value--warn">{{ stats.critical if stats is defined and stats.critical is defined else 4 }}</span>
+  </div>
+  <div class="auth-stat-col">
+    <span class="auth-stat__label">Devices Online</span>
+    <span class="auth-stat__value">{{ stats.devices_online if stats is defined and stats.devices_online is defined else 42 }}</span>
+  </div>
+</div>

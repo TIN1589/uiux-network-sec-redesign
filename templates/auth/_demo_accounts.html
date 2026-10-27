@@ -1,0 +1,35 @@
+{# Khối tài khoản Demo (chỉ hiển thị khi DEMO_MODE=true) #}
+{% if demo_mode %}
+<details class="demo">
+  <summary class="demo__summary">
+    <div class="demo__summary-left">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="7.5" cy="15.5" r="5.5" />
+        <path d="m21 2-9.6 9.6" />
+        <path d="m15.5 7.5 3 3L22 7l-3-3" />
+      </svg>
+      <span>Demo accounts</span>
+    </div>
+    <div class="demo__summary-right">
+      <span>pwd: {{ demo_password }}</span>
+      <svg class="demo__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </div>
+  </summary>
+  <div class="demo__chips" role="group" aria-label="Demo credentials quick selection">
+    <button type="button" class="demo__chip" data-demo-user="admin" data-demo-pwd="{{ demo_password }}" aria-pressed="false">
+      <span class="demo__chip-dot demo__chip-dot--admin" aria-hidden="true"></span>
+      <span>Admin</span>
+    </button>
+    <button type="button" class="demo__chip" data-demo-user="tier2" data-demo-pwd="{{ demo_password }}" aria-pressed="false">
+      <span class="demo__chip-dot demo__chip-dot--tier2" aria-hidden="true"></span>
+      <span>Tier-2</span>
+    </button>
+    <button type="button" class="demo__chip" data-demo-user="tier1" data-demo-pwd="{{ demo_password }}" aria-pressed="false">
+      <span class="demo__chip-dot demo__chip-dot--tier1" aria-hidden="true"></span>
+      <span>Tier-1</span>
+    </button>
+  </div>
+</details>
+{% endif %}

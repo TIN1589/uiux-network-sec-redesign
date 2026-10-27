@@ -1,0 +1,61 @@
+{% import 'macros/fields.html' as fields %}
+
+<div class="auth-header">
+  <h1 class="auth-header__title">Sign in</h1>
+  <p class="auth-header__desc auth-header__desc--desktop">
+    Enter your SOC credentials to view alerts and manage incidents.
+  </p>
+  <p class="auth-header__desc auth-header__desc--mobile">
+    Enter your SOC credentials to view alerts.
+  </p>
+</div>
+
+<div id="auth-feedback" class="auth-feedback" aria-live="polite">
+  {% if error %}
+    {% include 'auth/_feedback.html' %}
+  {% endif %}
+</div>
+
+<form
+  class="auth-form"
+  method="post"
+  action="{{ url_for('auth.login') }}"
+  hx-post="{{ url_for('auth.login') }}"
+  hx-target="#auth-feedback"
+  hx-swap="innerHTML"
+  hx-sync="this:drop"
+  hx-indicator="#signin-btn"
+  hx-disabled-elt="#signin-btn"
+>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  {{ fields.text_field('username', 'Username', value=username_value|default(''), placeholder='e.g. soc.analyst', required=true, autocomplete='username', id='field-username') }}
+
+  {{ fields.password_field('password', 'Password', placeholder='••••••••', required=true, autocomplete='current-password', id='field-password') }}
+
+  <div class="auth-utilities">
+    <label class="auth-checkbox-label">
+      <input type="checkbox" name="remember" class="auth-checkbox" checked>
+      <span>Keep me signed in (8h shift)</span>
+    </label>
+    <a href="{{ url_for('auth.forgot') }}" class="auth-link">
+      Forgot credentials?
+    </a>
+  </div>
+
+  <button type="submit" id="signin-btn" class="btn btn--primary">
+    <span class="btn__label--idle">Sign in</span>
+    <span class="btn__label--busy">Signing in...</span>
+    <span class="btn__spinner" aria-hidden="true"></span>
+    <svg class="btn__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+      <polyline points="12 5 19 12 12 19"></polyline>
+    </svg>
+  </button>
+</form>
+
+<div class="auth-guest-wrap">
+  {% include 'auth/_guest_form.html' %}
+</div>
+
+{% include 'auth/_demo_accounts.html' %}

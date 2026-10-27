@@ -1,0 +1,98 @@
+{% extends 'base_public.html' %}
+{% from 'ui/_brand_mark.html' import brand_mark %}
+
+{% block content %}
+<div class="auth-layout">
+  <!-- Panel trái: Bối cảnh giám sát và hạ tầng SOC (Desktop & Header Mobile) -->
+  <aside class="auth-panel auth-panel--dark" aria-label="Product overview">
+    <div class="auth-panel__grid-bg" aria-hidden="true"></div>
+    {% include 'ui/_topology.html' %}
+
+    <div class="auth-panel__content">
+      <!-- 1. Wordmark nhận diện thương hiệu -->
+      <header class="auth-wordmark">
+        {{ brand_mark(size=48) }}
+        <div class="auth-wordmark__text">
+          <span class="auth-wordmark__title">VNPT SOC</span>
+          <span class="auth-wordmark__subtitle">CYBERSECURITY</span>
+        </div>
+      </header>
+
+      <!-- 2. Khối nội dung giới thiệu sản phẩm N4.2 -->
+      <section class="auth-hero">
+        <div class="auth-hero__eyebrow">
+          <span class="auth-hero__eyebrow-dot" aria-hidden="true"></span>
+          <span class="auth-hero__eyebrow-topic">TOPIC N4.2</span>
+          <span class="auth-hero__eyebrow-suffix"> · INFRASTRUCTURE ALERTS</span>
+        </div>
+        <p class="auth-hero__display">Network Security Monitor</p>
+        <p class="auth-hero__desc">
+          Alerts from routers, switches and firewalls, collected in one Security Operations Center console.
+        </p>
+
+        <!-- Dòng ticker cảnh báo dành riêng cho mobile (< 640px) -->
+        <div
+          class="auth-mobile-ticker live-ticker"
+          aria-hidden="true"
+          data-feed
+          hx-get="{{ url_for('ui.log_feed', size=1) }}"
+          hx-trigger="feed-tick"
+          hx-swap="innerHTML"
+          hx-sync="this:drop"
+        >
+          {% with lines=lines[-1:] if lines else [], compact=true %}
+            {% include 'ui/_log_feed.html' %}
+          {% endwith %}
+        </div>
+
+        <!-- Bảng 3 chỉ số thống kê SOC -->
+        {% include 'ui/_stats.html' %}
+      </section>
+
+      <!-- 3. Khu vực log stream và footer panel tối -->
+      <div>
+        <div
+          class="live-log auth-panel__log"
+          aria-hidden="true"
+          data-feed
+          hx-get="{{ url_for('ui.log_feed', size=5) }}"
+          hx-trigger="feed-tick"
+          hx-swap="innerHTML"
+          hx-sync="this:drop"
+        >
+          {% include 'ui/_log_feed.html' %}
+        </div>
+
+        <footer class="auth-footer-dark panel-footer">
+          <div class="auth-live-pill">
+            <span class="auth-live-pill__dot" aria-hidden="true"></span>
+            <span>Live monitoring</span>
+          </div>
+          {% if show_build_version %}
+            <div class="auth-footer-dark__version">v2.4 · UTC+7</div>
+          {% endif %}
+        </footer>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Panel phải: Biểu mẫu xác thực người dùng và chế độ xem -->
+  <main class="auth-panel auth-panel--light">
+    <div class="auth-panel__top-bar">
+      {% include 'ui/_status_pill.html' %}
+    </div>
+
+    <div class="auth-panel__center">
+      {% include 'auth/_form.html' %}
+    </div>
+
+    <footer class="auth-panel__footer">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+      <span>Authorized personnel only · VNPT Cybersecurity SOC</span>
+    </footer>
+  </main>
+</div>
+{% endblock %}

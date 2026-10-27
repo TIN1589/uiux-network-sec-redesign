@@ -1,0 +1,9 @@
+{# Fragment dòng log SOC trực tiếp hỗ trợ HTMX stream polling #}
+{% set is_compact = compact|default(false) %}
+{% for l in lines %}
+  <div class="log-row{% if loop.last and not is_compact %} is-new{% endif %}" data-tag="{{ l.tag|lower }}">
+    {% if not is_compact %}<span class="log-row__time">{{ l.time }}</span>{% endif %}
+    <span class="log-row__tag">{{ l.tag }}</span>
+    <span class="log-row__text">{{ l.text }}{% if loop.last and not is_compact %}<span class="cursor" aria-hidden="true"></span>{% endif %}</span>
+  </div>
+{% endfor %}
