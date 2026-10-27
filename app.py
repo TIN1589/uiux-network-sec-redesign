@@ -274,11 +274,18 @@ scenarios_store = [dict(s) for s in SCENARIO_RESULTS]
 _CSV_INJECT_RE = re.compile(r'^[\s\uFEFF]*[=+\-@|%]')
 
 def csv_safe_cell(value) -> str:
-    """
-    Sanitize a single CSV cell value against Formula Injection attacks.
-    Prepends a single-quote ' before any cell whose content starts with
-    =, +, -, @, |, % or Unicode whitespace / BOM characters.
-    Complies with REQ-FR-11 (VNPT ASSUMPTION-04).
+    """Khử độc một ô dữ liệu CSV để phòng chống tấn công CSV/Formula Injection.
+
+    Phòng vệ CSV Injection (Formula Injection / DDE Shell) theo REQ-FR-11:
+    Nếu một ô trong file xuất báo cáo bắt đầu bằng ký tự '=', '+', '-', '@', '|', '%',
+    Excel hoặc phần mềm bảng tính sẽ tự động thực thi công thức mã độc khi analyst mở file.
+    BẮT BUỘC thêm tiền tố dấu nháy đơn (') để ép bảng tính coi đó là chuỗi thuần túy.
+
+    Args:
+        value: Giá trị ô cần kiểm tra và xử lý.
+
+    Returns:
+        str: Chuỗi an toàn đã được khử độc nếu bắt đầu bằng ký tự đặc biệt.
     """
     s = str(value)
     if _CSV_INJECT_RE.match(s):
@@ -286,14 +293,31 @@ def csv_safe_cell(value) -> str:
     return s
 
 def csv_safe_row(row: list) -> list:
-    """Apply csv_safe_cell() to every element in a CSV row (REQ-FR-11)."""
+    """Áp dụng khử độc công thức CSV cho toàn bộ các phần tử trong một hàng.
+
+    Args:
+        row: Danh sách các giá trị trong một hàng của bảng tính.
+
+    Returns:
+        list: Danh sách các giá trị an toàn đã được xử lý qua csv_safe_cell.
+    """
     return [csv_safe_cell(v) for v in row]
 
 # --- ASSUMPTION-01: 4-State FE ↔ SQLite 2-flag bridge ---
 def state_to_db_flags(state: str) -> dict:
-    """
-    Map FE 4-state string → SQLite acknowledged + suppressed flags.
-    ASSUMPTION-01: Bridge layer cho tương thích SRS SQLite schema.
+    """Chuyển đổi trạng thái giao diện (FE 4-State) sang cờ lưu trữ SQLite (2 Flags).
+
+    Lớp cầu nối chuyển đổi (Bridge layer ASSUMPTION-01) tương thích với SRS SQLite schema:
+    - New: acknowledged=0, suppressed=False
+    - Investigating: acknowledged=1, suppressed=False
+    - Acknowledged: acknowledged=1, suppressed=False
+    - Resolved: acknowledged=1, suppressed=True
+
+    Args:
+        state: Tên trạng thái hiển thị trên giao diện ('New', 'Investigating', 'Acknowledged', 'Resolved').
+
+    Returns:
+        dict: Bộ cờ {'acknowledged': int, 'suppressed': bool}.
     """
     _MAP = {
         "New":          {"acknowledged": 0, "suppressed": False},
@@ -304,10 +328,14 @@ def state_to_db_flags(state: str) -> dict:
     return _MAP.get(state, {"acknowledged": 0, "suppressed": False})
 
 def db_flags_to_state(acknowledged: int, suppressed: bool) -> str:
-    """
-    Map SQLite flags → FE state string (reverse bridge).
-    Note: Investigating is ephemeral; round-trip resolves to Acknowledged.
-    ASSUMPTION-01.
+    """Chuyển đổi cờ SQLite database ngược lại trạng thái hiển thị của Frontend.
+
+    Args:
+        acknowledged: Cờ ghi nhận sự cố (0 hoặc 1).
+        suppressed: Cờ ẩn/đóng cảnh báo (True/False).
+
+    Returns:
+        str: Chuỗi trạng thái ('Resolved', 'Acknowledged' hoặc 'New').
     """
     if suppressed:
         return "Resolved"
@@ -315,10 +343,17 @@ def db_flags_to_state(acknowledged: int, suppressed: bool) -> str:
 
 # --- Auth helper functions (ASSUMPTION-02) ---
 def _verify_password(plain: str, stored_plain: str) -> bool:
-    """
-    PBKDF2-HMAC-SHA256 comparison (constant-time).
-    Demo mode: compares directly with timing-safe compare.
-    Production: stored_plain should be the hash.
+    """Xác thực mật khẩu người dùng theo chuẩn PBKDF2-HMAC-SHA256 với cơ chế so sánh an toàn thời gian.
+
+    Chống Timing Attack: Dùng hmac.compare_digest với thời gian so sánh hằng số O(1)
+    thay cho toán tử '==' thông thường nhằm ngăn chặn hacker đoán mật khẩu qua độ trễ phản hồi.
+
+    Args:
+        plain: Mật khẩu dạng văn bản gốc do người dùng nhập từ form đăng nhập.
+        stored_plain: Mật khẩu dạng văn bản gốc chuẩn của tài khoản quản trị demo.
+
+    Returns:
+        bool: True nếu khớp mật khẩu, False nếu không hợp lệ.
     """
     return hmac.compare_digest(
         hashlib.pbkdf2_hmac('sha256', plain.encode(), b'vnpt-soc-salt', 260000).hex(),
@@ -326,7 +361,15 @@ def _verify_password(plain: str, stored_plain: str) -> bool:
     )
 
 def _create_session(username: str, role: str = "admin") -> str:
-    """Create a signed session token, store in _sessions dict."""
+    """Khởi tạo phiên làm việc (Session) mới và lưu vào in-memory session store.
+
+    Args:
+        username: Tên tài khoản người dùng đăng nhập.
+        role: Quyền hạn phân vai ('admin', 'tier1', 'tier2').
+
+    Returns:
+        str: Session ID ngẫu nhiên an toàn dưới dạng URL-safe token.
+    """
     session_id = secrets.token_urlsafe(32)
     _sessions[session_id] = {
         "username": username,
@@ -336,17 +379,39 @@ def _create_session(username: str, role: str = "admin") -> str:
     return session_id
 
 def _get_session(session_id: Optional[str]) -> Optional[dict]:
-    """Validate session exists and return session data, or None."""
+    """Kiểm tra và truy xuất thông tin phiên làm việc từ cookie session_id.
+
+    Args:
+        session_id: Mã định danh phiên làm việc từ cookie người dùng.
+
+    Returns:
+        Optional[dict]: Thông tin phiên nếu hợp lệ, ngược lại None.
+    """
     if not session_id:
         return None
     return _sessions.get(session_id)
 
 def _generate_csrf_token(session_id: str) -> str:
-    """Generate HMAC-signed CSRF token tied to session."""
+    """Tạo mã xác thực CSRF Token ký bằng HMAC gắn liền với session_id.
+
+    Args:
+        session_id: Mã định danh phiên làm việc của người dùng.
+
+    Returns:
+        str: Chuỗi token bảo vệ CSRF an toàn.
+    """
     return _SERIALIZER.dumps(session_id, salt="csrf")
 
 def _validate_csrf_token(token: str, session_id: str) -> bool:
-    """Validate CSRF token matches session, max age 1h."""
+    """Xác thực tính hợp lệ và hạn sử dụng (1 giờ) của CSRF token đối chiếu với session_id.
+
+    Args:
+        token: Chuỗi CSRF token cần kiểm tra.
+        session_id: Mã phiên làm việc cần đối soát.
+
+    Returns:
+        bool: True nếu token hợp lệ và còn hạn sử dụng, ngược lại False.
+    """
     try:
         loaded = _SERIALIZER.loads(token, salt="csrf", max_age=_CSRF_MAX_AGE)
         return loaded == session_id
@@ -354,13 +419,29 @@ def _validate_csrf_token(token: str, session_id: str) -> bool:
         return False
 
 def get_window_max_minutes(win: str) -> int:
+    """Quy đổi chuỗi cửa sổ thời gian sang số phút tối đa để lọc dữ liệu.
+
+    Args:
+        win: Tên cửa sổ thời gian ('1h', '24h', '7d', 'Last 1 hour', 'Last 24 hours', 'Last 7 days').
+
+    Returns:
+        int: Số phút tối đa (60, 1440, hoặc 10080).
+    """
     if win in ('1h', 'Last 1 hour'):
         return 60
     if win in ('7d', 'Last 7 days'):
         return 10080
     return 1440  # 24h
 
-def compute_overview_stats(time_window: str = "24h"):
+def compute_overview_stats(time_window: str = "24h") -> tuple:
+    """Tính toán bộ dữ liệu thống kê và danh sách hiển thị cho trang Overview.
+
+    Args:
+        time_window: Khung thời gian cần tổng hợp ('1h', '24h', '7d').
+
+    Returns:
+        tuple: (stats_dict, queue_alerts_list, top_rules_list, top_ips_list, dev_types_list).
+    """
     max_mins = get_window_max_minutes(time_window)
     active_alerts = [a for a in alerts_store if a.get("ageMinutes", 0) <= max_mins]
 
@@ -395,7 +476,13 @@ def compute_overview_stats(time_window: str = "24h"):
 
     return stats, queue_alerts, top_rules, top_ips, dev_types
 
-def compute_scenario_stats():
+def compute_scenario_stats() -> dict:
+    """Tính toán chỉ số SLA kiểm thử kịch bản tấn công MITRE ATT&CK theo chuẩn VNPT N4.2.
+
+    Returns:
+        dict: Thống kê số lần chạy (runs), số phát hiện (detected), tỷ lệ (rate),
+            độ trễ delta trung bình (avg), số luật liên quan (rules_count).
+    """
     total = len(scenarios_store)
     detected = sum(1 for s in scenarios_store if s["detected"])
     rate = round((detected / total) * 100) if total else 100
@@ -411,8 +498,29 @@ def compute_scenario_stats():
         "rules_covered": rules_covered
     }
 
-def filter_alerts(q: str = "", time_range: str = "Last 24 hours", severity: str = "ALL",
-                  rule: str = "", ip: str = "", asset: str = "ALL", state: str = "ALL"):
+def filter_alerts(
+    q: str = "",
+    time_range: str = "Last 24 hours",
+    severity: str = "ALL",
+    rule: str = "",
+    ip: str = "",
+    asset: str = "ALL",
+    state: str = "ALL"
+) -> list:
+    """Lọc danh sách cảnh báo SOC theo từ khóa, thời gian, mức độ, luật và thiết bị.
+
+    Args:
+        q: Từ khóa tìm kiếm tự do (khớp với tiêu đề, mã rule, asset, IP nguồn, ID sự kiện).
+        time_range: Khung thời gian cần lọc ('1h', '24h', '7d').
+        severity: Mức độ nghiêm trọng ('ALL', 'Critical', 'High', 'Medium', 'Low').
+        rule: Mã định danh luật Suricata/Wazuh cần lọc.
+        ip: Địa chỉ IP nguồn cần lọc.
+        asset: Tên thiết bị đích cần lọc ('ALL' hoặc tên cụ thể).
+        state: Trạng thái xử lý ('ALL', 'New', 'Investigating', 'Acknowledged', 'Resolved').
+
+    Returns:
+        list: Danh sách cảnh báo đã lọc thỏa mãn toàn bộ điều kiện.
+    """
     max_mins = get_window_max_minutes(time_range)
     q_lower = q.strip().lower()
     rule_lower = rule.strip().lower()
@@ -449,6 +557,15 @@ def filter_alerts(q: str = "", time_range: str = "Last 24 hours", severity: str 
 
 @app.get("/", response_class=HTMLResponse)
 async def get_overview_page(request: Request, window: str = "24h"):
+    """Hiển thị toàn bộ trang Tổng quan (SOC Command Center Overview) kèm Layout Master.
+
+    Args:
+        request: FastAPI Request instance.
+        window: Khung thời gian phân tích ('1h', '24h', '7d').
+
+    Returns:
+        HTMLResponse: Giao diện hoàn chỉnh render từ template `pages/index.html`.
+    """
     stats, queue_alerts, top_rules, top_ips, dev_types = compute_overview_stats(window)
     return templates.TemplateResponse(
         request=request,
@@ -465,6 +582,16 @@ async def get_overview_page(request: Request, window: str = "24h"):
 
 @app.get("/alerts", response_class=HTMLResponse)
 async def get_alerts_page(request: Request, severity: Optional[str] = "ALL", asset: Optional[str] = "ALL"):
+    """Hiển thị toàn bộ trang Hàng đợi cảnh báo (Alert Queue) kèm Layout Master.
+
+    Args:
+        request: FastAPI Request instance.
+        severity: Bộ lọc mức độ cảnh báo ban đầu (mặc định 'ALL').
+        asset: Bộ lọc thiết bị nguồn ban đầu (mặc định 'ALL').
+
+    Returns:
+        HTMLResponse: Giao diện hoàn chỉnh render từ template `pages/alerts.html`.
+    """
     filtered = filter_alerts(severity=severity or "ALL", asset=asset or "ALL")
     alerts_stats = {
         "total": len(filtered),
@@ -489,6 +616,14 @@ async def get_alerts_page(request: Request, severity: Optional[str] = "ALL", ass
 
 @app.get("/devices", response_class=HTMLResponse)
 async def get_devices_page(request: Request):
+    """Hiển thị toàn bộ trang Giám sát thiết bị mạng (Monitored Devices) kèm Layout Master.
+
+    Args:
+        request: FastAPI Request instance.
+
+    Returns:
+        HTMLResponse: Giao diện hoàn chỉnh render từ template `pages/devices.html`.
+    """
     rep_count = sum(1 for d in DEVICES if d["status"] == "Reporting")
     sil_count = sum(1 for d in DEVICES if d["status"] == "Silent")
     devices_stats = {
@@ -507,6 +642,14 @@ async def get_devices_page(request: Request):
 
 @app.get("/scenarios", response_class=HTMLResponse)
 async def get_scenarios_page(request: Request):
+    """Hiển thị toàn bộ trang Phòng thí nghiệm kịch bản tấn công MITRE ATT&CK kèm Layout Master.
+
+    Args:
+        request: FastAPI Request instance.
+
+    Returns:
+        HTMLResponse: Giao diện hoàn chỉnh render từ template `pages/scenarios.html`.
+    """
     scenario_stats = compute_scenario_stats()
     return templates.TemplateResponse(
         request=request,
@@ -523,6 +666,15 @@ async def get_scenarios_page(request: Request):
 
 @app.get("/views/overview", response_class=HTMLResponse)
 async def get_overview_view(request: Request, window: str = "24h"):
+    """Trả về partial nội dung Overview để HTMX hoán đổi mượt mà vào #main-content.
+
+    Args:
+        request: FastAPI Request instance.
+        window: Khung thời gian lọc ('1h', '24h', '7d').
+
+    Returns:
+        HTMLResponse: Đoạn mã HTML render từ `partials/overview_content.html`.
+    """
     stats, queue_alerts, top_rules, top_ips, dev_types = compute_overview_stats(window)
     return templates.TemplateResponse(
         request=request,
@@ -539,6 +691,16 @@ async def get_overview_view(request: Request, window: str = "24h"):
 
 @app.get("/views/alerts", response_class=HTMLResponse)
 async def get_alerts_view(request: Request, severity: Optional[str] = "ALL", asset: Optional[str] = "ALL"):
+    """Trả về partial nội dung Alert Queue để HTMX hoán đổi mượt mà vào #main-content.
+
+    Args:
+        request: FastAPI Request instance.
+        severity: Bộ lọc mức độ ('ALL', 'Critical'...).
+        asset: Bộ lọc thiết bị ('ALL' hoặc tên cụ thể).
+
+    Returns:
+        HTMLResponse: Đoạn mã HTML render từ `partials/alerts_content.html`.
+    """
     filtered = filter_alerts(severity=severity or "ALL", asset=asset or "ALL")
     alerts_stats = {
         "total": len(filtered),
@@ -563,6 +725,14 @@ async def get_alerts_view(request: Request, severity: Optional[str] = "ALL", ass
 
 @app.get("/views/devices", response_class=HTMLResponse)
 async def get_devices_view(request: Request):
+    """Trả về partial danh sách thiết bị để HTMX hoán đổi mượt mà vào #main-content.
+
+    Args:
+        request: FastAPI Request instance.
+
+    Returns:
+        HTMLResponse: Đoạn mã HTML render từ `partials/devices_content.html`.
+    """
     rep_count = sum(1 for d in DEVICES if d["status"] == "Reporting")
     sil_count = sum(1 for d in DEVICES if d["status"] == "Silent")
     devices_stats = {
@@ -581,6 +751,14 @@ async def get_devices_view(request: Request):
 
 @app.get("/views/scenarios", response_class=HTMLResponse)
 async def get_scenarios_view(request: Request):
+    """Trả về partial lab kịch bản tấn công để HTMX hoán đổi mượt mà vào #main-content.
+
+    Args:
+        request: FastAPI Request instance.
+
+    Returns:
+        HTMLResponse: Đoạn mã HTML render từ `partials/scenarios_content.html`.
+    """
     scenario_stats = compute_scenario_stats()
     return templates.TemplateResponse(
         request=request,
@@ -801,6 +979,19 @@ async def delete_scenario(request: Request, scenario_id: str):
 
 @app.get("/api/scenarios/calculate-delta", response_class=JSONResponse)
 async def calculate_delta(linked_id: str):
+    """Tính toán thời gian kiểm thử và độ trễ phát hiện (Detection Delta SLA) từ cảnh báo liên kết.
+
+    Công thức đo lường viễn thông & SLA nghiệm thu VNPT N4.2 theo Rule 3.5:
+    Delta = Thời điểm SOC ghi nhận cảnh báo (Alert observed) - Thời điểm bắt đầu kích hoạt tấn công (Test started).
+    Ngưỡng SLA cam kết của VNPT N4.2 là <= 5.0 giây.
+    Nếu delta <= 5.0s, gán nhãn trạng thái 'Within target', ngược lại đánh dấu 'Exceeded SLA'.
+
+    Args:
+        linked_id: Mã định danh sự kiện cảnh báo (ví dụ: 'EVT-2610-099').
+
+    Returns:
+        JSONResponse: Đối tượng JSON chứa testStartTs, testObsTs và testDeltaSec.
+    """
     item = next((a for a in alerts_store if a["eventId"] == linked_id), alerts_store[3])
     return {
         "testStartTs": item.get("testStartTs", "01:10:46.0"),
@@ -879,6 +1070,14 @@ async def get_me(session_id: Optional[str] = Cookie(None)):
 
 @app.get("/api/export/alerts.csv")
 async def export_alerts_csv():
+    """Xuất danh sách toàn bộ cảnh báo SOC ra định dạng CSV với cơ chế bảo vệ Formula Injection.
+
+    Phòng vệ CSV Injection (Rule 3.3): Mọi hàng dữ liệu đều được lọc qua hàm csv_safe_row()
+    để thêm tiền tố (') trước các ký tự nguy hiểm (=, +, -, @), triệt tiêu rủi ro thực thi lệnh máy tính.
+
+    Returns:
+        StreamingResponse: Luồng dữ liệu tệp 'soc_alerts_export.csv'.
+    """
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["EventID", "RuleID", "Severity", "Title", "SourceIP", "DestinationIP", "Asset", "Observed", "State"])
@@ -903,6 +1102,11 @@ async def export_alerts_csv():
 
 @app.get("/api/export/scenarios.csv")
 async def export_scenarios_csv():
+    """Xuất kết quả kiểm thử kịch bản tấn công MITRE ATT&CK ra định dạng CSV có bảo vệ an toàn.
+
+    Returns:
+        StreamingResponse: Luồng dữ liệu tệp 'soc_attack_scenarios.csv'.
+    """
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Tested", "Technique", "Name", "Tool", "Rule", "LinkedAlert", "Detected", "DeltaSeconds", "Notes"])
