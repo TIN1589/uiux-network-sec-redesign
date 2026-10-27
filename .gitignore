@@ -72,6 +72,7 @@ playwright-report/
 *_evidence.jpg
 *_evidence.webp
 *.test.log
+scratch
 
 # Directory junctions in app package
 app/static
