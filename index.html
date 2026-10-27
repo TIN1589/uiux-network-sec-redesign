@@ -13,6 +13,13 @@
   <!-- Icons: FontAwesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
+  <!-- Favicon & Touch Icons (Standalone Relative Paths) -->
+  <link rel="icon" type="image/svg+xml" href="./static/img/favicon/nsm-favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./static/img/favicon/nsm-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="./static/img/favicon/nsm-favicon-512.png" />
+  <link rel="shortcut icon" href="./static/img/favicon/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./static/img/favicon/nsm-favicon-512.png" />
+
   <!-- Modern Vanilla CSS3 Design System (No Tailwind!) -->
   <link rel="stylesheet" href="./static/css/style.css?v=2.4.2" />
 
@@ -36,9 +43,7 @@
     <div class="sidebar-brand-wrap">
       <div style="display: flex; align-items: center; gap: 12px;">
         <div class="sidebar-brand-logo" title="Network Security Monitor">
-          <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" />
-          </svg>
+          <img src="./static/img/favicon/nsm-favicon.svg" alt="Network Security Monitor logo" style="width: 32px; height: 32px; object-fit: contain;" />
         </div>
         <div class="sidebar-brand-text">
           <div>Network Security</div>
@@ -128,24 +133,32 @@
       <!-- STICKY TOPBAR UTILITY HEADER -->
       <!-- TOP FLOATING UTILITY BAR -->
 <header id="app-topbar" role="banner">
-  <!-- Left: Menu Button (<1024px) + Live Pill Badge -->
+  <!-- Left: Mobile Brand Shield + Live Pill Badge -->
   <div class="topbar-left">
+    <!-- Nút Hamburger chỉ hiện trên Tablet (768px-1023px), ẩn hoàn toàn trên Mobile (<768px) -->
     <button type="button" id="topbar-menu-btn" onclick="openMobileSidebar()" aria-label="Open navigation menu"
       class="soc-btn soc-btn-secondary soc-btn-icon">
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
 
-    <div id="live-status-pill" role="status" aria-live="polite" class="soc-badge" style="background-color: #FFFFFF; border: 1px solid var(--color-border-card); color: var(--color-text-secondary); box-shadow: var(--shadow-2xs); padding: 6px 12px;">
-      <span id="live-status-dot" class="status-dot dot-live" aria-hidden="true"></span>
-      <span id="live-status-text">Live · updated <span id="live-sec-counter" class="font-mono">5s</span> ago · GMT+7</span>
+    <!-- Logo nhận diện thương hiệu trên Mobile -->
+    <div class="topbar-brand-mobile" title="Network Security Monitor">
+      <img src="./static/img/favicon/nsm-favicon.svg" alt="Network Security Monitor logo" style="width: 24px; height: 24px; object-fit: contain;" />
+    </div>
+
+    <div id="live-status-pill" role="status" aria-live="polite" class="soc-badge" style="background-color: #FFFFFF; border: 1px solid var(--color-border-card); color: var(--color-text-secondary); box-shadow: var(--shadow-2xs); padding: 5px 10px;">
+      <span id="live-status-dot" class="status-dot dot-live pulse-dot" aria-hidden="true"></span>
+      <span id="live-status-text">
+        <span>Live</span> · <span id="live-sec-counter" class="font-mono">5s</span> ago<span class="live-desktop-tz"> · GMT+7</span>
+      </span>
     </div>
   </div>
 
   <!-- Right: Auto-Refresh Pill + Analyst Avatar + Role Switcher -->
   <div class="topbar-right">
     <button type="button" onclick="toggleAutoRefresh()" id="btn-autorefresh" aria-pressed="true"
-      class="soc-btn soc-btn-outline soc-btn-sm">
-      Auto-refresh: on
+      class="soc-btn soc-btn-outline soc-btn-sm" style="min-height: 32px; padding: 4px 10px;">
+      <span id="autorefresh-label">Auto: ON</span>
     </button>
 
     <!-- Analyst Profile & Role Switcher Dropdown (ASSUMPTION-03) -->
@@ -228,9 +241,7 @@
 
       <!-- MAIN PAGE CONTENT (HTMX SWAP TARGET) -->
       <main id="main-content" class="content-shell" style="flex: 1;">
-        <!-- =================================================================== -->
-<!-- PAGE 1: OVERVIEW (SOC COMMAND CENTER)                               -->
-<!-- =================================================================== -->
+        <!-- OVERVIEW (SOC COMMAND CENTER) -->
 <section id="tab-overview" class="stack-blocks" aria-label="SOC Command Center Overview" data-window="24h">
 
   <!-- Title & Segmented Time Pill -->
@@ -274,15 +285,15 @@
   <!-- Unified 5-Column KPI Strip Card -->
   
   <div id="ov-kpi-strip" class="kpi-strip kpi-strip-5">
-    <!-- Total Alerts -->
-    <div class="kpi-cell">
+    <!-- Total Alerts (Banner trên cùng trên mobile, ô thứ nhất trên desktop) -->
+    <div class="kpi-cell kpi-cell-total">
       <div class="kpi-header">
         <span class="status-dot dot-dark" aria-hidden="true"></span>
         <span>TOTAL ALERTS</span>
       </div>
-      <div id="ov-kpi-total" class="kpi-number">6</div>
-      <div class="kpi-footer">
-        <span id="ov-kpi-window-sub">last 24 hours</span>
+      <div class="kpi-total-val-wrap">
+        <span id="ov-kpi-total" class="kpi-number">6</span>
+        <span class="kpi-footer" id="ov-kpi-window-sub">last 24 hours</span>
       </div>
     </div>
 
@@ -490,9 +501,7 @@
       <div class="soc-card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
         <div style="display: flex; align-items: baseline; gap: 8px;">
           <h2 class="soc-card-title">Alerts per hour</h2>
-          <span id="ov-hourly-sub" style="font-size: 12px; color: var(--color-text-muted);">
-            per hour
-          </span>
+          <span id="ov-hourly-sub" style="font-size: 12px; color: var(--color-text-muted);"></span>
         </div>
 
         <!-- Inline Legend with all 4 levels -->
@@ -646,9 +655,7 @@
   </div>
 
 </section>
-        <!-- =================================================================== -->
-<!-- PAGE 2: ALERTS (ALERT QUEUE)                                        -->
-<!-- =================================================================== -->
+        <!-- ALERTS (ALERT QUEUE) -->
 <section id="tab-alerts" class="hidden stack-blocks" style="display: none;" aria-label="Alert Queue">
 
   <!-- Title & Export CSV Button -->
@@ -759,22 +766,29 @@
   </div>
 
   <!-- Search & Collapsible Advanced Filters Card -->
-  <div class="soc-card soc-card-pad" style="display: flex; flex-direction: column; gap: 16px;">
+  <div class="soc-card soc-card-pad" style="display: flex; flex-direction: column; gap: 14px;">
     <form id="alerts-filter-form"
           hx-get="/api/alerts/filter"
           hx-target="#alerts-table-container"
           hx-trigger="input from:#al-search delay:200ms, change from:#al-time, change from:#al-severity, input from:#al-rule-id delay:200ms, input from:#al-src-ip delay:200ms, change from:#al-asset">
       <input type="hidden" id="al-state-hidden" name="state" value="ALL" />
       
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
-        <div style="grid-column: span 2;">
-          <label for="al-search" class="soc-label">Search alerts</label>
-          <div class="soc-input-icon-wrap" style="margin-top: 6px;">
-            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-            <input type="text" id="al-search" name="q" placeholder="Rule, device, IP, or event text" class="soc-input" />
-          </div>
+      <!-- Primary Search Row with Mobile Filters Toggle Button -->
+      <div class="alerts-search-row">
+        <div class="soc-input-icon-wrap" style="flex: 1; min-width: 0;">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input type="text" id="al-search" name="q" placeholder="Rule, device, IP, or event text" class="soc-input" />
         </div>
+        <button type="button" id="al-mobile-filter-btn" onclick="toggleMobileFilterBar()"
+                class="soc-btn soc-btn-outline al-mobile-filter-btn" aria-expanded="false" aria-label="Toggle filter options">
+          <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+          <span>Filters</span>
+          <span id="al-filter-active-indicator" class="al-filter-dot hidden"></span>
+        </button>
+      </div>
 
+      <!-- Collapsible Filter Options (Always visible on Desktop, collapsible on Mobile) -->
+      <div id="alerts-collapsible-filters" class="alerts-filter-options-grid">
         <div>
           <label for="al-time" class="soc-label">Time range</label>
           <div class="soc-input-wrap" style="margin-top: 6px;">
@@ -800,14 +814,14 @@
         </div>
 
         <div>
-          <button type="submit" class="soc-btn soc-btn-primary" style="width: 100%; min-height: 40px;">
+          <button type="submit" class="soc-btn soc-btn-primary" style="width: 100%; min-height: 40px; margin-top: 6px;">
             Apply filters
           </button>
         </div>
       </div>
 
       <!-- Advanced Filter Toggle Controls -->
-      <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; margin-top: 4px;">
+      <div class="alerts-adv-toggle-row">
         <button type="button" onclick="toggleAdvancedFilters()" id="adv-filter-toggle-btn" aria-expanded="false" class="soc-btn-link" style="display: flex; align-items: center; gap: 6px;">
           <i id="adv-filter-caret" class="fa-solid fa-caret-right" aria-hidden="true" style="transition: transform 0.2s;"></i>
           <span>Advanced filters</span>
@@ -868,8 +882,9 @@
     </div>
   </div>
 
-  <div class="soc-table-wrap">
-    <table class="soc-table" style="table-layout: fixed; min-width: 980px;">
+  <!-- Desktop Table View (>= 768px) -->
+  <div class="desktop-table-wrap soc-table-wrap">
+    <table class="soc-table alerts-table" style="table-layout: fixed; min-width: 980px;">
       <thead>
         <tr>
           <th scope="col" style="width: 36px;">
@@ -1103,6 +1118,129 @@
     </table>
   </div>
 
+  <!-- Mobile Stacked Card View (< 768px): Tối ưu thao tác vuốt chạm di động -->
+  <div class="mobile-alerts-list">
+    <!-- Card 1 -->
+    <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-099')">
+      <div class="m-alert-row1">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="soc-badge badge-critical">Critical</span>
+          <span class="font-mono m-rule-tag">#100999</span>
+        </div>
+        <span class="m-time-text font-mono">12m ago</span>
+      </div>
+      <div class="m-alert-row2">Unauthorized Spanning-Tree Root Bridge BPDU inject</div>
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="vnpt-agg-switch-05 · 10.254.0.99">
+          <span>vnpt-agg-switch-05</span> · <span>10.254.0.99</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-099')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          Investigate →
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-095')">
+      <div class="m-alert-row1">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="soc-badge badge-critical">Critical</span>
+          <span class="font-mono m-rule-tag">#100201</span>
+        </div>
+        <span class="m-time-text font-mono">18m ago</span>
+      </div>
+      <div class="m-alert-row2">BGP Neighbor Flapping detected on Core Uplink</div>
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="vnpt-core-router-01 · 203.0.113.195">
+          <span>vnpt-core-router-01</span> · <span>203.0.113.195</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-095')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          Investigate →
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-092')">
+      <div class="m-alert-row1">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="soc-badge badge-high">High</span>
+          <span class="font-mono m-rule-tag">#100210</span>
+        </div>
+        <span class="m-time-text font-mono">25m ago</span>
+      </div>
+      <div class="m-alert-row2">SSH brute force login attempt from untrusted subnet</div>
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="vnpt-access-sw-02 · 198.51.100.23">
+          <span>vnpt-access-sw-02</span> · <span>198.51.100.23</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-092')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          Investigate →
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-089')">
+      <div class="m-alert-row1">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="soc-badge badge-high">High</span>
+          <span class="font-mono m-rule-tag">#100200</span>
+        </div>
+        <span class="m-time-text font-mono">32m ago</span>
+      </div>
+      <div class="m-alert-row2">Port scan detected against management gateway</div>
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="vnpt-edge-fw-01 · 198.51.100.14">
+          <span>vnpt-edge-fw-01</span> · <span>198.51.100.14</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-089')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          Investigate →
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-084')">
+      <div class="m-alert-row1">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="soc-badge badge-high">High</span>
+          <span class="font-mono m-rule-tag">#100280</span>
+        </div>
+        <span class="m-time-text font-mono">48m ago</span>
+      </div>
+      <div class="m-alert-row2">VPN login from unusual source</div>
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="vnpt-edge-fw-01 · 192.0.2.88">
+          <span>vnpt-edge-fw-01</span> · <span>192.0.2.88</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-084')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          Open →
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 6 -->
+    <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-079')">
+      <div class="m-alert-row1">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="soc-badge badge-medium">Medium</span>
+          <span class="font-mono m-rule-tag">#100305</span>
+        </div>
+        <span class="m-time-text font-mono">1h ago</span>
+      </div>
+      <div class="m-alert-row2">SYN flood threshold exceeded</div>
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="vnpt-edge-fw-01 · 203.0.113.99">
+          <span>vnpt-edge-fw-01</span> · <span>203.0.113.99</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-079')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          Investigate →
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Pagination Footer -->
   <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 18px; margin-top: 8px; border-top: 1px solid var(--color-border-divider); font-size: 12px; color: var(--color-text-muted);">
     <span id="al-footer-count">
@@ -1124,9 +1262,7 @@
   </div>
 
 </section>
-        <!-- =================================================================== -->
-<!-- PAGE 3: DEVICES (MONITORED DEVICES)                                 -->
-<!-- =================================================================== -->
+        <!-- DEVICES (MONITORED DEVICES) -->
 <section id="tab-devices" class="hidden stack-blocks" style="display: none;" aria-label="Monitored Devices">
 
   <div>
@@ -1340,9 +1476,7 @@
   </div>
 
 </section>
-        <!-- =================================================================== -->
-<!-- PAGE 4: ATTACK SCENARIOS                                            -->
-<!-- =================================================================== -->
+        <!-- ATTACK SCENARIOS -->
 <section id="tab-scenarios" class="hidden stack-blocks" style="display: none;" aria-label="Attack Scenarios">
 
   <!-- Header & Export CSV -->
@@ -1384,137 +1518,150 @@
   </div>
 
   <!-- New / Edit Test Card (Admin only — ASSUMPTION-03) -->
-  <div id="sc-form-card" data-min-role="admin" class="soc-card soc-card-pad" style="display: flex; flex-direction: column; gap: 20px;">
-    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+  <div id="sc-form-card" data-min-role="admin" class="soc-card soc-card-pad sc-accordion-card">
+    <!-- Mobile Accordion Trigger Button (< 768px) -->
+    <button type="button" id="sc-accordion-toggle-btn" onclick="toggleScenarioFormAccordion()"
+            class="sc-accordion-trigger" aria-expanded="false" aria-controls="sc-form-collapsible-body">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-plus-circle" style="color: var(--color-accent-lime-dark, #4D7C0F); font-size: 16px;" aria-hidden="true"></i>
+        <span style="font-weight: 700; font-size: 14px; color: var(--color-text-primary);">+ Run / Record New Test</span>
+        <span id="sc-editing-badge-mobile" class="soc-badge badge-high hidden" style="margin-left: 4px;">Editing</span>
+      </div>
+      <i id="sc-accordion-chevron" class="fa-solid fa-chevron-down" style="font-size: 12px; color: var(--color-text-muted); transition: transform 0.2s;" aria-hidden="true"></i>
+    </button>
+
+    <!-- Desktop Header (hidden on mobile accordion) -->
+    <div class="sc-form-desktop-header" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 20px;">
       <h2 id="sc-form-heading" class="soc-card-title">New test</h2>
       <span id="sc-editing-badge" class="soc-badge badge-high hidden">
         Editing existing test
       </span>
     </div>
 
-    <form id="scenario-test-form"
-          hx-post="/api/scenarios"
-          hx-target="#scenarios-table-container"
-          hx-on::after-request="if(event.detail.successful) { cancelScenarioEdit(true); }"
-          style="display: flex; flex-direction: column; gap: 20px;">
+    <!-- Collapsible Body (Default collapsed on mobile, open on desktop) -->
+    <div id="sc-form-collapsible-body" class="sc-form-collapsible-body">
+      <form id="scenario-test-form"
+            hx-post="/api/scenarios"
+            hx-target="#scenarios-table-container"
+            hx-on::after-request="if(event.detail.successful) { cancelScenarioEdit(true); }"
+            style="display: flex; flex-direction: column; gap: 20px;">
 
-      <input type="hidden" id="sc-edit-id-input" name="id" value="" />
+        <input type="hidden" id="sc-edit-id-input" name="id" value="" />
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-start;">
-        <div class="soc-form-group">
-          <label for="sc-technique" class="soc-label">Attack technique</label>
-          <div class="soc-input-wrap">
-            <select id="sc-technique" name="code" onchange="handleScenarioTechniqueChange()" class="soc-select">
-              <option value="T1046">T1046 – Network Service Scanning</option>
-              <option value="T1110">T1110 – SSH Credential Brute Force</option>
-              <option value="T1557">T1557 – Spanning-Tree BPDU Spoofing</option>
-              <option value="T1498">T1498 – SYN Flood Denial of Service</option>
-            </select>
+        <div class="sc-inputs-grid">
+          <div class="soc-form-group">
+            <label for="sc-technique" class="soc-label">Attack technique</label>
+            <div class="soc-input-wrap">
+              <select id="sc-technique" name="code" onchange="handleScenarioTechniqueChange()" class="soc-select">
+                <option value="T1046">T1046 – Network Service Scanning</option>
+                <option value="T1110">T1110 – SSH Credential Brute Force</option>
+                <option value="T1557">T1557 – Spanning-Tree BPDU Spoofing</option>
+                <option value="T1498">T1498 – SYN Flood Denial of Service</option>
+              </select>
+            </div>
+            <span class="soc-form-hint">MITRE ATT&amp;CK</span>
           </div>
-          <span class="soc-form-hint">MITRE ATT&amp;CK</span>
-        </div>
 
-        <div class="soc-form-group">
-          <label for="sc-tool" class="soc-label">Tool</label>
-          <div class="soc-input-wrap">
-            <input type="text" id="sc-tool" name="tool" value="nmap 7.94" class="soc-input" />
-          </div>
-        </div>
-
-        <div class="soc-form-group">
-          <label for="sc-rule" class="soc-label">Expected rule</label>
-          <div class="soc-input-wrap">
-            <select id="sc-rule" name="rule" onchange="handleScenarioRuleChange()" class="soc-select font-mono">
-              <option value="100200">100200</option>
-              <option value="100210">100210</option>
-              <option value="100999">100999</option>
-              <option value="100305">100305</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="soc-form-group">
-          <label for="sc-linked-alert" class="soc-label">Linked live alert</label>
-          <div class="soc-input-wrap">
-            <select id="sc-linked-alert" name="linkedEventId" onchange="updateComputedDeltaWell()" class="soc-select font-mono">
-              <option value="EVT-2610-089">Rule 100200 · Port scan detected · 01:10:47.8</option>
-              <option value="EVT-2610-092">Rule 100210 · SSH Brute-force attempt · 01:07:11.4</option>
-              <option value="EVT-2610-099">Rule 100999 · Root Bridge BPDU inject · 01:12:04.6</option>
-              <option value="EVT-2610-095">Rule 100305 · SYN flood threshold · 01:08:42.1</option>
-            </select>
-          </div>
-          <span class="soc-form-hint">sets detection time</span>
-        </div>
-      </div>
-
-      <!-- DETECTION TIME · COMPUTED FROM THE LINKED ALERT (Rule Section 5: ba giá trị mono 20px, Delta đậm hơn) -->
-      <div class="delta-well" style="width: 100%; box-sizing: border-box; overflow-x: hidden;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-secondary);">
-            DETECTION TIME · COMPUTED FROM THE LINKED ALERT
-          </span>
-          <span id="sc-target-badge" class="soc-badge badge-resolved">
-            Within target
-          </span>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; align-items: baseline; width: 100%; box-sizing: border-box;">
-          <div>
-            <div style="font-size: 12px; color: var(--color-text-muted);">Test started</div>
-            <div id="sc-start-ts" class="font-mono" style="font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-top: 2px;">01:10:46.0</div>
-          </div>
-          <div>
-            <div style="font-size: 12px; color: var(--color-text-muted);">Alert observed</div>
-            <div id="sc-obs-ts" class="font-mono" style="font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-top: 2px;">01:10:47.8</div>
-          </div>
-          <div>
-            <div style="font-size: 12px; color: var(--color-text-muted);">Delta</div>
-            <div id="sc-delta-display" class="font-mono" style="font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">1.8 s</div>
-          </div>
-        </div>
-
-        <!-- Horizontal Gauge Bar with 5s Target Marker -->
-        <div style="padding-top: 6px; width: 100%; box-sizing: border-box;">
-          <div class="delta-gauge-track" style="width: 100%; box-sizing: border-box;">
-            <div id="sc-delta-bar" class="delta-gauge-fill" style="width: 30%;"></div>
-            <div class="delta-target-marker">
-              <span class="delta-target-label">target 5 s</span>
+          <div class="soc-form-group">
+            <label for="sc-tool" class="soc-label">Tool</label>
+            <div class="soc-input-wrap">
+              <input type="text" id="sc-tool" name="tool" value="nmap 7.94" class="soc-input" />
             </div>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-muted); margin-top: 6px;">
-            <span>0 s</span>
-            <span>6 s</span>
+
+          <div class="soc-form-group">
+            <label for="sc-rule" class="soc-label">Expected rule</label>
+            <div class="soc-input-wrap">
+              <select id="sc-rule" name="rule" onchange="handleScenarioRuleChange()" class="soc-select font-mono">
+                <option value="100200">100200</option>
+                <option value="100210">100210</option>
+                <option value="100999">100999</option>
+                <option value="100305">100305</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="soc-form-group">
+            <label for="sc-linked-alert" class="soc-label">Linked live alert</label>
+            <div class="soc-input-wrap">
+              <select id="sc-linked-alert" name="linkedEventId" onchange="updateComputedDeltaWell()" class="soc-select font-mono">
+                <option value="EVT-2610-089">Rule 100200 · Port scan detected · 01:10:47.8</option>
+                <option value="EVT-2610-092">Rule 100210 · SSH Brute-force attempt · 01:07:11.4</option>
+                <option value="EVT-2610-099">Rule 100999 · Root Bridge BPDU inject · 01:12:04.6</option>
+                <option value="EVT-2610-095">Rule 100305 · SYN flood threshold · 01:08:42.1</option>
+              </select>
+            </div>
+            <span class="soc-form-hint">sets detection time</span>
           </div>
         </div>
-      </div>
 
-      <!-- Notes, Detected Checkbox & Submit Action (Unified Compact Row) -->
-      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px;">
-        <div style="padding-bottom: 10px;">
-          <label for="sc-detected-check" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
-            <input type="checkbox" id="sc-detected-check" name="detected" checked class="soc-checkbox" />
-            <span style="font-size: 14px; font-weight: 600; color: var(--color-text-primary);">Detected</span>
-          </label>
-        </div>
+        <!-- DETECTION TIME · COMPUTED FROM THE LINKED ALERT (Giữ nguyên 3 cột trên 1 hàng ngang trên mobile) -->
+        <div class="delta-well" style="width: 100%; box-sizing: border-box; overflow-x: hidden;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-secondary);">
+              DETECTION TIME · COMPUTED FROM THE LINKED ALERT
+            </span>
+            <span id="sc-target-badge" class="soc-badge badge-resolved">
+              Within target
+            </span>
+          </div>
 
-        <div class="soc-form-group" style="flex: 1; min-width: 260px;">
-          <label for="sc-notes" class="soc-label">Notes</label>
-          <div class="soc-input-wrap">
-            <input type="text" id="sc-notes" name="notes" placeholder="What happened, what was observed" class="soc-input" value="Kịch bản kiểm thử E2E tự động hóa Playwright đạt chuẩn nghiệm thu VNPT N4.2." />
+          <div class="delta-timestamps-grid">
+            <div>
+              <div class="delta-ts-label">Test started</div>
+              <div id="sc-start-ts" class="font-mono delta-ts-val">01:10:46.0</div>
+            </div>
+            <div>
+              <div class="delta-ts-label">Alert observed</div>
+              <div id="sc-obs-ts" class="font-mono delta-ts-val">01:10:47.8</div>
+            </div>
+            <div>
+              <div class="delta-ts-label">Delta</div>
+              <div id="sc-delta-display" class="font-mono delta-ts-val delta-bold">1.8 s</div>
+            </div>
+          </div>
+
+          <!-- Horizontal Gauge Bar with 5s Target Marker -->
+          <div style="padding-top: 6px; width: 100%; box-sizing: border-box;">
+            <div class="delta-gauge-track" style="width: 100%; box-sizing: border-box;">
+              <div id="sc-delta-bar" class="delta-gauge-fill" style="width: 30%;"></div>
+              <div class="delta-target-marker">
+                <span class="delta-target-label">target 5 s</span>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-muted); margin-top: 6px;">
+              <span>0 s</span>
+              <span>6 s</span>
+            </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 10px; margin-top: auto;">
-          <button type="button" id="sc-cancel-edit-btn" onclick="cancelScenarioEdit()" class="soc-btn soc-btn-outline hidden">
-            Cancel edit
-          </button>
-          <button type="submit" id="sc-submit-btn" class="soc-btn soc-btn-primary" style="height: 40px;">
-            Record test
-          </button>
-        </div>
-      </div>
+        <!-- Notes, Detected Checkbox & Submit Action (Unified Compact Row) -->
+        <div class="sc-submit-row">
+          <div style="padding-bottom: 10px;">
+            <label for="sc-detected-check" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+              <input type="checkbox" id="sc-detected-check" name="detected" checked class="soc-checkbox" />
+              <span style="font-size: 14px; font-weight: 600; color: var(--color-text-primary);">Detected</span>
+            </label>
+          </div>
 
-    </form>
+          <div class="soc-form-group" style="flex: 1; min-width: 260px;">
+            <label for="sc-notes" class="soc-label">Notes</label>
+            <textarea id="sc-notes" name="notes" rows="2" placeholder="What happened, what was observed" class="soc-textarea" style="min-height: 56px; resize: vertical;">Kịch bản kiểm thử E2E tự động hóa Playwright đạt chuẩn nghiệm thu VNPT N4.2.</textarea>
+          </div>
+
+          <div class="sc-actions-group">
+            <button type="button" id="sc-cancel-edit-btn" onclick="cancelScenarioEdit()" class="soc-btn soc-btn-outline hidden">
+              Cancel edit
+            </button>
+            <button type="submit" id="sc-submit-btn" class="soc-btn soc-btn-primary" style="height: 40px;">
+              Record test
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
   </div>
 
   <!-- Test Results Table Card (Swappable by HTMX) -->
@@ -1522,19 +1669,20 @@
     <!-- TEST RESULTS TABLE BODY & WRAPPER -->
 <div class="soc-card soc-card-pad">
   <h2 class="soc-card-title" style="margin-bottom: 16px;">Test results</h2>
-  <div class="soc-table-wrap">
-    <table class="soc-table">
+  <!-- Desktop Table View (>= 768px) -->
+  <div class="desktop-table-wrap soc-table-wrap">
+    <table class="soc-table scenarios-table">
       <thead>
         <tr>
-          <th scope="col">TESTED (GMT+7)</th>
-          <th scope="col">TECHNIQUE</th>
-          <th scope="col">TOOL</th>
-          <th scope="col">RULE</th>
-          <th scope="col">LINKED ALERT</th>
-          <th scope="col">RESULT</th>
-          <th scope="col">DELTA</th>
-          <th scope="col">NOTES</th>
-          <th scope="col" style="text-align: right;"><span class="sr-only">Actions</span></th>
+          <th scope="col" class="col-tested">TESTED (GMT+7)</th>
+          <th scope="col" class="col-technique">TECHNIQUE</th>
+          <th scope="col" class="col-tool">TOOL</th>
+          <th scope="col" class="col-rule">RULE</th>
+          <th scope="col" class="col-alert">LINKED ALERT</th>
+          <th scope="col" class="col-result">RESULT</th>
+          <th scope="col" class="col-delta">DELTA</th>
+          <th scope="col" class="col-notes">NOTES</th>
+          <th scope="col" class="col-action" style="text-align: right;"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
       <tbody id="sc-results-tbody">
@@ -1692,6 +1840,132 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Mobile Stacked Card View (< 768px): Tối ưu xem nhanh kết quả test không cần cuộn ngang -->
+  <div class="mobile-scenarios-list">
+    <!-- Card SC-01 -->
+    <div class="mobile-scenario-card highlighted">
+      <div class="m-sc-row1">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0;">
+          <span class="font-mono" style="font-size: 13px; font-weight: 700; color: var(--color-text-primary);">T1046</span>
+          <span style="font-size: 13px; font-weight: 600; color: var(--color-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Network Service Scanning</span>
+          <span class="soc-badge badge-resolved">Detected (1.8s)</span>
+        </div>
+        <div class="row-action-menu-wrap" style="flex-shrink: 0;">
+          <button type="button" data-min-role="admin"
+                  onclick="event.stopPropagation(); toggleRowMenu('sc-m-menu-SC-01', event)"
+                  aria-label="Actions for test T1046"
+                  class="soc-btn soc-btn-outline soc-btn-icon"
+                  style="width: 32px; height: 32px; min-height: 32px; font-weight: 700; font-size: 14px;">
+            ⋯
+          </button>
+          <div id="sc-m-menu-SC-01" class="row-menu-dropdown hidden" role="menu">
+            <button type="button" onclick="editScenarioRow('SC-01'); closeAllRowMenus();"
+                    class="row-menu-item" role="menuitem">
+              <i class="fa-solid fa-pen-to-square" style="font-size: 11px;" aria-hidden="true"></i> Edit
+            </button>
+            <button type="button"
+                    hx-delete="/api/scenarios/SC-01"
+                    hx-target="#scenarios-table-container"
+                    onclick="closeAllRowMenus();"
+                    class="row-menu-item danger" role="menuitem">
+              <i class="fa-solid fa-trash" style="font-size: 11px;" aria-hidden="true"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="m-sc-row2 font-mono">
+        <span>Tool: <strong>nmap 7.94</strong></span> ·
+        <span>Rule: <strong>100200</strong></span> ·
+        <span>Alert: <button type="button" onclick="openAlertDrawer('EVT-2610-089')" class="soc-btn-link font-mono" style="font-size: 12px; display: inline; padding: 0;">EVT-2610-089</button></span>
+      </div>
+      <div class="m-sc-row3">
+        Kịch bản kiểm thử E2E tự động hóa Playwright đạt chuẩn nghiệm thu VNPT N4.2.
+      </div>
+    </div>
+
+    <!-- Card SC-02 -->
+    <div class="mobile-scenario-card">
+      <div class="m-sc-row1">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0;">
+          <span class="font-mono" style="font-size: 13px; font-weight: 700; color: var(--color-text-primary);">T1110</span>
+          <span style="font-size: 13px; font-weight: 600; color: var(--color-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">SSH Credential Brute Force</span>
+          <span class="soc-badge badge-resolved">Detected (1.5s)</span>
+        </div>
+        <div class="row-action-menu-wrap" style="flex-shrink: 0;">
+          <button type="button" data-min-role="admin"
+                  onclick="event.stopPropagation(); toggleRowMenu('sc-m-menu-SC-02', event)"
+                  aria-label="Actions for test T1110"
+                  class="soc-btn soc-btn-outline soc-btn-icon"
+                  style="width: 32px; height: 32px; min-height: 32px; font-weight: 700; font-size: 14px;">
+            ⋯
+          </button>
+          <div id="sc-m-menu-SC-02" class="row-menu-dropdown hidden" role="menu">
+            <button type="button" onclick="editScenarioRow('SC-02'); closeAllRowMenus();"
+                    class="row-menu-item" role="menuitem">
+              <i class="fa-solid fa-pen-to-square" style="font-size: 11px;" aria-hidden="true"></i> Edit
+            </button>
+            <button type="button"
+                    hx-delete="/api/scenarios/SC-02"
+                    hx-target="#scenarios-table-container"
+                    onclick="closeAllRowMenus();"
+                    class="row-menu-item danger" role="menuitem">
+              <i class="fa-solid fa-trash" style="font-size: 11px;" aria-hidden="true"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="m-sc-row2 font-mono">
+        <span>Tool: <strong>hydra 9.5</strong></span> ·
+        <span>Rule: <strong>100210</strong></span> ·
+        <span>Alert: <button type="button" onclick="openAlertDrawer('EVT-2610-092')" class="soc-btn-link font-mono" style="font-size: 12px; display: inline; padding: 0;">EVT-2610-092</button></span>
+      </div>
+      <div class="m-sc-row3">
+        Khóa IP 198.51.100.44 tự động trên vnpt-edge-fw-01 sau 1.5 giây.
+      </div>
+    </div>
+
+    <!-- Card SC-03 -->
+    <div class="mobile-scenario-card">
+      <div class="m-sc-row1">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0;">
+          <span class="font-mono" style="font-size: 13px; font-weight: 700; color: var(--color-text-primary);">T1557</span>
+          <span style="font-size: 13px; font-weight: 600; color: var(--color-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Spanning-Tree BPDU Spoofing</span>
+          <span class="soc-badge badge-resolved">Detected (1.4s)</span>
+        </div>
+        <div class="row-action-menu-wrap" style="flex-shrink: 0;">
+          <button type="button" data-min-role="admin"
+                  onclick="event.stopPropagation(); toggleRowMenu('sc-m-menu-SC-03', event)"
+                  aria-label="Actions for test T1557"
+                  class="soc-btn soc-btn-outline soc-btn-icon"
+                  style="width: 32px; height: 32px; min-height: 32px; font-weight: 700; font-size: 14px;">
+            ⋯
+          </button>
+          <div id="sc-m-menu-SC-03" class="row-menu-dropdown hidden" role="menu">
+            <button type="button" onclick="editScenarioRow('SC-03'); closeAllRowMenus();"
+                    class="row-menu-item" role="menuitem">
+              <i class="fa-solid fa-pen-to-square" style="font-size: 11px;" aria-hidden="true"></i> Edit
+            </button>
+            <button type="button"
+                    hx-delete="/api/scenarios/SC-03"
+                    hx-target="#scenarios-table-container"
+                    onclick="closeAllRowMenus();"
+                    class="row-menu-item danger" role="menuitem">
+              <i class="fa-solid fa-trash" style="font-size: 11px;" aria-hidden="true"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="m-sc-row2 font-mono">
+        <span>Tool: <strong>yersinia 0.8.2</strong></span> ·
+        <span>Rule: <strong>100999</strong></span> ·
+        <span>Alert: <button type="button" onclick="openAlertDrawer('EVT-2610-099')" class="soc-btn-link font-mono" style="font-size: 12px; display: inline; padding: 0;">EVT-2610-099</button></span>
+      </div>
+      <div class="m-sc-row3">
+        Cổng Gi0/24 chuyển sang trạng thái Root-Inconsistent ngay lập tức.
+      </div>
+    </div>
+  </div>
 </div>
   </div>
 
@@ -1706,7 +1980,7 @@
     class="soc-drawer-backdrop">
     <div id="alert-drawer-container" onclick="event.stopPropagation()" class="soc-drawer">
       <!-- INNER ALERT DRAWER CONTENT -->
-<div style="display: flex; flex-direction: column; gap: 24px;">
+<div class="drawer-scroll-body">
   <!-- Mobile Grab Handle -->
   <div class="drawer-grab-handle" aria-hidden="true"></div>
 
@@ -1788,13 +2062,12 @@
 </div>
 
 <!-- Bottom Action Pills -->
-<div style="padding-top: 24px; border-top: 1px solid var(--color-border-divider); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 20px;">
+<div class="drawer-action-group">
   <button type="button"
           hx-post="/api/alerts/EVT-2610-099/state"
           hx-vals='{"state": "Acknowledged"}'
           hx-target="#alert-drawer-container"
-          class="soc-btn soc-btn-primary"
-          style="flex: 1;">
+          class="soc-btn soc-btn-primary drawer-btn-ack">
     Acknowledge
   </button>
   <button type="button"
@@ -1802,8 +2075,7 @@
           hx-post="/api/alerts/EVT-2610-099/state"
           hx-vals='{"state": "Investigating"}'
           hx-target="#alert-drawer-container"
-          class="soc-btn soc-btn-outline"
-          style="flex: 1;">
+          class="soc-btn soc-btn-outline drawer-btn-investigate">
     Mark investigating
   </button>
   <button type="button"
@@ -1811,7 +2083,7 @@
           hx-post="/api/alerts/EVT-2610-099/state"
           hx-vals='{"state": "Resolved"}'
           hx-target="#alert-drawer-container"
-          class="soc-btn soc-btn-secondary">
+          class="soc-btn soc-btn-secondary drawer-btn-resolve">
     Resolve
   </button>
 </div>
@@ -1824,7 +2096,8 @@
   <div class="signin-split-grid">
     <!-- Left Matte-Black Half -->
     <div class="signin-left-matte">
-      <div>
+      <!-- Desktop Logo Icon -->
+      <div class="signin-desktop-logo">
         <div style="width: 44px; height: 44px; border-radius: var(--radius-lg); background-color: var(--color-accent-lime); color: var(--color-obsidian-900); display: flex; align-items: center; justify-content: center;">
           <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" />
@@ -1832,21 +2105,37 @@
         </div>
       </div>
 
-      <div style="margin-block: auto; padding-block: 32px;">
+      <!-- Mobile Header Brand (Hiện trên mobile < 768px) -->
+      <div class="signin-mobile-header-brand">
+        <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <img src="./static/img/favicon/nsm-favicon.svg" alt="Network Security Monitor logo" style="width: 100%; height: 100%; object-fit: contain;" />
+        </div>
+        <div style="line-height: 1.2;">
+          <div style="font-weight: 700; font-size: 14px; color: #FFFFFF;">Network Security Monitor</div>
+          <div style="font-size: 11px; color: #A8A29E; font-family: var(--font-mono);">VNPT SOC · N4.2</div>
+        </div>
+      </div>
+
+      <div class="signin-left-hero-text" style="margin-block: auto; padding-block: 32px;">
+        <!-- Brand Topic Tag: Lấp khoảng trống giữa logo và heading, nhận diện VNPT N4.2 -->
+        <div class="signin-brand-tag">
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: var(--color-accent-lime);" aria-hidden="true"></span>
+          <span>VNPT CYBERSECURITY • TOPIC N4.2</span>
+        </div>
         <h1 style="font-size: clamp(36px, 4vw, 56px); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; color: #FFFFFF;">
           Network<br />Security<br />Monitor
         </h1>
         <p style="color: #A8A29E; font-size: 16px; margin-top: 16px;">Security Operations Center</p>
       </div>
 
-      <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div class="signin-left-bottom-status" style="display: flex; align-items: center; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #D6D3D1;">
           <span class="status-dot dot-lime" aria-hidden="true"></span>
           <span>Live monitoring</span>
         </div>
-        <button type="button" onclick="closeSignInModal()" style="font-size: 12px; color: #A8A29E; text-decoration: underline; cursor: pointer;">
-          Return to SOC Console →
-        </button>
+        <div style="font-size: 11px; color: #A8A29E; font-family: var(--font-mono);">
+          VNPT SOC v2.4 · E2E
+        </div>
       </div>
     </div>
 
@@ -1858,8 +2147,29 @@
             Sign in
           </h2>
           <p style="font-size: 14px; color: var(--color-text-secondary); margin-top: 4px;">
-            Sign in to view network alerts and manage incidents.
+            Enter your SOC credentials to view alerts and manage incidents.
           </p>
+        </div>
+
+        <!-- Quick Demo Fill Pills (Dành cho người chấm / demo kiểm thử) -->
+        <div class="signin-demo-box">
+          <div class="signin-demo-header">
+            <span class="signin-demo-title">
+              <i class="fa-solid fa-key" style="margin-right: 4px;" aria-hidden="true"></i>Quick Demo Fill
+            </span>
+            <span class="signin-demo-pwd-hint">pwd: vnpt-soc-2026</span>
+          </div>
+          <div class="signin-demo-pills">
+            <button type="button" onclick="fillDemoCredentials('admin')" class="signin-demo-pill" title="Fill SecOps Admin credentials">
+              Admin
+            </button>
+            <button type="button" onclick="fillDemoCredentials('tier2')" class="signin-demo-pill" title="Fill Tier-2 Analyst credentials">
+              Tier-2
+            </button>
+            <button type="button" onclick="fillDemoCredentials('tier1')" class="signin-demo-pill" title="Fill Tier-1 Responder credentials">
+              Tier-1
+            </button>
+          </div>
         </div>
 
         <!-- Error Banner -->
@@ -1872,7 +2182,7 @@
           <div class="soc-form-group">
             <label for="signin-user" class="soc-label">Username</label>
             <div class="soc-input-wrap">
-              <input type="text" id="signin-user" value="admin" required autocomplete="username"
+              <input type="text" id="signin-user" value="admin" placeholder="e.g. admin, tier2, tier1" required autocomplete="username"
                 oninput="hideSignInError()"
                 class="soc-input" />
             </div>
@@ -1881,11 +2191,11 @@
           <div class="soc-form-group">
             <label for="signin-pwd" class="soc-label">Password</label>
             <div class="soc-input-wrap">
-              <input type="password" id="signin-pwd" required autocomplete="current-password"
-                oninput="hideSignInError()" onkeyup="checkCapsLock(event)" onkeydown="checkCapsLock(event)"
+              <input type="password" id="signin-pwd" placeholder="••••••••" required autocomplete="current-password"
+                oninput="handleSignInPwdInput()" onkeyup="checkCapsLock(event)" onkeydown="checkCapsLock(event)"
                 class="soc-input" style="padding-right: 64px;" />
-              <button type="button" onclick="toggleSignInPwd()" id="signin-pwd-btn"
-                style="position: absolute; right: 12px; font-size: 12px; font-weight: 700; color: var(--color-text-primary); cursor: pointer; background: none; border: none;">
+              <button type="button" onclick="toggleSignInPwd()" id="signin-pwd-btn" class="hidden"
+                style="position: absolute; right: 12px; font-size: 12px; font-weight: 700; color: var(--color-text-primary); cursor: pointer; background: none; border: none; padding: 4px 6px;">
                 Show
               </button>
             </div>
@@ -1894,8 +2204,22 @@
             </div>
           </div>
 
+          <!-- Enterprise Form Utilities: Remember Session & Forgot Password Hint -->
+          <div class="signin-utility-row">
+            <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: var(--color-text-secondary); user-select: none;">
+              <input type="checkbox" id="signin-remember" checked class="soc-checkbox" style="margin: 0;" />
+              <span style="font-size: 12px; font-weight: 500;">Keep me signed in (8h shift)</span>
+            </label>
+            <button type="button" onclick="showForgotCredentialsHint()" style="background: none; border: none; padding: 0; font-size: 12px; font-weight: 500; color: var(--color-text-muted); cursor: pointer; text-decoration: underline;">
+              Forgot credentials?
+            </button>
+          </div>
+
           <button type="submit" class="soc-btn soc-btn-primary soc-btn-lg" style="margin-top: 8px;">
             Sign in
+          </button>
+          <button type="button" onclick="continueAsGuest()" class="soc-btn soc-btn-outline" style="width: 100%; min-height: 40px;">
+            Continue as Guest (Read-only)
           </button>
         </form>
 
@@ -1929,7 +2253,10 @@
        onclick="if(window.switchTab && document.getElementById('tab-alerts')) { event.preventDefault(); window.switchTab('alerts'); }"
        class="mob-tab-btn"
        id="mob-nav-alerts">
-      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <div style="position: relative; display: inline-flex;">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <span class="mob-tab-badge">4</span>
+      </div>
       <span>Alerts</span>
     </a>
     <a href="/devices"
@@ -2004,7 +2331,7 @@
                 const sub = document.getElementById('ov-kpi-window-sub');
                 if (sub) sub.textContent = win === '1h' ? 'last 1h' : (win === '7d' ? 'last 7d' : 'last 24 hours');
                 const hSub = document.getElementById('ov-hourly-sub');
-                if (hSub) hSub.textContent = win === '1h' ? 'per 5 min' : (win === '7d' ? 'per day' : 'per hour');
+                if (hSub) hSub.textContent = win === '1h' ? 'per 5 min' : (win === '7d' ? 'per day' : '');
                 const tab = document.getElementById('tab-overview');
                 if (tab) tab.setAttribute('data-window', win);
                 if (window.initOverviewCharts) window.initOverviewCharts();
@@ -2087,6 +2414,205 @@
             window.closeAllRowMenus();
           }
         });
+
+        // Dual-Mode Sign-in Modal & Quick Demo Fill Fallback
+        if (!window.openSignInModal) {
+          window.openSignInModal = function() {
+            window.hideSignInError && window.hideSignInError();
+            const modal = document.getElementById('signin-modal');
+            if (modal) modal.classList.add('active');
+            const userInp = document.getElementById('signin-user');
+            if (userInp) userInp.focus();
+            window.handleSignInPwdInput && window.handleSignInPwdInput();
+            if (window.location.hash !== '#signin') {
+              history.replaceState(null, '', window.location.pathname + window.location.search + '#signin');
+            }
+          };
+        }
+        if (!window.closeSignInModal) {
+          window.closeSignInModal = function() {
+            const modal = document.getElementById('signin-modal');
+            if (modal) modal.classList.remove('active');
+            if (window.location.hash === '#signin') {
+              history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+          };
+        }
+        if (!window.continueAsGuest) {
+          window.continueAsGuest = function() {
+            sessionStorage.setItem('soc_guest_mode', 'true');
+            window.closeSignInModal();
+            const analystNameEl = document.getElementById('topbar-analyst-name');
+            if (analystNameEl) analystNameEl.textContent = 'Guest';
+            const avatarCircle = document.getElementById('analyst-avatar-circle');
+            if (avatarCircle) avatarCircle.textContent = 'G';
+            if (window.showToast) window.showToast('light', 'Viewing as Guest (Read-only mode)');
+          };
+        }
+        if (!window.hideSignInError) {
+          window.hideSignInError = function() {
+            const err = document.getElementById('signin-err-banner');
+            if (err) err.classList.add('hidden');
+          };
+        }
+        if (!window.checkCapsLock) {
+          window.checkCapsLock = function(e) {
+            const hint = document.getElementById('signin-capslock-hint');
+            if (!hint || typeof e.getModifierState !== 'function') return;
+            if (e.getModifierState('CapsLock')) hint.classList.remove('hidden');
+            else hint.classList.add('hidden');
+          };
+        }
+        if (!window.toggleSignInPwd) {
+          window.toggleSignInPwd = function() {
+            const inp = document.getElementById('signin-pwd');
+            const btn = document.getElementById('signin-pwd-btn');
+            if (!inp || !btn) return;
+            if (inp.type === 'password') {
+              inp.type = 'text';
+              btn.textContent = 'Hide';
+            } else {
+              inp.type = 'password';
+              btn.textContent = 'Show';
+            }
+          };
+        }
+        if (!window.handleSignInPwdInput) {
+          window.handleSignInPwdInput = function() {
+            window.hideSignInError && window.hideSignInError();
+            const inp = document.getElementById('signin-pwd');
+            const btn = document.getElementById('signin-pwd-btn');
+            if (!inp || !btn) return;
+            if (inp.value.length > 0) btn.classList.remove('hidden');
+            else {
+              btn.classList.add('hidden');
+              inp.type = 'password';
+              btn.textContent = 'Show';
+            }
+          };
+        }
+        if (!window.fillDemoCredentials) {
+          window.fillDemoCredentials = function(role) {
+            const userInp = document.getElementById('signin-user');
+            const pwdInp = document.getElementById('signin-pwd');
+            const demoAccounts = {
+              admin: { user: 'admin', pwd: 'vnpt-soc-2026', label: 'SecOps Admin' },
+              tier2: { user: 'tier2', pwd: 'vnpt-soc-2026', label: 'Tier-2 Analyst' },
+              tier1: { user: 'tier1', pwd: 'vnpt-soc-2026', label: 'Tier-1 Responder' }
+            };
+            const cred = demoAccounts[role] || demoAccounts.admin;
+            if (userInp) userInp.value = cred.user;
+            if (pwdInp) {
+              pwdInp.value = cred.pwd;
+              window.handleSignInPwdInput();
+            }
+            if (window.showToast) window.showToast('light', `Loaded demo credentials: ${cred.label}`);
+          };
+        }
+        if (!window.showForgotCredentialsHint) {
+          window.showForgotCredentialsHint = function() {
+            if (window.showToast) window.showToast('dark', 'Demo Sandbox: Use Quick Demo Fill pills below or password: vnpt-soc-2026');
+            const demoBox = document.querySelector('.signin-demo-box');
+            if (demoBox) {
+              demoBox.style.transition = 'all 0.3s ease';
+              demoBox.style.borderColor = 'var(--color-accent-lime)';
+              demoBox.style.boxShadow = '0 0 0 2px var(--color-accent-lime)';
+              demoBox.style.backgroundColor = 'rgba(198, 241, 53, 0.18)';
+              setTimeout(() => {
+                demoBox.style.borderColor = 'var(--color-border-card)';
+                demoBox.style.boxShadow = 'none';
+                demoBox.style.backgroundColor = 'rgba(231, 228, 220, 0.45)';
+              }, 1800);
+            }
+          };
+        }
+        if (!window.showToast) {
+          window.showToast = function(type, msg) {
+            const stack = document.getElementById('toast-stack');
+            if (!stack) return;
+            const item = document.createElement('div');
+            item.className = 'toast-item';
+            item.style.backgroundColor = type === 'dark' ? 'var(--color-obsidian-900)' : 'var(--color-surface-card)';
+            item.style.color = type === 'dark' ? '#FFFFFF' : 'var(--color-text-primary)';
+            item.style.border = '1px solid var(--color-border-card)';
+            item.textContent = msg;
+            stack.appendChild(item);
+            setTimeout(() => item.remove(), 3000);
+          };
+        }
+        if (!window.switchRole) {
+          window.switchRole = function(role) {
+            const roleLabels = { tier1: 'Tier-1 Responder', tier2: 'Tier-2 Analyst', admin: 'SecOps Admin' };
+            ['admin', 'tier2', 'tier1'].forEach(r => {
+              const check = document.getElementById(`role-check-${r}`);
+              const btn = document.querySelector(`[data-role="${r}"]`);
+              if (check) check.classList.toggle('hidden', r !== role);
+              if (btn) btn.classList.toggle('role-btn-active', r === role);
+            });
+            if (window.showToast) window.showToast('light', `Active Role: ${roleLabels[role] || role}`);
+          };
+        }
+        if (!window.submitSignInForm) {
+          window.submitSignInForm = function(e) {
+            e.preventDefault();
+            const user = (document.getElementById('signin-user')?.value || '').trim();
+            const pwd = document.getElementById('signin-pwd')?.value || '';
+            if (!user || pwd.length < 4) {
+              const err = document.getElementById('signin-err-banner');
+              if (err) {
+                err.textContent = 'Please enter a valid username and password (min 4 characters).';
+                err.classList.remove('hidden');
+              }
+              return;
+            }
+            const assignedRole = user.toLowerCase().includes('tier2') ? 'tier2' : (user.toLowerCase().includes('tier1') ? 'tier1' : 'admin');
+            sessionStorage.removeItem('soc_guest_mode');
+            sessionStorage.setItem('soc_auth_user', user);
+            sessionStorage.setItem('soc_auth_role', assignedRole);
+            const analystNameEl = document.getElementById('topbar-analyst-name');
+            if (analystNameEl) analystNameEl.textContent = user;
+            const avatarCircle = document.getElementById('analyst-avatar-circle');
+            if (avatarCircle) avatarCircle.textContent = user.charAt(0).toUpperCase();
+            if (window.switchRole) window.switchRole(assignedRole);
+            window.closeSignInModal();
+            if (window.showToast) window.showToast('dark', `Signed in as ${user} (${assignedRole})`);
+          };
+        }
+        if (!window.handleSignOut) {
+          window.handleSignOut = function() {
+            sessionStorage.removeItem('soc_auth_user');
+            sessionStorage.removeItem('soc_auth_role');
+            sessionStorage.removeItem('soc_guest_mode');
+            const nameEl = document.getElementById('topbar-analyst-name');
+            if (nameEl) nameEl.textContent = 'Guest';
+            const avatarEl = document.getElementById('analyst-avatar-circle');
+            if (avatarEl) avatarEl.textContent = 'G';
+            if (window.showToast) window.showToast('light', 'Signed out successfully');
+            window.openSignInModal();
+          };
+        }
+
+        // Smart Auth Guard Check (Static Preview)
+        const isHashSignIn = window.location.hash === '#signin';
+        if (isHashSignIn) {
+          window.openSignInModal();
+        } else {
+          const savedUser = sessionStorage.getItem('soc_auth_user');
+          const isGuestMode = sessionStorage.getItem('soc_guest_mode') === 'true';
+          if (savedUser) {
+            const analystNameEl = document.getElementById('topbar-analyst-name');
+            if (analystNameEl) analystNameEl.textContent = savedUser;
+            const avatarCircle = document.getElementById('analyst-avatar-circle');
+            if (avatarCircle) avatarCircle.textContent = savedUser.charAt(0).toUpperCase();
+          } else if (!isGuestMode) {
+            window.openSignInModal();
+          } else {
+            const analystNameEl = document.getElementById('topbar-analyst-name');
+            if (analystNameEl) analystNameEl.textContent = 'Guest';
+            const avatarCircle = document.getElementById('analyst-avatar-circle');
+            if (avatarCircle) avatarCircle.textContent = 'G';
+          }
+        }
       }
     });
   </script>
