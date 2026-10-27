@@ -37,7 +37,9 @@
       <!-- STICKY TOPBAR UTILITY HEADER -->
       {% include 'components/topbar.html' %}
 
-      <!-- MAIN PAGE CONTENT (HTMX SWAP TARGET) -->
+      {# Hợp đồng HTMX:
+         Thẻ div#main-content là vùng hoán đổi trung tâm (hx-target="#main-content").
+         Mọi route chuyển trang hoặc điều hướng đều swap fragment vào đây mà không reload toàn bộ shell. #}
       <main id="main-content" class="content-shell" style="flex: 1;">
         {% block content %}{% endblock %}
       </main>
