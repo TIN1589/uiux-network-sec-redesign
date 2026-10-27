@@ -1,0 +1,925 @@
+@layer layout, components;
+
+@layer layout {
+  /* Bố cục chia đôi màn hình 50/50 trên màn hình lớn */
+  .auth-layout {
+    display: grid;
+    min-height: 100dvh;
+    grid-template-columns: 1fr;
+    background-color: var(--bg-dark);
+  }
+
+  @media (width >= 1024px) {
+    .auth-layout {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Panel trái: Nền tối giám sát SOC */
+  .auth-panel--dark {
+    position: relative;
+    background-color: var(--bg-dark);
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px clamp(24px, 5vw, 64px);
+    overflow: hidden;
+    gap: 40px;
+    isolation: isolate;
+  }
+
+  /* Lớp lưới điểm dot-grid nền cho panel tối */
+  .auth-panel__grid-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1.2px);
+    background-size: 28px 28px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+    z-index: 0;
+  }
+
+  .auth-panel__topology-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .topology-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .topology-svg--mobile,
+  .topology--mobile {
+    display: none;
+  }
+
+  /* Khóa tỷ lệ SVG Mobile 390x300, nằm dưới nội dung và mờ dần xuống dưới */
+  @media (width < 640px) {
+    .topology-svg--desktop {
+      display: none;
+    }
+    .topology-svg--mobile,
+    .topology--mobile {
+      display: block;
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline: 0;
+      width: 100%;
+      aspect-ratio: 390 / 300;
+      height: auto;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.85;
+      -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent);
+      mask-image: linear-gradient(to bottom, #000 60%, transparent);
+    }
+  }
+
+  .auth-panel__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100%;
+    gap: 40px;
+  }
+
+  /* Panel phải: Nền paper sáng thân thiện cho thao tác nhập liệu */
+  .auth-panel--light {
+    position: relative;
+    background-color: var(--paper);
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-block: 32px;
+    padding-inline: clamp(24px, 6vw, 96px);
+    min-height: 100dvh;
+  }
+
+  .auth-panel__top-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+  }
+
+  .auth-panel__center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px;
+    margin-inline: auto;
+    margin-block: auto;
+    padding-block: 24px;
+  }
+
+  .auth-panel__footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted-light);
+    margin-top: 16px;
+    text-align: center;
+  }
+
+  /* Breakpoint Tablet: 640px den 1023px */
+  @media (640px <= width <= 1023px) {
+    .auth-layout {
+      grid-template-columns: 1fr;
+    }
+    .auth-panel--dark {
+      padding: 32px clamp(24px, 4vw, 48px);
+      min-height: auto;
+      gap: 28px;
+    }
+    .auth-panel--dark .auth-hero__desc,
+    .auth-panel--dark .auth-panel__log {
+      display: none;
+    }
+    .auth-panel--light {
+      min-height: auto;
+      padding-block: 40px;
+    }
+  }
+
+  /* Breakpoint Mobile: < 640px (Tối ưu cho Mobile 390x844 và 360x740) */
+  @media (width < 640px) {
+    .auth-layout {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+    }
+
+    .auth-panel--dark {
+      padding: 24px 24px 26px 24px;
+      min-height: auto;
+      gap: 16px;
+    }
+
+    .auth-panel__content {
+      gap: 16px;
+      min-height: auto;
+      justify-content: flex-start;
+    }
+
+    .auth-hero {
+      gap: 10px;
+    }
+
+    .auth-panel--dark .auth-hero__desc,
+    .auth-panel--dark .auth-stats,
+    .auth-panel--dark .stats,
+    .auth-panel--dark .auth-panel__log,
+    .auth-panel--dark .live-log,
+    .auth-panel--dark .auth-footer-dark,
+    .auth-panel--dark .panel-footer {
+      display: none !important;
+    }
+
+    .auth-panel--light {
+      margin-top: -24px;
+      border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+      padding: 28px 24px 24px 24px;
+      gap: 18px;
+      min-height: auto;
+      flex: 1;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.18);
+      z-index: 10;
+    }
+
+    .auth-panel__top-bar {
+      display: none;
+    }
+
+    .auth-panel__center {
+      padding-block: 0;
+    }
+  }
+}
+
+@layer components {
+  /* Logo VNPT SOC qua SVG macro */
+  .brand-mark {
+    display: inline-block;
+    flex-shrink: 0;
+    width: var(--size, 48px);
+    height: var(--size, 48px);
+    object-fit: contain;
+  }
+
+  .brand-mark__bg {
+    fill: var(--accent);
+  }
+
+  .brand-mark__line {
+    fill: none;
+    stroke: var(--bg-dark);
+    stroke-width: 2.4;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .brand-mark__line--thin {
+    stroke-width: 1.6;
+  }
+
+  .brand-mark__dot {
+    fill: var(--bg-dark);
+  }
+
+  /* Wordmark thuong hieu goc tren trai */
+  .auth-wordmark {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+  }
+
+  .auth-wordmark__text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+  }
+
+  .auth-wordmark__title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #FFFFFF;
+  }
+
+  .auth-wordmark__subtitle {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-dark);
+  }
+
+  /* Khoi gioi thieu giua panel toi */
+  .auth-hero {
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .auth-hero__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  @media (width < 640px) {
+    .auth-hero__eyebrow-suffix {
+      display: none;
+    }
+  }
+
+  .auth-hero__eyebrow-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--accent);
+  }
+
+  .auth-hero__display {
+    font-size: 60px;
+    font-weight: 700;
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    color: #FFFFFF;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  @media (width < 640px) {
+    .auth-hero__display {
+      font-size: 32px;
+      line-height: 1.06;
+      max-width: 280px;
+    }
+  }
+
+  .auth-hero__desc {
+    font-size: 17px;
+    line-height: 1.55;
+    color: #B4B4AB;
+    margin: 0;
+  }
+
+  /* Bang thong ke 3 chi so SOC ban dau */
+  .auth-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+  }
+
+  @media (width < 640px) {
+    .auth-stats,
+    .stats {
+      display: none !important;
+    }
+  }
+
+  .auth-stat-col {
+    padding-block: 16px 8px;
+    padding-inline: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .auth-stat-col:not(:first-child) {
+    border-left: 1px solid rgba(255, 255, 255, 0.16);
+  }
+
+  .auth-stat-col:first-child {
+    padding-left: 0;
+  }
+
+  .auth-stat__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted-dark);
+  }
+
+  .auth-stat__value {
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: #FFFFFF;
+  }
+
+  .auth-stat__value--warn {
+    color: var(--warn);
+  }
+
+  /* Thanh ticker canh bao tren mobile */
+  .auth-mobile-ticker,
+  .live-ticker {
+    display: none;
+  }
+
+  /* Định dạng Ticker mobile chuẩn: 1 dòng 34px, không cột time, không con trỏ */
+  @media (width < 640px) {
+    .auth-mobile-ticker,
+    .live-ticker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 34px;
+      min-height: 34px;
+      max-height: 34px;
+      padding: 0 12px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: var(--radius-chip, 10px);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #D6D3D1;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      margin-top: 4px;
+      box-sizing: border-box;
+    }
+
+    .auth-mobile-ticker .log-row,
+    .live-ticker .log-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .auth-mobile-ticker .log-row__time,
+    .auth-mobile-ticker .cursor,
+    .live-ticker .log-row__time,
+    .live-ticker .cursor {
+      display: none !important;
+    }
+
+    .auth-mobile-ticker .log-row__tag,
+    .live-ticker .log-row__tag {
+      font-weight: 700;
+      flex-shrink: 0;
+      width: auto;
+    }
+
+    .auth-mobile-ticker .log-row__text,
+    .live-ticker .log-row__text {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  /* Footer panel toi */
+  .auth-footer-dark {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted-dark);
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  @media (width < 640px) {
+    .auth-footer-dark,
+    .panel-footer {
+      display: none !important;
+    }
+  }
+
+  .auth-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #FFFFFF;
+    font-weight: 500;
+  }
+
+  .auth-live-pill__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--accent);
+  }
+
+  .auth-footer-dark__version {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  /* Status pill goc phai tren panel sang */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding-inline: 12px;
+    background-color: #E4E3DB;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .status-pill__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--ok-dot);
+  }
+
+  /* Tieu de va mo ta khoi dang nhap */
+  .auth-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+
+  .auth-header__title {
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  @media (width < 640px) {
+    .auth-header__title {
+      font-size: 28px;
+    }
+  }
+
+  .auth-header__desc {
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--muted-light);
+    margin: 0;
+  }
+
+  .auth-header__desc--desktop {
+    display: block;
+  }
+
+  .auth-header__desc--mobile {
+    display: none;
+  }
+
+  @media (width < 640px) {
+    .auth-header__desc--desktop {
+      display: none;
+    }
+    .auth-header__desc--mobile {
+      display: block;
+    }
+  }
+
+  /* Feedback loi dang nhap */
+  .auth-feedback {
+    margin-bottom: 16px;
+  }
+
+  .auth-feedback:empty {
+    display: none;
+  }
+
+  .auth-alert {
+    padding: 12px 16px;
+    border-radius: var(--radius-chip);
+    background-color: var(--error-bg);
+    color: var(--error-ink);
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Form dang nhap chinh */
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* Truong nhap lieu */
+  .auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .auth-field__label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .auth-field__control {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 50px;
+    background-color: #FFFFFF;
+    border: 1px solid var(--field-border);
+    border-radius: var(--radius-field);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .auth-field__control:hover {
+    border-color: #8E8D84;
+  }
+
+  .auth-field__control:focus-within {
+    border-color: #111111;
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+
+  .auth-field__control:has(:user-invalid) {
+    border-color: var(--error-ink);
+  }
+
+  .auth-field__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 100%;
+    color: var(--muted-light);
+    flex-shrink: 0;
+    pointer-events: none;
+  }
+
+  .auth-field__input {
+    flex: 1;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding-inline-end: 14px;
+    font-size: 15px;
+    color: var(--ink);
+  }
+
+  @media (width < 640px) {
+    .auth-field__input {
+      font-size: 16px; /* Chống phóng to tự động trên trình duyệt iOS */
+    }
+  }
+
+  .auth-field__input::placeholder {
+    color: #9C9B94;
+  }
+
+  .auth-field__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-right: 4px;
+    border-radius: 8px;
+    color: var(--ink);
+    cursor: pointer;
+    background: none;
+    border: none;
+    flex-shrink: 0;
+  }
+
+  .auth-field__action:hover {
+    background-color: rgba(17, 17, 17, 0.05);
+  }
+
+  .auth-field__hint {
+    font-size: 12px;
+    color: #B45309;
+    font-weight: 500;
+  }
+
+  .auth-field__hint[hidden] {
+    display: none;
+  }
+
+  /* Hang tien ich: Checkbox Keep me signed in va Link quen thong tin */
+  .auth-utilities {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: -2px;
+  }
+
+  .auth-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted-light);
+    min-height: 44px;
+  }
+
+  .auth-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ink);
+    cursor: pointer;
+  }
+
+  .auth-link {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted-light);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    transition: text-decoration-thickness 0.15s ease, color 0.15s ease;
+  }
+
+  .auth-link:hover {
+    text-decoration-thickness: 2px;
+    color: var(--ink);
+  }
+
+  /* Cac loai nut bam */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: var(--radius-field);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.05s ease;
+    width: 100%;
+    text-decoration: none;
+    border: none;
+  }
+
+  .btn--primary {
+    height: 52px;
+    background-color: var(--ink);
+    color: #FFFFFF;
+    font-size: 15px;
+  }
+
+  .btn--primary:hover {
+    background-color: #000000;
+  }
+
+  .btn--primary:active {
+    transform: translateY(1px);
+  }
+
+  .btn--primary:disabled,
+  .btn--primary[aria-disabled='true'] {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn--ghost {
+    height: 46px;
+    background-color: transparent;
+    color: #33332E;
+    font-size: 14px;
+    border: none;
+  }
+
+  .btn--ghost:hover {
+    background-color: rgba(17, 17, 17, 0.07);
+  }
+
+  .btn--ghost:active {
+    transform: translateY(1px);
+  }
+
+  .auth-guest-wrap {
+    margin-top: 10px;
+  }
+
+  /* Khối Demo accounts (<details>/<summary>) */
+  .demo {
+    background-color: var(--paper-2);
+    border: 1px solid #DFDDD3;
+    border-radius: var(--radius-box);
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .demo__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    list-style: none;
+  }
+
+  .demo__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .demo__summary-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .demo__summary-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted-light);
+  }
+
+  .demo__chevron {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.2s ease;
+  }
+
+  .demo[open] .demo__chevron {
+    transform: rotate(180deg);
+  }
+
+  .demo__chips {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 0 16px 14px 16px;
+  }
+
+  .demo__chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 40px;
+    padding-inline: 8px;
+    background-color: #FFFFFF;
+    border: 1px solid #D5D3C9;
+    border-radius: var(--radius-chip);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  @media (width < 640px) {
+    .demo__chip {
+      height: 44px;
+    }
+  }
+
+  .demo__chip:hover {
+    border-color: #8E8D84;
+    background-color: #F8F8F5;
+  }
+
+  .demo__chip[aria-pressed='true'] {
+    background-color: var(--ink);
+    color: #FFFFFF;
+    border-color: var(--ink);
+  }
+
+  .demo__chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .demo__chip-dot--admin {
+    background-color: #6F9A00;
+  }
+
+  .demo__chip-dot--tier2 {
+    background-color: #C27A00;
+  }
+
+  .demo__chip-dot--tier1 {
+    background-color: #2F6FDB;
+  }
+
+  /* Nut submit trang thai loading */
+  .btn__label--busy,
+  .btn__spinner {
+    display: none;
+  }
+
+  .btn.htmx-request .btn__label--idle {
+    display: none;
+  }
+
+  .btn.htmx-request .btn__label--busy,
+  .btn.htmx-request .btn__spinner {
+    display: inline-flex;
+  }
+
+  .btn__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #FFFFFF;
+    border-radius: 50%;
+    animation: btn-spin 0.6s linear infinite;
+  }
+
+  @keyframes btn-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
