@@ -44,6 +44,11 @@ export function initOverviewCharts(data = null) {
     return;
   }
 
+  // Tối ưu RAM đồ họa trên iPhone / Super Retina XDR (3x pixel ratio):
+  // Giới hạn devicePixelRatio tối đa 2 để tránh tiêu tốn gấp 9 lần bộ đệm bitmap,
+  // giảm hơn 50% RAM canvas mà vẫn giữ độ sắc nét hoàn hảo trên màn hình Retina.
+  Chart.defaults.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
   destroyOverviewCharts();
 
   // 1. Severity Mix Donut Chart
@@ -109,7 +114,7 @@ export function initOverviewCharts(data = null) {
           }
         },
         animation: {
-          duration: 400,
+          duration: (typeof window !== 'undefined' && window.innerWidth < 768) ? 100 : 350,
           easing: 'easeOutQuart'
         }
       }
@@ -276,7 +281,7 @@ export function initOverviewCharts(data = null) {
           }
         },
         animation: {
-          duration: 350
+          duration: (typeof window !== 'undefined' && window.innerWidth < 768) ? 100 : 300
         }
       }
     });

@@ -84,8 +84,16 @@
   font-size: 15px;
   font-weight: 500;
   color: #A8A29E;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform 0.08s ease;
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.nav-btn:active {
+  transform: scale(0.98);
 }
 
 .nav-btn:hover {
@@ -521,8 +529,8 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60px;
-    min-height: 60px;
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(60px + env(safe-area-inset-bottom, 0px));
     background-color: #121212;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 50;
@@ -544,7 +552,16 @@
     font-weight: 500;
     flex: 1;
     height: 100%;
-    transition: color 0.15s ease;
+    transition: color 0.1s ease, transform 0.08s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .mob-tab-btn:active {
+    transform: scale(0.92);
+    opacity: 0.8;
   }
 
   .mob-tab-btn i {
@@ -556,13 +573,15 @@
     color: #C6F135;
   }
 
-  /* Header 1 hàng duy nhất cao đúng 56px */
+  /* Header trên di động: Tự động né Dynamic Island & Status Bar Notch trên iPhone */
   #app-topbar {
-    padding: 0 14px;
-    height: 56px;
-    min-height: 56px;
+    padding: max(8px, env(safe-area-inset-top, 0px)) 14px 8px 14px;
+    height: auto;
+    min-height: calc(56px + env(safe-area-inset-top, 0px));
     flex-wrap: nowrap;
     gap: 8px;
+    box-sizing: border-box;
+    background-color: var(--color-bg-workspace);
   }
 
   .topbar-left {
@@ -608,7 +627,7 @@
   }
 
   #main-content {
-    padding: 20px 14px 84px !important;
+    padding: 20px 14px calc(84px + env(safe-area-inset-bottom, 0px)) !important;
     max-width: 100%;
     overflow-x: hidden;
     box-sizing: border-box;
@@ -628,5 +647,38 @@
   #btn-autorefresh {
     padding: 4px 6px !important;
     font-size: 10px !important;
+  }
+}
+
+/* PWA Standalone Mode trên iOS (Tránh tai thỏ & Dynamic Island) */
+@supports (padding-top: env(safe-area-inset-top)) {
+  @media all and (display-mode: standalone) {
+    #app-topbar {
+      padding-top: env(safe-area-inset-top, 0px);
+      height: calc(56px + env(safe-area-inset-top, 0px));
+      min-height: calc(56px + env(safe-area-inset-top, 0px));
+    }
+  }
+}
+
+/* Khử giật cục khi HTMX tráo đổi nội dung giữa các tab */
+#main-content {
+  transition: opacity 0.08s ease-out;
+}
+
+#main-content.htmx-swapping {
+  opacity: 0.9;
+}
+
+#main-content.htmx-settling {
+  animation: contentSettleFade 0.1s ease-out;
+}
+
+@keyframes contentSettleFade {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 1;
   }
 }

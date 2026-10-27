@@ -93,7 +93,7 @@ input, select, textarea {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-workspace);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -124,6 +124,13 @@ input, select, textarea {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
+}
+
+/* Tối ưu iOS WebKit: Chống tự động phóng to (Auto-zoom) viewport khi focus vào trường nhập */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
 
 img, svg {

@@ -768,6 +768,20 @@ export function toggleScenarioFormAccordion() {
   }
 }
 
+// Seconds counter ticker & Quản lý trạng thái Visibility (Tối ưu RAM/Pin iOS Jetsam)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    state._pausedByVisibility = state.autoRefreshOn;
+    state.autoRefreshOn = false;
+  } else {
+    if (state._pausedByVisibility) {
+      state.autoRefreshOn = true;
+      delete state._pausedByVisibility;
+      state.secSinceRefresh = 5;
+    }
+  }
+});
+
 // Seconds counter ticker
 setInterval(() => {
   if (!state.autoRefreshOn) return;
@@ -775,6 +789,21 @@ setInterval(() => {
   const counterEl = document.getElementById('live-sec-counter');
   if (counterEl) counterEl.textContent = `${state.secSinceRefresh}s`;
 }, 1000);
+
+// Kích hoạt ngay lập tức CSS :active trên màn hình cảm ứng iOS WebKit
+document.addEventListener('touchstart', () => {}, { passive: true });
+
+// Phản hồi giao diện tức thì (Optimistic 0ms Active Indicator):
+// Chuyển highlight tab ngay khi người dùng chạm, không phải chờ HTMX fetch xong mới đổi
+document.addEventListener('click', (e) => {
+  const tabBtn = e.target.closest('#mobile-bottom-bar .mob-tab-btn, #app-sidebar .nav-btn');
+  if (tabBtn) {
+    const targetHref = tabBtn.getAttribute('href') || tabBtn.getAttribute('hx-push-url');
+    if (targetHref) {
+      syncActiveNav(targetHref);
+    }
+  }
+});
 
 // Global event listeners and HTMX lifecycle hooks
 document.addEventListener('keydown', (e) => {
@@ -795,9 +824,14 @@ document.addEventListener('htmx:afterSwap', (evt) => {
   closeMobileSidebar();
   applyRolePermissions(state.currentRole);
 
-  // If new content contains overview charts, initialize them
+  // Khử nhịp khựng (UI Jank Elimination):
+  // Trì hoãn việc vẽ đồ họa Chart.js sang frame kế tiếp qua requestAnimationFrame,
+  // cho phép trình duyệt ưu tiên paint toàn bộ DOM HTML ngay lập tức (16ms / 60fps),
+  // tránh tình trạng treo main thread khi vừa đổi tab.
   if (document.getElementById('severityDonutChart')) {
-    initOverviewCharts();
+    requestAnimationFrame(() => {
+      initOverviewCharts();
+    });
   }
 });
 
@@ -1037,3 +1071,11 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     });
 });
+
+// Đăng ký Service Worker cho PWA (Tối ưu Cache Storage & Offline Fallback)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .catch((err) => console.debug('Service Worker registration skipped:', err));
+  });
+}
