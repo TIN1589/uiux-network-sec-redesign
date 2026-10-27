@@ -1,6 +1,4 @@
-<!-- =================================================================== -->
-<!-- PAGE 2: ALERTS (ALERT QUEUE)                                        -->
-<!-- =================================================================== -->
+{# PAGE 2: ALERTS (ALERT QUEUE) #}
 <section id="tab-alerts" class="stack-blocks" aria-label="Alert Queue">
 
   <!-- Title & Export CSV Button (Rule Section 4: Export CSV căn đáy với dòng phụ đề) -->
@@ -111,22 +109,29 @@
   </div>
 
   <!-- Search & Collapsible Advanced Filters Card -->
-  <div class="soc-card soc-card-pad" style="display: flex; flex-direction: column; gap: 16px;">
+  <div class="soc-card soc-card-pad" style="display: flex; flex-direction: column; gap: 14px;">
     <form id="alerts-filter-form"
           hx-get="/api/alerts/filter"
           hx-target="#alerts-table-container"
           hx-trigger="input from:#al-search delay:200ms, change from:#al-time, change from:#al-severity, input from:#al-rule-id delay:200ms, input from:#al-src-ip delay:200ms, change from:#al-asset">
       <input type="hidden" id="al-state-hidden" name="state" value="{{ current_state or 'ALL' }}" />
       
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
-        <div style="grid-column: span 2;">
-          <label for="al-search" class="soc-label">Search alerts</label>
-          <div class="soc-input-icon-wrap" style="margin-top: 6px;">
-            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-            <input type="text" id="al-search" name="q" placeholder="Rule, device, IP, or event text" class="soc-input" />
-          </div>
+      <!-- Primary Search Row with Mobile Filters Toggle Button -->
+      <div class="alerts-search-row">
+        <div class="soc-input-icon-wrap" style="flex: 1; min-width: 0;">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input type="text" id="al-search" name="q" placeholder="Rule, device, IP, or event text" class="soc-input" />
         </div>
+        <button type="button" id="al-mobile-filter-btn" onclick="toggleMobileFilterBar()"
+                class="soc-btn soc-btn-outline al-mobile-filter-btn" aria-expanded="false" aria-label="Toggle filter options">
+          <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+          <span>Filters</span>
+          <span id="al-filter-active-indicator" class="al-filter-dot hidden"></span>
+        </button>
+      </div>
 
+      <!-- Collapsible Filter Options (Always visible on Desktop, collapsible on Mobile) -->
+      <div id="alerts-collapsible-filters" class="alerts-filter-options-grid">
         <div>
           <label for="al-time" class="soc-label">Time range</label>
           <div class="soc-input-wrap" style="margin-top: 6px;">
@@ -152,14 +157,14 @@
         </div>
 
         <div>
-          <button type="submit" class="soc-btn soc-btn-primary" style="width: 100%; min-height: 40px;">
+          <button type="submit" class="soc-btn soc-btn-primary" style="width: 100%; min-height: 40px; margin-top: 6px;">
             Apply filters
           </button>
         </div>
       </div>
 
       <!-- Advanced Filter Toggle Controls -->
-      <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; margin-top: 4px;">
+      <div class="alerts-adv-toggle-row">
         <button type="button" onclick="toggleAdvancedFilters()" id="adv-filter-toggle-btn" aria-expanded="false" class="soc-btn-link" style="display: flex; align-items: center; gap: 6px;">
           <i id="adv-filter-caret" class="fa-solid fa-caret-right" aria-hidden="true" style="transition: transform 0.2s;"></i>
           <span>Advanced filters</span>

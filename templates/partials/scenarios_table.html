@@ -3,19 +3,20 @@
    để cập nhật bảng kết quả kiểm thử MITRE ATT&CK và tính toán SLA delta. #}
 <div class="soc-card soc-card-pad">
   <h2 class="soc-card-title" style="margin-bottom: 16px;">Test results</h2>
-  <div class="soc-table-wrap">
-    <table class="soc-table">
+  <!-- Desktop Table View (>= 768px) -->
+  <div class="desktop-table-wrap soc-table-wrap">
+    <table class="soc-table scenarios-table">
       <thead>
         <tr>
-          <th scope="col">TESTED (GMT+7)</th>
-          <th scope="col">TECHNIQUE</th>
-          <th scope="col">TOOL</th>
-          <th scope="col">RULE</th>
-          <th scope="col">LINKED ALERT</th>
-          <th scope="col">RESULT</th>
-          <th scope="col">DELTA</th>
-          <th scope="col">NOTES</th>
-          <th scope="col" style="text-align: right;"><span class="sr-only">Actions</span></th>
+          <th scope="col" class="col-tested">TESTED (GMT+7)</th>
+          <th scope="col" class="col-technique">TECHNIQUE</th>
+          <th scope="col" class="col-tool">TOOL</th>
+          <th scope="col" class="col-rule">RULE</th>
+          <th scope="col" class="col-alert">LINKED ALERT</th>
+          <th scope="col" class="col-result">RESULT</th>
+          <th scope="col" class="col-delta">DELTA</th>
+          <th scope="col" class="col-notes">NOTES</th>
+          <th scope="col" class="col-action" style="text-align: right;"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
       <tbody id="sc-results-tbody">
@@ -74,5 +75,59 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+
+  <!-- Mobile Stacked Card View (< 768px): Tối ưu xem nhanh kết quả test không cần cuộn ngang -->
+  <div class="mobile-scenarios-list">
+    {% for r in scenarios %}
+    <div class="mobile-scenario-card {% if r.highlighted %}highlighted{% endif %}">
+      <!-- Hàng trên: [T1046 - Network Service Scanning] + [Badge: Detected (1.4s)] + Nút ... ở góc phải trên cùng -->
+      <div class="m-sc-row1">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0;">
+          <span class="font-mono" style="font-size: 13px; font-weight: 700; color: var(--color-text-primary);">{{ r.code }}</span>
+          <span style="font-size: 13px; font-weight: 600; color: var(--color-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ r.name }}</span>
+          {% if r.detected %}
+          <span class="soc-badge badge-resolved">Detected ({{ r.delta }}s)</span>
+          {% else %}
+          <span class="soc-badge badge-critical">Missed ({{ r.delta }}s)</span>
+          {% endif %}
+        </div>
+        <div class="row-action-menu-wrap" style="flex-shrink: 0;">
+          <button type="button" data-min-role="admin"
+                  onclick="event.stopPropagation(); toggleRowMenu('sc-m-menu-{{ r.id }}', event)"
+                  aria-label="Actions for test {{ r.code }}"
+                  class="soc-btn soc-btn-outline soc-btn-icon"
+                  style="width: 32px; height: 32px; min-height: 32px; font-weight: 700; font-size: 14px;">
+            ⋯
+          </button>
+          <div id="sc-m-menu-{{ r.id }}" class="row-menu-dropdown hidden" role="menu">
+            <button type="button" onclick="editScenarioRow('{{ r.id }}'); closeAllRowMenus();"
+                    class="row-menu-item" role="menuitem">
+              <i class="fa-solid fa-pen-to-square" style="font-size: 11px;" aria-hidden="true"></i> Edit
+            </button>
+            <button type="button"
+                    hx-delete="/api/scenarios/{{ r.id }}"
+                    hx-target="#scenarios-table-container"
+                    onclick="closeAllRowMenus();"
+                    class="row-menu-item danger" role="menuitem">
+              <i class="fa-solid fa-trash" style="font-size: 11px;" aria-hidden="true"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hàng giữa: Tool: nmap 7.94 • Rule: 100200 • Alert: EVT-2610-089 -->
+      <div class="m-sc-row2 font-mono">
+        <span>Tool: <strong>{{ r.tool }}</strong></span> ·
+        <span>Rule: <strong>{{ r.rule }}</strong></span> ·
+        <span>Alert: <button type="button" onclick="openAlertDrawer('{{ r.linkedEventId }}')" class="soc-btn-link font-mono" style="font-size: 12px; display: inline; padding: 0;">{{ r.linkedEventId }}</button></span>
+      </div>
+
+      <!-- Hàng dưới (nền xám nhạt): Ghi chú -->
+      <div class="m-sc-row3">
+        {{ r.notes }}
+      </div>
+    </div>
+    {% endfor %}
   </div>
 </div>

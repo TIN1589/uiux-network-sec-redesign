@@ -1,11 +1,6 @@
-/* ==========================================================================
-   COMPONENTS DESIGN SYSTEM
-   Modern Vanilla CSS3 Components
-   ========================================================================== */
+/* COMPONENTS DESIGN SYSTEM - Modern Vanilla CSS3 Components */
 
-/* ==========================================================================
-   1. CARDS & SURFACES
-   ========================================================================== */
+/* CARDS & SURFACES */
 .soc-card {
   background-color: #FFFFFF;
   border-radius: 16px;
@@ -13,6 +8,8 @@
   padding: 24px;
   box-sizing: border-box;
   box-shadow: none !important;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .soc-card-pad {
@@ -24,6 +21,19 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 14px;
+  gap: 8px;
+  min-width: 0;
+}
+
+@media (max-width: 767.98px) {
+  .soc-card,
+  .soc-card-pad {
+    padding: 16px !important;
+  }
+  .soc-card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 
 .soc-card-title {
@@ -38,9 +48,7 @@
   color: var(--color-text-muted);
 }
 
-/* ==========================================================================
-   2. BUTTONS (Rule Section 5: 3 distinct types only)
-   ========================================================================== */
+/* BUTTONS (Rule Section 5: 3 distinct types only) */
 .soc-btn {
   display: inline-flex;
   align-items: center;
@@ -148,9 +156,7 @@ input, select, textarea {
   color: var(--color-text-secondary);
 }
 
-/* ==========================================================================
-   3. PILLS & BADGES
-   ========================================================================== */
+/* PILLS & BADGES */
 .soc-badge {
   display: inline-flex;
   align-items: center;
@@ -232,9 +238,7 @@ input, select, textarea {
 .dot-dark { background-color: var(--color-obsidian-900); }
 .dot-lime { background-color: var(--color-accent-lime); }
 
-/* ==========================================================================
-   4. KPI STRIPS (Req 3: Card liền, grid 5 cột, border-left 1px, pad 20px 24px)
-   ========================================================================== */
+/* KPI STRIPS (Req 3: Card liền, grid 5 cột, border-left 1px, pad 20px 24px) */
 .kpi-strip {
   background-color: #FFFFFF;
   border-radius: 16px;
@@ -320,24 +324,94 @@ input, select, textarea {
   margin: 0;
 }
 
+/* Grid co giãn theo thiết bị: Desktop (>1024px) 4-5 cột, Tablet (768-1024px) 2-3 cột */
 @media (min-width: 768px) and (max-width: 1023.98px) {
-  .kpi-strip,
-  .kpi-strip-5,
-  .kpi-strip-4 {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  .kpi-strip-5 {
+    grid-template-columns: repeat(3, 1fr);
   }
+  .kpi-strip-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .kpi-strip-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Mobile (< 768px): KPI Strip 5 transforms into Top Total Banner + 2x2 Severity Grid */
+.kpi-total-val-wrap {
+  display: contents;
 }
 
 @media (max-width: 767.98px) {
   .kpi-strip,
-  .kpi-strip-5,
   .kpi-strip-4,
   .kpi-strip-3 {
     grid-template-columns: repeat(2, 1fr);
   }
+  .kpi-strip-5 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Banner Total Alerts trên cùng */
+  .kpi-strip-5 .kpi-cell-total {
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 14px !important;
+    background-color: #F8F7F4 !important;
+    border-left: none !important;
+    border-top: none !important;
+    border-bottom: 1px solid #E7E4DC !important;
+  }
+  .kpi-strip-5 .kpi-cell-total .kpi-header {
+    margin-bottom: 0 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+  }
+  .kpi-strip-5 .kpi-cell-total .kpi-total-val-wrap {
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 8px !important;
+  }
+  .kpi-strip-5 .kpi-cell-total .kpi-number {
+    font-size: 22px !important;
+    margin: 0 !important;
+    font-weight: 700 !important;
+  }
+  .kpi-strip-5 .kpi-cell-total .kpi-footer {
+    margin: 0 !important;
+    font-size: 11px !important;
+    color: var(--color-text-muted) !important;
+  }
+
+  /* 4 ô Severity bên dưới chia lưới 2x2 cân xứng */
+  .kpi-strip-5 .kpi-cell:not(.kpi-cell-total) {
+    padding: 10px 12px !important;
+    border-left: none !important;
+    border-top: none !important;
+  }
+  /* Cột 1 (Critical & Medium) */
+  .kpi-strip-5 .kpi-cell:nth-child(2),
+  .kpi-strip-5 .kpi-cell:nth-child(4) {
+    border-right: 1px solid #E7E4DC !important;
+  }
+  /* Hàng 2 (Medium & Low) */
+  .kpi-strip-5 .kpi-cell:nth-child(4),
+  .kpi-strip-5 .kpi-cell:nth-child(5) {
+    border-top: 1px solid #E7E4DC !important;
+  }
+  /* Ô LOW nằm góc phải dưới, không span 2 cột */
+  .kpi-strip-5 .kpi-cell:last-child {
+    grid-column: auto !important;
+  }
+
   .kpi-cell {
     border-left: none;
     border-top: 1px solid #E7E4DC;
+    padding: 12px 14px;
   }
   .kpi-cell:nth-child(1),
   .kpi-cell:nth-child(2) {
@@ -346,11 +420,25 @@ input, select, textarea {
   .kpi-cell:nth-child(2n) {
     border-left: 1px solid #E7E4DC;
   }
+  .kpi-strip-3 .kpi-cell:last-child {
+    grid-column: span 2;
+    border-left: none;
+  }
+  .kpi-number {
+    font-size: clamp(22px, 5.5vw, 28px);
+    margin-top: 4px;
+    margin-bottom: 2px;
+  }
+  .kpi-header {
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+  .kpi-footer {
+    font-size: 11px;
+  }
 }
 
-/* ==========================================================================
-   5. SEGMENTED CONTROLS & PILLS
-   ========================================================================== */
+/* SEGMENTED CONTROLS & PILLS */
 .segmented-pill-group {
   display: inline-flex;
   align-items: center;
@@ -382,9 +470,7 @@ input, select, textarea {
   box-shadow: var(--shadow-2xs);
 }
 
-/* ==========================================================================
-   6. FORMS & INPUTS
-   ========================================================================== */
+/* FORMS & INPUTS */
 .soc-form-group {
   display: flex;
   flex-direction: column;
@@ -453,8 +539,7 @@ input, select, textarea {
   box-sizing: border-box;
 }
 
-.soc-input,
-.soc-select {
+.soc-input {
   width: 100%;
   height: 40px;
   min-height: 40px;
@@ -467,6 +552,28 @@ input, select, textarea {
   box-sizing: border-box;
   outline: none !important;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.soc-select {
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 32px 0 14px !important;
+  font-size: 14px;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--color-border-input);
+  background-color: #FFFFFF;
+  color: var(--color-text-primary);
+  box-sizing: border-box;
+  outline: none !important;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.soc-input-wrap select,
+.soc-input-icon-wrap select {
+  padding-right: 32px !important;
 }
 
 .soc-textarea {
@@ -551,12 +658,15 @@ input, select, textarea {
   color: var(--color-text-primary);
 }
 
-/* ==========================================================================
-   7. TABLES (Req 8: Top triggered rules styling)
-   ========================================================================== */
+/* TABLES (Req 8: Top triggered rules styling & Mobile touch scroll) */
 .soc-table-wrap {
-  overflow-x: auto;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
   width: 100%;
+  max-width: 100%;
+  display: block;
+  position: relative;
+  padding-bottom: 8px;
 }
 
 .soc-table {
@@ -647,9 +757,155 @@ input, select, textarea {
   font-variant-numeric: tabular-nums;
 }
 
-/* ==========================================================================
-   7A. ROW ACTION MENU & DROPDOWN / DROPUP (Test results & Data tables)
-   ========================================================================== */
+/* Scenarios Test Results Table - Đặt min-width và tỉ lệ cột chuẩn tránh gãy chữ trên mobile */
+.scenarios-table {
+  table-layout: fixed;
+  min-width: 820px;
+}
+
+.scenarios-table .col-tested { width: 110px; }
+.scenarios-table .col-technique { width: 170px; }
+.scenarios-table .col-tool { width: 95px; }
+.scenarios-table .col-rule { width: 80px; }
+.scenarios-table .col-alert { width: 125px; }
+.scenarios-table .col-result { width: 90px; }
+.scenarios-table .col-delta { width: 95px; }
+.scenarios-table .col-notes { min-width: 140px; }
+.scenarios-table .col-action { width: 50px; text-align: right; }
+
+/* Alerts Table - Min-width đảm bảo vuốt ngang mượt mà trên mobile */
+.alerts-table {
+  table-layout: fixed;
+  min-width: 920px;
+}
+
+/* Mobile Stacked Card View (< 768px): Tự động chuyển bảng dữ liệu thành danh sách thẻ */
+.mobile-alerts-list,
+.mobile-scenarios-list {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .desktop-table-wrap {
+    display: none !important;
+  }
+
+  .mobile-alerts-list,
+  .mobile-scenarios-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .mobile-alert-card {
+    background-color: #FFFFFF;
+    border: 1px solid var(--color-border-card, #E7E4DC);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    box-sizing: border-box;
+  }
+
+  .mobile-alert-card:hover {
+    background-color: #F3F1EC;
+  }
+
+  .m-alert-row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .m-rule-tag {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
+  .m-time-text {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  .m-alert-row2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.35;
+  }
+
+  .m-alert-row3 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--color-border-row, #EFECE5);
+  }
+
+  .m-meta-entity {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .m-act-btn {
+    min-height: 32px !important;
+    height: 32px;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+    flex-shrink: 0;
+  }
+
+  /* Scenarios Mobile Card */
+  .mobile-scenario-card {
+    background-color: #FFFFFF;
+    border: 1px solid var(--color-border-card, #E7E4DC);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+
+  .mobile-scenario-card.highlighted {
+    background-color: var(--color-surface-highlight, #F4F7E6);
+  }
+
+  .m-sc-row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .m-sc-row2 {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+  }
+
+  .m-sc-row3 {
+    background-color: #F7F5EF;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+  }
+}
+
+/* ROW ACTION MENU & DROPDOWN / DROPUP (Test results & Data tables) */
 .row-action-cell {
   position: relative;
   text-align: right;
@@ -724,9 +980,7 @@ td.row-action-cell.menu-open,
   background: #FEE4E2;
 }
 
-/* ==========================================================================
-   7B. DISTRIBUTION LIST (Req 7: Top source IPs / Device type)
-   ========================================================================== */
+/* DISTRIBUTION LIST (Req 7: Top source IPs / Device type) */
 .distribution-list {
   display: flex;
   flex-direction: column;
@@ -780,9 +1034,7 @@ td.row-action-cell.menu-open,
   margin-top: 24px;
 }
 
-/* ==========================================================================
-   8. BULK ACTION BAR
-   ========================================================================== */
+/* BULK ACTION BAR */
 .bulk-action-bar {
   position: sticky;
   top: 56px;
@@ -811,9 +1063,7 @@ td.row-action-cell.menu-open,
   }
 }
 
-/* ==========================================================================
-   9. SLIDE-OVER ALERT DRAWER
-   ========================================================================== */
+/* SLIDE-OVER ALERT DRAWER / BOTTOM SHEET */
 .soc-drawer-backdrop {
   position: fixed;
   inset: 0;
@@ -822,7 +1072,7 @@ td.row-action-cell.menu-open,
   z-index: 200;
   display: flex;
   align-items: flex-end;
-  justify-content: flex-end;
+  justify-content: center;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-normal);
@@ -833,36 +1083,26 @@ td.row-action-cell.menu-open,
   pointer-events: auto;
 }
 
+/* Mobile (< 768px): Bottom Sheet trượt từ đáy lên chiếm 85% chiều cao */
 .soc-drawer {
   width: 100%;
-  max-width: 520px;
-  height: 88vh;
+  max-width: 100%;
+  height: 85vh;
+  max-height: 85vh;
   background-color: #FFFFFF;
-  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
-  box-shadow: var(--shadow-2xl);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 24px;
-  overflow-y: auto;
+  padding: 12px 18px 18px;
+  overflow: hidden;
   transform: translateY(100%);
-  transition: transform var(--transition-drawer);
-}
-
-@media (min-width: 768px) {
-  .soc-drawer-backdrop {
-    align-items: stretch;
-  }
-  .soc-drawer {
-    height: 100vh;
-    border-radius: 0;
-    padding: 30px;
-    transform: translateX(100%);
-  }
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
 .soc-drawer-backdrop.active .soc-drawer {
-  transform: translate(0, 0);
+  transform: translateY(0);
 }
 
 .drawer-grab-handle {
@@ -870,12 +1110,79 @@ td.row-action-cell.menu-open,
   height: 5px;
   background-color: #D6D3D1;
   border-radius: var(--radius-full);
-  margin: -8px auto 16px;
+  margin: 0 auto 12px;
+  flex-shrink: 0;
 }
 
+.drawer-scroll-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Cố định cụm nút hành động ở đáy Bottom Sheet (Sticky Footer 2 hàng) */
+.drawer-action-group {
+  flex-shrink: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border-divider);
+  background-color: #FFFFFF;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin-top: 8px;
+}
+
+.drawer-btn-ack {
+  grid-column: span 2 !important;
+  width: 100% !important;
+  min-height: 42px;
+  background-color: var(--color-obsidian-900) !important;
+  color: #FFFFFF !important;
+  font-weight: 700;
+}
+
+.drawer-btn-investigate,
+.drawer-btn-resolve {
+  width: 100% !important;
+  min-height: 40px;
+}
+
+/* Desktop (>= 768px): Right Slide-Over Drawer */
 @media (min-width: 768px) {
+  .soc-drawer-backdrop {
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+  .soc-drawer {
+    max-width: 520px;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 30px;
+    transform: translateX(100%);
+  }
+  .soc-drawer-backdrop.active .soc-drawer {
+    transform: translateX(0);
+  }
   .drawer-grab-handle {
-    display: none;
+    display: none !important;
+  }
+  .drawer-action-group {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .drawer-btn-ack,
+  .drawer-btn-investigate,
+  .drawer-btn-resolve {
+    flex: 1 !important;
+    grid-column: auto !important;
+    width: auto !important;
   }
 }
 
@@ -899,9 +1206,7 @@ td.row-action-cell.menu-open,
   background-color: var(--color-surface-highlight);
 }
 
-/* ==========================================================================
-   10. SIGN-IN MODAL (50/50 SPLIT)
-   ========================================================================== */
+/* SIGN-IN MODAL (50/50 SPLIT ON DESKTOP | COMPACT HEADER ON MOBILE) */
 .signin-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -918,6 +1223,7 @@ td.row-action-cell.menu-open,
 .signin-split-grid {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: 1fr;
 }
@@ -940,6 +1246,51 @@ td.row-action-cell.menu-open,
 @media (min-width: 768px) {
   .signin-left-matte {
     padding: 64px;
+  }
+  .signin-mobile-header-brand {
+    display: none !important;
+  }
+}
+
+/* Mobile: Thu gọn cột đen thành header nhỏ ở trên cùng để form hiện ngay above the fold */
+@media (max-width: 767.98px) {
+  .signin-split-grid {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .signin-left-matte {
+    padding: 14px 20px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .signin-left-hero-text,
+  .signin-left-bottom-status,
+  .signin-desktop-logo {
+    display: none !important;
+  }
+
+  .signin-mobile-header-brand {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .signin-right-form {
+    padding: 24px 20px 32px !important;
+    flex: 1;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .signin-form-box {
+    max-width: 100%;
+    gap: 16px;
   }
 }
 
@@ -965,14 +1316,98 @@ td.row-action-cell.menu-open,
   gap: 20px;
 }
 
-/* ==========================================================================
-   11. TOAST NOTIFICATIONS
-   ========================================================================== */
+/* Brand Topic Tag: Lấp khoảng trống giữa logo và heading trên cột nhận diện thương hiệu */
+.signin-brand-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent-lime);
+  margin-bottom: 16px;
+  font-family: var(--font-mono);
+}
+
+/* Hàng tiện ích form: Ghi nhớ phiên trực ca 8h và gợi ý khôi phục tài khoản */
+.signin-utility-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-top: -4px;
+}
+
+/* Khung gợi ý tài khoản Demo cho công tác kiểm thử và bảo vệ đồ án */
+.signin-demo-box {
+  padding: 10px 12px;
+  background: rgba(231, 228, 220, 0.45);
+  border: 1px dashed var(--color-border-card);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.signin-demo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.signin-demo-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.signin-demo-pwd-hint {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.signin-demo-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.signin-demo-pill {
+  flex: 1;
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.signin-demo-pill:hover {
+  background: var(--color-bg-workspace);
+  border-color: var(--color-border-input);
+  color: #000000;
+}
+
+.signin-demo-pill:active {
+  transform: scale(0.98);
+}
+
+/* TOAST NOTIFICATIONS */
 .toast-stack {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 70;
+  z-index: 500;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1021,9 +1456,7 @@ td.row-action-cell.menu-open,
   color: var(--color-sev-critical-text);
 }
 
-/* ==========================================================================
-   12. DEVICES CARDS GRID
-   ========================================================================== */
+/* DEVICES CARDS GRID */
 .devices-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -1082,9 +1515,7 @@ td.row-action-cell.menu-open,
   transition: width 0.3s ease;
 }
 
-/* ==========================================================================
-   13. ATTACK SCENARIO COMPUTED DELTA WELL
-   ========================================================================== */
+/* ATTACK SCENARIO COMPUTED DELTA WELL */
 .delta-well {
   background-color: var(--color-surface-card-subtle);
   border-radius: var(--radius-xl);
@@ -1132,9 +1563,7 @@ td.row-action-cell.menu-open,
   white-space: nowrap;
 }
 
-/* =========================================================
-   ROLE SWITCHER & ANALYST DROPDOWN — ASSUMPTION-03
-   ========================================================= */
+/* ROLE SWITCHER & ANALYST DROPDOWN — ASSUMPTION-03 */
 .role-switcher-btn {
   background: transparent;
   border: none;
@@ -1168,4 +1597,221 @@ td.row-action-cell.menu-open,
   color: var(--color-accent-lime);
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+/* FORM "NEW TEST" & DETECTION TIME RESPONSIVE (ATTACK SCENARIOS) */
+/* Detection Time 3-Column Grid: Luôn giữ 3 cột trên 1 hàng ngang trên mọi thiết bị */
+.delta-timestamps-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 8px !important;
+  align-items: baseline;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.delta-ts-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.delta-ts-val {
+  font-size: clamp(14px, 4vw, 20px);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.delta-ts-val.delta-bold {
+  font-weight: 700;
+}
+
+/* Accordion Form New Test trên Mobile (< 768px) */
+.sc-accordion-trigger {
+  display: none !important;
+}
+
+.sc-form-desktop-header {
+  display: flex;
+}
+
+.sc-form-collapsible-body {
+  display: block;
+}
+
+.sc-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.sc-submit-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.sc-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+}
+
+@media (max-width: 767.98px) {
+  .sc-form-desktop-header {
+    display: none !important;
+  }
+  .sc-accordion-trigger {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+  }
+  .sc-accordion-card {
+    padding: 14px 16px !important;
+    transition: all 0.2s ease-in-out;
+  }
+  .sc-form-collapsible-body {
+    display: none;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border-divider);
+    margin-top: 12px;
+  }
+  .sc-form-collapsible-body.expanded {
+    display: block !important;
+  }
+  .sc-inputs-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .sc-submit-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .sc-actions-group {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sc-actions-group .soc-btn {
+    width: 100% !important;
+  }
+}
+
+/* COLLAPSIBLE FILTER BAR (ALERTS QUEUE) */
+.alerts-search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.al-mobile-filter-btn {
+  display: none !important;
+}
+
+.alerts-filter-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.alerts-adv-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+@media (max-width: 767.98px) {
+  .al-mobile-filter-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .al-mobile-filter-btn.active {
+    background-color: var(--color-obsidian-900);
+    color: #FFFFFF;
+    border-color: var(--color-obsidian-900);
+  }
+  .al-filter-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-sev-critical, #D92D20);
+  }
+  .alerts-filter-options-grid {
+    display: none;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border-divider);
+    animation: fadeInFast 0.2s ease-in-out;
+  }
+  .alerts-filter-options-grid.show-mobile {
+    display: grid !important;
+  }
+  .alerts-adv-toggle-row {
+    display: none;
+  }
+  .alerts-filter-options-grid.show-mobile ~ .alerts-adv-toggle-row {
+    display: flex !important;
+  }
+}
+
+/* MOBILE TOUCH TARGETS & SAFARI AUTO-ZOOM PREVENTION (< 768px) */
+@media (max-width: 767.98px) {
+  /* Chiều cao tối thiểu 44px và font-size 16px ngăn chặn iOS Safari tự phóng to màn hình */
+  .soc-input,
+  .soc-select,
+  .soc-textarea,
+  .soc-input-wrap,
+  .soc-input-icon-wrap {
+    min-height: 44px !important;
+    height: 44px;
+  }
+
+  .soc-input,
+  .soc-select,
+  .soc-textarea,
+  .soc-input-wrap input,
+  .soc-input-wrap select,
+  .soc-input-icon-wrap input,
+  .soc-input-icon-wrap select {
+    font-size: 16px !important;
+  }
+
+  /* Nút bấm đạt diện tích chạm chuẩn WCAG Touch Target */
+  .soc-btn-primary,
+  .soc-btn-lg,
+  .soc-btn {
+    min-height: 44px;
+  }
+
+  .soc-btn-sm {
+    min-height: 36px;
+  }
+
+  .soc-btn-icon {
+    min-width: 38px;
+    min-height: 38px;
+  }
 }

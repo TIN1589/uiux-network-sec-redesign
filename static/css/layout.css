@@ -1,7 +1,4 @@
-/* ==========================================================================
-   LAYOUT & RESPONSIVE ARCHITECTURE
-   Sidebar, Header, Main Shell, Grid Systems, Container Queries
-   ========================================================================== */
+/* LAYOUT & RESPONSIVE ARCHITECTURE - Sidebar, Header, Main Shell, Grid Systems, Container Queries */
 
 /* Main Layout Shell */
 .app-shell {
@@ -20,13 +17,11 @@
   inset: 0;
   background: rgba(18, 19, 20, 0.55);
   backdrop-filter: blur(2px);
-  z-index: 30;
+  z-index: 55;
   transition: opacity var(--transition-normal);
 }
 
-/* ==========================================================================
-   APP SIDEBAR (>=1280px: 248px | 1024-1279px: 72px | <1024px: Off-canvas)
-   ========================================================================== */
+/* APP SIDEBAR (>=1280px: 248px | 1024-1279px: 72px | <1024px: Off-canvas) */
 #app-sidebar {
   background-color: var(--color-obsidian-900);
   color: #D6D3D1;
@@ -54,14 +49,11 @@
 .sidebar-brand-logo {
   width: 36px;
   height: 36px;
-  border-radius: var(--radius-md);
-  background-color: var(--color-accent-lime);
-  color: var(--color-obsidian-900);
+  background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: var(--shadow-xs);
 }
 
 .sidebar-brand-text {
@@ -132,6 +124,10 @@
 @media (max-width: 1023.98px) {
   .sidebar-close-btn {
     display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 
@@ -201,8 +197,9 @@
     inset-block: 0;
     left: 0;
     width: var(--sidebar-w-desktop);
-    min-width: var(--sidebar-w-desktop);
-    max-width: var(--sidebar-w-desktop);
+    min-width: 220px;
+    max-width: calc(100vw - 48px);
+    z-index: 60;
     transform: translateX(-100%);
   }
   #app-sidebar.mobile-open {
@@ -210,9 +207,7 @@
   }
 }
 
-/* ==========================================================================
-   WORKSPACE & TOP UTILITY BAR
-   ========================================================================== */
+/* WORKSPACE & TOP UTILITY BAR */
 .workspace-scroll {
   flex: 1;
   min-width: 0;
@@ -417,23 +412,38 @@
 /* Mobile Queue Row Responsive (< 768px: dạng thẻ dọc) */
 @media (max-width: 767.98px) {
   .content-shell {
-    padding-inline: 16px;
+    padding-inline: 14px;
   }
   .queue-row {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
-    padding: 16px;
+    gap: 10px;
+    padding: 12px 14px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
   }
   .q-badge {
     width: auto;
   }
+  .q-info {
+    min-width: 0;
+    max-width: 100%;
+  }
   .q-status {
-    width: auto;
+    width: 100%;
+    display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
+  }
+  .q-status-time {
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: right;
   }
   .q-action {
     width: 100%;
@@ -443,19 +453,76 @@
   }
 }
 
-/* Mobile Bottom Tab Bar (Req 10: < 768px thanh tab dưới cố định, chừa padding đáy) */
+/* Mobile Bottom Tab Bar (Req 10: < 768px thanh tab dưới cố định cao 60px, chừa padding đáy) */
 .mobile-bottom-bar {
   display: none;
 }
 
+.topbar-brand-mobile {
+  display: none;
+}
+
+@keyframes pulseLive {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(22, 163, 74, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+}
+
+.pulse-dot {
+  animation: pulseLive 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.mob-tab-badge {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  background-color: var(--color-sev-critical, #D92D20);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 999px;
+  min-width: 14px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
 @media (max-width: 767.98px) {
+  /* Ẩn hoàn toàn nút Hamburger menu và Sidebar Drawer trên mobile vì đã có Bottom Navigation Bar */
+  #topbar-menu-btn {
+    display: none !important;
+  }
+  #app-sidebar {
+    display: none !important;
+  }
+  #sidebar-backdrop {
+    display: none !important;
+  }
+
+  /* Logo nhận diện thương hiệu trên mobile */
+  .topbar-brand-mobile {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background-color: transparent;
+    flex-shrink: 0;
+  }
+
+  .live-desktop-tz {
+    display: none !important;
+  }
+
   .mobile-bottom-bar {
     display: flex;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 56px;
+    height: 60px;
+    min-height: 60px;
     background-color: #121212;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 50;
@@ -489,11 +556,77 @@
     color: #C6F135;
   }
 
+  /* Header 1 hàng duy nhất cao đúng 56px */
   #app-topbar {
-    padding-inline: 16px;
+    padding: 0 14px;
+    height: 56px;
+    min-height: 56px;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .topbar-left {
+    gap: 8px;
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  #live-status-pill {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar-right {
+    gap: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Rút gọn nút Auto-refresh trên mobile */
+  #btn-autorefresh {
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+    min-height: 32px;
+    height: 32px;
+  }
+
+  /* Thu gọn thông tin Analyst: chỉ giữ Avatar tròn */
+  .analyst-info-text,
+  #analyst-avatar-btn .fa-chevron-down {
+    display: none !important;
+  }
+
+  #analyst-avatar-btn {
+    padding: 0 !important;
   }
 
   #main-content {
-    padding: 24px 16px 76px !important;
+    padding: 20px 14px 84px !important;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+}
+
+/* Tối ưu hóa thêm cho màn hình siêu hẹp (< 360px) */
+@media (max-width: 359.98px) {
+  #app-topbar {
+    padding-inline: 8px;
+    gap: 4px;
+  }
+  #live-status-pill {
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+  }
+  #btn-autorefresh {
+    padding: 4px 6px !important;
+    font-size: 10px !important;
   }
 }

@@ -1,6 +1,4 @@
-<!-- =================================================================== -->
-<!-- PAGE 1: OVERVIEW (SOC COMMAND CENTER)                               -->
-<!-- =================================================================== -->
+{# PAGE 1: OVERVIEW (SOC COMMAND CENTER) #}
 <section id="tab-overview" class="stack-blocks" aria-label="SOC Command Center Overview" data-window="{{ current_window or '24h' }}">
 
   <!-- Title & Segmented Time Pill -->
@@ -44,15 +42,15 @@
   <!-- Unified 5-Column KPI Strip Card -->
   {% set time_sub = 'last 1h' if current_window == '1h' else ('last 7d' if current_window == '7d' else 'last 24 hours') %}
   <div id="ov-kpi-strip" class="kpi-strip kpi-strip-5">
-    <!-- Total Alerts -->
-    <div class="kpi-cell">
+    <!-- Total Alerts (Banner trên cùng trên mobile, ô thứ nhất trên desktop) -->
+    <div class="kpi-cell kpi-cell-total">
       <div class="kpi-header">
         <span class="status-dot dot-dark" aria-hidden="true"></span>
         <span>TOTAL ALERTS</span>
       </div>
-      <div id="ov-kpi-total" class="kpi-number">{{ stats.total }}</div>
-      <div class="kpi-footer">
-        <span id="ov-kpi-window-sub">{{ time_sub }}</span>
+      <div class="kpi-total-val-wrap">
+        <span id="ov-kpi-total" class="kpi-number">{{ stats.total }}</span>
+        <span class="kpi-footer" id="ov-kpi-window-sub">{{ time_sub }}</span>
       </div>
     </div>
 
@@ -215,7 +213,7 @@
         <div style="display: flex; align-items: baseline; gap: 8px;">
           <h2 class="soc-card-title">Alerts per hour</h2>
           <span id="ov-hourly-sub" style="font-size: 12px; color: var(--color-text-muted);">
-            {% if current_window == '1h' %}per 5 min{% elif current_window == '7d' %}per day{% else %}per hour{% endif %}
+            {% if current_window == '1h' %}per 5 min{% elif current_window == '7d' %}per day{% endif %}
           </span>
         </div>
 

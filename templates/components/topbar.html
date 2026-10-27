@@ -1,23 +1,31 @@
 <!-- TOP FLOATING UTILITY BAR (Rule Section 4: border-bottom chạy suốt chiều ngang, padding ngang 40px) -->
 <header id="app-topbar" role="banner">
-  <!-- Left: Menu Button (<1024px) + Live Pill Badge -->
+  <!-- Left: Mobile Brand Shield + Live Pill Badge -->
   <div class="topbar-left">
+    <!-- Nút Hamburger chỉ hiện trên Tablet (768px-1023px), ẩn hoàn toàn trên Mobile (<768px) -->
     <button type="button" id="topbar-menu-btn" onclick="openMobileSidebar()" aria-label="Open navigation menu"
       class="soc-btn soc-btn-secondary soc-btn-icon">
       <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
 
-    <div id="live-status-pill" role="status" aria-live="polite" class="soc-badge" style="background-color: #FFFFFF; border: 1px solid var(--color-border-card); color: var(--color-text-secondary); box-shadow: var(--shadow-2xs); padding: 6px 12px;">
-      <span id="live-status-dot" class="status-dot dot-live" aria-hidden="true"></span>
-      <span id="live-status-text">Live · updated <span id="live-sec-counter" class="font-mono">5s</span> ago · GMT+7</span>
+    <!-- Logo nhận diện thương hiệu trên Mobile -->
+    <div class="topbar-brand-mobile" title="Network Security Monitor">
+      <img src="/static/img/favicon/nsm-favicon.svg" alt="Network Security Monitor logo" style="width: 24px; height: 24px; object-fit: contain;" />
+    </div>
+
+    <div id="live-status-pill" role="status" aria-live="polite" class="soc-badge" style="background-color: #FFFFFF; border: 1px solid var(--color-border-card); color: var(--color-text-secondary); box-shadow: var(--shadow-2xs); padding: 5px 10px;">
+      <span id="live-status-dot" class="status-dot dot-live pulse-dot" aria-hidden="true"></span>
+      <span id="live-status-text">
+        <span>Live</span> · <span id="live-sec-counter" class="font-mono">5s</span> ago<span class="live-desktop-tz"> · GMT+7</span>
+      </span>
     </div>
   </div>
 
   <!-- Right: Auto-Refresh Pill + Analyst Avatar + Role Switcher -->
   <div class="topbar-right">
     <button type="button" onclick="toggleAutoRefresh()" id="btn-autorefresh" aria-pressed="true"
-      class="soc-btn soc-btn-outline soc-btn-sm">
-      Auto-refresh: on
+      class="soc-btn soc-btn-outline soc-btn-sm" style="min-height: 32px; padding: 4px 10px;">
+      <span id="autorefresh-label">Auto: ON</span>
     </button>
 
     <!-- Analyst Profile & Role Switcher Dropdown (ASSUMPTION-03) -->

@@ -1,7 +1,7 @@
 {# Hợp đồng HTMX:
    Partial drawer_content.html trả về từ endpoint /api/alerts/{event_id}/drawer
    để hoán đổi chi tiết cảnh báo, MITRE ATT&CK technique và syslog thô vào #alert-drawer-content. #}
-<div style="display: flex; flex-direction: column; gap: 24px;">
+<div class="drawer-scroll-body">
   <!-- Mobile Grab Handle -->
   <div class="drawer-grab-handle" aria-hidden="true"></div>
 
@@ -81,13 +81,12 @@
 </div>
 
 <!-- Bottom Action Pills -->
-<div style="padding-top: 24px; border-top: 1px solid var(--color-border-divider); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 20px;">
+<div class="drawer-action-group">
   <button type="button"
           hx-post="/api/alerts/{{ alert.eventId }}/state"
           hx-vals='{"state": "Acknowledged"}'
           hx-target="#alert-drawer-container"
-          class="soc-btn soc-btn-primary"
-          style="flex: 1;">
+          class="soc-btn soc-btn-primary drawer-btn-ack">
     Acknowledge
   </button>
   <button type="button"
@@ -95,8 +94,7 @@
           hx-post="/api/alerts/{{ alert.eventId }}/state"
           hx-vals='{"state": "Investigating"}'
           hx-target="#alert-drawer-container"
-          class="soc-btn soc-btn-outline"
-          style="flex: 1;">
+          class="soc-btn soc-btn-outline drawer-btn-investigate">
     Mark investigating
   </button>
   <button type="button"
@@ -104,7 +102,7 @@
           hx-post="/api/alerts/{{ alert.eventId }}/state"
           hx-vals='{"state": "Resolved"}'
           hx-target="#alert-drawer-container"
-          class="soc-btn soc-btn-secondary">
+          class="soc-btn soc-btn-secondary drawer-btn-resolve">
     Resolve
   </button>
 </div>

@@ -19,9 +19,7 @@ export const state = {
   csrfToken: null
 };
 
-// =========================================================================
-// 1. NAVIGATION & MOBILE DRAWER
-// =========================================================================
+// Navigation and mobile drawer control
 /**
  * Mở thanh điều hướng sidebar ở chế độ off-canvas trên thiết bị di động (< 1024px).
  * @returns {void}
@@ -118,9 +116,7 @@ export function switchTab(tabId) {
   }
 }
 
-// =========================================================================
-// 2. ALERT DRAWER (SLIDE-OVER)
-// =========================================================================
+// Slide-over alert drawer lifecycle
 export function openAlertDrawer(eventId) {
   state.activeDrawerAlertId = eventId;
   const backdrop = document.getElementById('alert-drawer-backdrop');
@@ -130,8 +126,8 @@ export function openAlertDrawer(eventId) {
     backdrop.classList.add('active');
   }
 
-  // If HTMX is used, load the drawer content via API
-  if (typeof htmx !== 'undefined' && drawerContainer) {
+  // If HTMX is used and running on HTTP/S, load the drawer content via API
+  if (typeof htmx !== 'undefined' && drawerContainer && window.location.protocol.startsWith('http')) {
     htmx.ajax('GET', `/api/alerts/${eventId}/drawer`, {
       target: '#alert-drawer-container',
       swap: 'innerHTML'
@@ -167,9 +163,7 @@ export async function copyDrawerPayload() {
   }
 }
 
-// =========================================================================
-// 3. BULK ACTIONS & SELECTION
-// =========================================================================
+// Bulk action state management
 export function toggleSelectOneAlert(eventId, checked) {
   if (checked) {
     state.selectedAlertIds.add(eventId);
@@ -246,9 +240,7 @@ export async function executeBulkState(newState) {
   }
 }
 
-// =========================================================================
-// 4. ADVANCED FILTERS PANEL
-// =========================================================================
+// Advanced filters panel control
 export function toggleAdvancedFilters() {
   const panel = document.getElementById('adv-filters-panel');
   const caret = document.getElementById('adv-filter-caret');
@@ -283,9 +275,7 @@ export function resetAllAlertFilters() {
   }
 }
 
-// =========================================================================
-// 5. ATTACK SCENARIOS LOGIC
-// =========================================================================
+// Attack scenarios logic and form presets
 export function handleScenarioTechniqueChange() {
   const tech = document.getElementById('sc-technique')?.value;
   const presets = {
@@ -381,6 +371,15 @@ export function editScenarioRow(id) {
       document.getElementById('sc-cancel-edit-btn').classList.remove('hidden');
       document.getElementById('sc-editing-badge').classList.remove('hidden');
 
+      const body = document.getElementById('sc-form-collapsible-body');
+      const chevron = document.getElementById('sc-accordion-chevron');
+      const btn = document.getElementById('sc-accordion-toggle-btn');
+      const badgeMob = document.getElementById('sc-editing-badge-mobile');
+      if (body) body.classList.add('expanded');
+      if (chevron) chevron.style.transform = 'rotate(180deg)';
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+      if (badgeMob) badgeMob.classList.remove('hidden');
+
       const card = document.getElementById('sc-form-card');
       if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       document.getElementById('sc-notes')?.focus();
@@ -398,39 +397,46 @@ export function cancelScenarioEdit(silent = false) {
   document.getElementById('sc-submit-btn').textContent = 'Record test';
   document.getElementById('sc-cancel-edit-btn').classList.add('hidden');
   document.getElementById('sc-editing-badge').classList.add('hidden');
+  const badgeMob = document.getElementById('sc-editing-badge-mobile');
+  if (badgeMob) badgeMob.classList.add('hidden');
 
   if (!silent) {
     showToast('light', 'Canceled test edit');
   }
 }
 
-// =========================================================================
-// 6. SIGN-IN MODAL (ASSUMPTION-02)
-// =========================================================================
-export async function openSignInModal() {
-  hideSignInError();
-  const modal = document.getElementById('signin-modal');
-  if (modal) modal.classList.add('active');
-  const userInp = document.getElementById('signin-user');
-  if (userInp) userInp.focus();
-
-  // Fetch fresh CSRF token (ASSUMPTION-02)
-  try {
-    const res = await fetch('/api/auth/csrf-token');
-    if (res.ok) {
-      const data = await res.json();
-      state.csrfToken = data.csrf_token;
-      const csrfInput = document.getElementById('signin-csrf');
-      if (csrfInput) csrfInput.value = data.csrf_token;
-    }
-  } catch (err) {
-    // Best effort
-  }
+// Sign-in route navigation and auth guard
+/**
+ * Chuyển hướng người dùng tới trang Đăng nhập độc lập (/login).
+ */
+export function openSignInModal() {
+  window.location.href = '/login';
 }
 
 export function closeSignInModal() {
   const modal = document.getElementById('signin-modal');
   if (modal) modal.classList.remove('active');
+  if (window.location.hash === '#signin') {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
+
+/**
+ * Tiếp tục phiên làm việc với tư cách Khách xem (Read-only Guest).
+ * Ghi nhận cờ soc_guest_mode để ngăn chặn modal tự động bật lại khi chuyển trang hoặc F5.
+ */
+export function continueAsGuest() {
+  sessionStorage.setItem('soc_guest_mode', 'true');
+  closeSignInModal();
+  const analystNameEl = document.getElementById('topbar-analyst-name');
+  if (analystNameEl && !state.isAuthenticated) {
+    analystNameEl.textContent = 'Guest';
+  }
+  const avatarCircle = document.getElementById('analyst-avatar-circle');
+  if (avatarCircle && !state.isAuthenticated) {
+    avatarCircle.textContent = 'G';
+  }
+  showToast('light', 'Viewing as Guest (Read-only mode)');
 }
 
 export function hideSignInError() {
@@ -448,6 +454,25 @@ export function checkCapsLock(e) {
   }
 }
 
+/**
+ * Quản lý trạng thái hiển thị của nút Show/Hide mật khẩu.
+ * Nút chỉ hiển thị khi ô mật khẩu có nội dung (value.length > 0)
+ * theo chuẩn UX Enterprise, tránh hiển thị dư thừa khi ô còn trống.
+ */
+export function handleSignInPwdInput() {
+  hideSignInError();
+  const inp = document.getElementById('signin-pwd');
+  const btn = document.getElementById('signin-pwd-btn');
+  if (!inp || !btn) return;
+  if (inp.value.length > 0) {
+    btn.classList.remove('hidden');
+  } else {
+    btn.classList.add('hidden');
+    inp.type = 'password';
+    btn.textContent = 'Show';
+  }
+}
+
 export function toggleSignInPwd() {
   const inp = document.getElementById('signin-pwd');
   const btn = document.getElementById('signin-pwd-btn');
@@ -458,6 +483,52 @@ export function toggleSignInPwd() {
   } else {
     inp.type = 'password';
     btn.textContent = 'Show';
+  }
+}
+
+/**
+ * Điền nhanh thông tin tài khoản demo cho người chấm hoặc giảng viên (Quick Demo Fill).
+ * Hỗ trợ 3 phân quyền chuẩn SOC: SecOps Admin, Tier-2 Analyst, Tier-1 Responder.
+ *
+ * @param {'admin'|'tier2'|'tier1'} role - Vai trò cần điền tài khoản mẫu.
+ */
+export function fillDemoCredentials(role) {
+  const userInp = document.getElementById('signin-user');
+  const pwdInp = document.getElementById('signin-pwd');
+  hideSignInError();
+
+  const demoAccounts = {
+    admin: { user: 'admin', pwd: 'vnpt-soc-2026', label: 'SecOps Admin' },
+    tier2: { user: 'tier2', pwd: 'vnpt-soc-2026', label: 'Tier-2 Analyst' },
+    tier1: { user: 'tier1', pwd: 'vnpt-soc-2026', label: 'Tier-1 Responder' }
+  };
+
+  const cred = demoAccounts[role] || demoAccounts.admin;
+  if (userInp) userInp.value = cred.user;
+  if (pwdInp) {
+    pwdInp.value = cred.pwd;
+    handleSignInPwdInput();
+  }
+  showToast('light', `Loaded demo credentials: ${cred.label}`);
+}
+
+/**
+ * Hiển thị thông báo hỗ trợ khi người dùng chọn quên thông tin đăng nhập trong phiên demo.
+ * Cung cấp hướng dẫn trực quan ngay trên modal và làm nổi bật cụm Quick Demo Fill.
+ */
+export function showForgotCredentialsHint() {
+  showToast('dark', 'Demo Sandbox: Use Quick Demo Fill pills below or password: vnpt-soc-2026');
+  const demoBox = document.querySelector('.signin-demo-box');
+  if (demoBox) {
+    demoBox.style.transition = 'all 0.3s ease';
+    demoBox.style.borderColor = 'var(--color-accent-lime)';
+    demoBox.style.boxShadow = '0 0 0 2px var(--color-accent-lime)';
+    demoBox.style.backgroundColor = 'rgba(198, 241, 53, 0.18)';
+    setTimeout(() => {
+      demoBox.style.borderColor = 'var(--color-border-card)';
+      demoBox.style.boxShadow = 'none';
+      demoBox.style.backgroundColor = 'rgba(231, 228, 220, 0.45)';
+    }, 1800);
   }
 }
 
@@ -497,17 +568,41 @@ export async function submitSignInForm(e) {
       return;
     }
 
+    const assignedRole = data.role || (user.toLowerCase().includes('tier2') ? 'tier2' : (user.toLowerCase().includes('tier1') ? 'tier1' : 'admin'));
+    sessionStorage.removeItem('soc_guest_mode');
+    sessionStorage.setItem('soc_auth_user', data.username || user);
+    sessionStorage.setItem('soc_auth_role', assignedRole);
+    state.isAuthenticated = true;
+    state.currentUser = data.username || user;
+
     const analystNameEl = document.getElementById('topbar-analyst-name');
     if (analystNameEl) analystNameEl.textContent = data.username || user;
+    const avatarCircle = document.getElementById('analyst-avatar-circle');
+    if (avatarCircle) {
+      avatarCircle.textContent = (data.username || user).charAt(0).toUpperCase();
+    }
+    switchRole(assignedRole);
     closeSignInModal();
-    showToast('dark', `Signed in as ${data.username || user}`);
+    showToast('dark', `Signed in as ${data.username || user} (${ROLE_LABELS[assignedRole] || assignedRole})`);
   } catch (err) {
-    // Client-side fallback for static preview / file: context
+    // Dual-Mode Fallback: Xử lý đăng nhập giả lập khi chạy xem trước tĩnh (file:// hoặc không chạy FastAPI cổng 8000)
     if (window.location.protocol === 'file:' || (window.location.port !== '8000' && window.location.port !== '')) {
+      const assignedRole = user.toLowerCase().includes('tier2') ? 'tier2' : (user.toLowerCase().includes('tier1') ? 'tier1' : 'admin');
+      sessionStorage.removeItem('soc_guest_mode');
+      sessionStorage.setItem('soc_auth_user', user);
+      sessionStorage.setItem('soc_auth_role', assignedRole);
+      state.isAuthenticated = true;
+      state.currentUser = user;
+
       const analystNameEl = document.getElementById('topbar-analyst-name');
       if (analystNameEl) analystNameEl.textContent = user;
+      const avatarCircle = document.getElementById('analyst-avatar-circle');
+      if (avatarCircle) {
+        avatarCircle.textContent = user.charAt(0).toUpperCase();
+      }
+      switchRole(assignedRole);
       closeSignInModal();
-      showToast('dark', `Signed in as ${user}`);
+      showToast('dark', `Signed in as ${user} (${ROLE_LABELS[assignedRole] || assignedRole})`);
       return;
     }
     const errEl = document.getElementById('signin-err-banner');
@@ -518,9 +613,7 @@ export async function submitSignInForm(e) {
   }
 }
 
-// =========================================================================
-// 6B. ANALYST MENU & ROLE SWITCHER (ASSUMPTION-03)
-// =========================================================================
+// Analyst menu and role switcher
 
 const ROLE_HIERARCHY = { tier1: 1, tier2: 2, admin: 3 };
 const ROLE_LABELS = { tier1: 'Tier-1 Responder', tier2: 'Tier-2 Analyst', admin: 'SecOps Admin' };
@@ -575,8 +668,17 @@ export function handleSignOut() {
     .catch(() => {})
     .finally(() => {
       closeAnalystMenu();
+      sessionStorage.removeItem('soc_auth_user');
+      sessionStorage.removeItem('soc_auth_role');
+      sessionStorage.removeItem('soc_guest_mode');
+      state.isAuthenticated = false;
+      state.currentUser = null;
+
       const nameEl = document.getElementById('topbar-analyst-name');
       if (nameEl) nameEl.textContent = 'Guest';
+      const avatarEl = document.getElementById('analyst-avatar-circle');
+      if (avatarEl) avatarEl.textContent = 'G';
+
       showToast('light', 'Signed out successfully');
       openSignInModal();
     });
@@ -590,33 +692,79 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// =========================================================================
-// 7. AUTO-REFRESH & HEARTBEAT TIMER
-// =========================================================================
+// Auto-refresh and heartbeat timer
 export function toggleAutoRefresh() {
   state.autoRefreshOn = !state.autoRefreshOn;
   const btn = document.getElementById('btn-autorefresh');
   const dot = document.getElementById('live-status-dot');
   const text = document.getElementById('live-status-text');
+  const label = document.getElementById('autorefresh-label');
 
   if (state.autoRefreshOn) {
     if (btn) {
-      btn.textContent = 'Auto-refresh: on';
       btn.setAttribute('aria-pressed', 'true');
       btn.className = 'soc-btn soc-btn-outline soc-btn-sm';
     }
-    if (dot) dot.className = 'status-dot dot-live';
-    if (text) text.innerHTML = 'Live · updated <span id="live-sec-counter" class="font-mono">1s</span> ago · GMT+7';
+    if (label) {
+      label.textContent = 'Auto: ON';
+    } else if (btn) {
+      btn.textContent = 'Auto: ON';
+    }
+    if (dot) dot.className = 'status-dot dot-live pulse-dot';
+    if (text) text.innerHTML = '<span>Live</span> · <span id="live-sec-counter" class="font-mono">1s</span> ago<span class="live-desktop-tz"> · GMT+7</span>';
     showToast('dark', 'Live auto-refresh enabled');
   } else {
     if (btn) {
-      btn.textContent = 'Auto-refresh: off';
       btn.setAttribute('aria-pressed', 'false');
       btn.className = 'soc-btn soc-btn-secondary soc-btn-sm';
     }
+    if (label) {
+      label.textContent = 'Auto: OFF';
+    } else if (btn) {
+      btn.textContent = 'Auto: OFF';
+    }
     if (dot) dot.className = 'status-dot dot-paused';
-    if (text) text.textContent = 'Paused · GMT+7';
+    if (text) text.innerHTML = '<span>Paused</span><span class="live-desktop-tz"> · GMT+7</span>';
     showToast('light', 'Live auto-refresh paused');
+  }
+}
+
+/**
+ * Bật/tắt thanh bộ lọc thu gọn trên mobile ở trang Alerts
+ */
+export function toggleMobileFilterBar() {
+  const panel = document.getElementById('alerts-collapsible-filters');
+  const btn = document.getElementById('al-mobile-filter-btn');
+  if (!panel) return;
+  const isHidden = !panel.classList.contains('show-mobile');
+  if (isHidden) {
+    panel.classList.add('show-mobile');
+    if (btn) btn.classList.add('active');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  } else {
+    panel.classList.remove('show-mobile');
+    if (btn) btn.classList.remove('active');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+/**
+ * Bật/tắt accordion form New Test trên mobile ở trang Scenarios
+ */
+export function toggleScenarioFormAccordion() {
+  const body = document.getElementById('sc-form-collapsible-body');
+  const chevron = document.getElementById('sc-accordion-chevron');
+  const btn = document.getElementById('sc-accordion-toggle-btn');
+  if (!body) return;
+  const isExpanded = body.classList.contains('expanded');
+  if (isExpanded) {
+    body.classList.remove('expanded');
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  } else {
+    body.classList.add('expanded');
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+    if (btn) btn.setAttribute('aria-expanded', 'true');
   }
 }
 
@@ -628,9 +776,7 @@ setInterval(() => {
   if (counterEl) counterEl.textContent = `${state.secSinceRefresh}s`;
 }, 1000);
 
-// =========================================================================
-// 8. GLOBAL EVENT LISTENERS & HTMX HOOKS
-// =========================================================================
+// Global event listeners and HTMX lifecycle hooks
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeSignInModal();
@@ -777,11 +923,17 @@ window.editScenarioRow = editScenarioRow;
 window.cancelScenarioEdit = cancelScenarioEdit;
 window.openSignInModal = openSignInModal;
 window.closeSignInModal = closeSignInModal;
+window.continueAsGuest = continueAsGuest;
 window.hideSignInError = hideSignInError;
 window.checkCapsLock = checkCapsLock;
+window.handleSignInPwdInput = handleSignInPwdInput;
 window.toggleSignInPwd = toggleSignInPwd;
+window.fillDemoCredentials = fillDemoCredentials;
+window.showForgotCredentialsHint = showForgotCredentialsHint;
 window.submitSignInForm = submitSignInForm;
 window.toggleAutoRefresh = toggleAutoRefresh;
+window.toggleMobileFilterBar = toggleMobileFilterBar;
+window.toggleScenarioFormAccordion = toggleScenarioFormAccordion;
 window.toggleAnalystMenu = toggleAnalystMenu;
 window.closeAnalystMenu = closeAnalystMenu;
 window.switchRole = switchRole;
@@ -789,29 +941,99 @@ window.switchTab = switchTab;
 window.applyRolePermissions = applyRolePermissions;
 window.handleSignOut = handleSignOut;
 
+/**
+ * Xử lý trạng thái khi người dùng chưa đăng nhập.
+ * Nếu chưa từng chọn chế độ Guest, tự động chuyển hướng sang trang Sign In (/login).
+ *
+ * @param {boolean} isHashSignIn - Cờ nhận diện URL đã có hash #signin.
+ */
+function handleUnauthenticatedState(isHashSignIn) {
+  state.isAuthenticated = false;
+  state.currentUser = null;
+  const isGuestMode = sessionStorage.getItem('soc_guest_mode') === 'true';
+
+  const nameEl = document.getElementById('topbar-analyst-name');
+  if (nameEl) nameEl.textContent = 'Guest';
+  const avatarEl = document.getElementById('analyst-avatar-circle');
+  if (avatarEl) avatarEl.textContent = 'G';
+  applyRolePermissions(state.currentRole);
+
+  if (!isGuestMode) {
+    window.location.href = '/login';
+  }
+}
+
 // Initialize when DOM is ready
 window.addEventListener('DOMContentLoaded', () => {
+  // Ghi nhận cờ guest nếu được chuyển hướng từ /login
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('guest') === '1') {
+    sessionStorage.setItem('soc_guest_mode', 'true');
+  }
+
   syncActiveNav(window.location.pathname);
   if (document.getElementById('severityDonutChart')) {
     initOverviewCharts();
   }
   updateComputedDeltaWell();
 
-  // Initialize auth state from session (ASSUMPTION-02 & ASSUMPTION-03)
+  // Tự động đóng mobile sidebar khi click bất kỳ mục điều hướng nào trên di động
+  document.querySelectorAll('#app-sidebar .nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      closeMobileSidebar();
+    });
+  });
+
+  // Smart Auth Guard: Điều phối phiên trực ca và duy trì xác thực
+  const isHashSignIn = window.location.hash === '#signin';
+
+  if (isHashSignIn) {
+    window.location.href = '/login';
+    return;
+  }
+
   fetch('/api/auth/me')
     .then(r => r.json())
     .then(data => {
       if (data.authenticated) {
+        state.isAuthenticated = true;
+        state.currentUser = data.username;
+        sessionStorage.removeItem('soc_guest_mode');
+        sessionStorage.setItem('soc_auth_user', data.username);
+        if (data.role) sessionStorage.setItem('soc_auth_role', data.role);
+
         const nameEl = document.getElementById('topbar-analyst-name');
         if (nameEl) nameEl.textContent = data.username;
+        const avatarEl = document.getElementById('analyst-avatar-circle');
+        if (avatarEl) avatarEl.textContent = data.username.charAt(0).toUpperCase();
+
         if (data.role && ROLE_HIERARCHY[data.role]) {
           switchRole(data.role);
           return;
         }
+        applyRolePermissions(state.currentRole);
+      } else {
+        handleUnauthenticatedState(isHashSignIn);
       }
-      applyRolePermissions(state.currentRole);
     })
     .catch(() => {
-      applyRolePermissions(state.currentRole);
+      // Static Offline / Dual-Mode Preview Fallback
+      const savedUser = sessionStorage.getItem('soc_auth_user');
+      const savedRole = sessionStorage.getItem('soc_auth_role');
+      if (savedUser) {
+        state.isAuthenticated = true;
+        state.currentUser = savedUser;
+        const nameEl = document.getElementById('topbar-analyst-name');
+        if (nameEl) nameEl.textContent = savedUser;
+        const avatarEl = document.getElementById('analyst-avatar-circle');
+        if (avatarEl) avatarEl.textContent = savedUser.charAt(0).toUpperCase();
+        if (savedRole && ROLE_HIERARCHY[savedRole]) {
+          switchRole(savedRole);
+          return;
+        }
+        applyRolePermissions(state.currentRole);
+      } else {
+        handleUnauthenticatedState(isHashSignIn);
+      }
     });
 });

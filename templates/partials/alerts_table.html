@@ -11,8 +11,9 @@
     </div>
   </div>
 
-  <div class="soc-table-wrap">
-    <table class="soc-table" style="table-layout: fixed; min-width: 980px;">
+  <!-- Desktop Table View (>= 768px) -->
+  <div class="desktop-table-wrap soc-table-wrap">
+    <table class="soc-table alerts-table" style="table-layout: fixed; min-width: 980px;">
       <thead>
         <tr>
           <th scope="col" style="width: 36px;">
@@ -81,6 +82,44 @@
         {% endif %}
       </tbody>
     </table>
+  </div>
+
+  <!-- Mobile Stacked Card View (< 768px): Tối ưu thao tác vuốt chạm di động -->
+  <div class="mobile-alerts-list">
+    {% if alerts | length == 0 %}
+    <div style="padding: 32px 16px; text-align: center;">
+      <div style="font-size: 15px; font-weight: 700; color: var(--color-text-primary);">No alerts match these filters</div>
+      <button type="button" onclick="resetAllAlertFilters()" class="soc-btn soc-btn-outline" style="margin-top: 12px;">
+        Reset filters
+      </button>
+    </div>
+    {% else %}
+    {% for a in alerts %}
+    <div class="mobile-alert-card" onclick="openAlertDrawer('{{ a.eventId }}')">
+      <!-- Dòng 1: [Badge: Critical] + Mã #100999 (bên trái) — Thời gian: 12m ago (bên phải) -->
+      <div class="m-alert-row1">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="soc-badge badge-{{ a.severity | lower }}">{{ a.severity }}</span>
+          <span class="font-mono m-rule-tag">#{{ a.ruleId }}</span>
+        </div>
+        <span class="m-time-text font-mono">{{ a.observedRel }}</span>
+      </div>
+
+      <!-- Dòng 2 (In đậm): Tên cảnh báo -->
+      <div class="m-alert-row2">{{ a.title }}</div>
+
+      <!-- Dòng 3 (Chữ monospace nhỏ): vnpt-agg-switch-01 • 10.254.0.99 + Nút [Investigate →] nằm gọn góc phải dưới -->
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="{{ a.asset }} · {{ a.srcIp }}">
+          <span>{{ a.asset }}</span> · <span>{{ a.srcIp }}</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('{{ a.eventId }}')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          {% if a.state == 'Resolved' %}Open →{% else %}Investigate →{% endif %}
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
   </div>
 
   <!-- Pagination Footer -->
