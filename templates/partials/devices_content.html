@@ -1,0 +1,90 @@
+<!-- =================================================================== -->
+<!-- PAGE 3: DEVICES (MONITORED DEVICES)                                 -->
+<!-- =================================================================== -->
+<section id="tab-devices" class="stack-blocks" aria-label="Monitored Devices">
+
+  <div>
+    <h1 class="fluid-h1">Devices</h1>
+    <p style="font-size: 15px; color: var(--color-text-secondary); margin-top: 2px;">
+      Silent after 15 minutes without an alert.
+    </p>
+  </div>
+
+  <!-- Unified 3-Column KPI Strip (Rule Section 3: 40px/700) -->
+  <div class="kpi-strip kpi-strip-3">
+    <div class="kpi-cell">
+      <div class="kpi-header">
+        <span class="status-dot dot-dark" aria-hidden="true"></span>
+        <span>DEVICES</span>
+      </div>
+      <div id="dev-kpi-total" class="kpi-number">{{ devices_stats.total }}</div>
+      <div class="kpi-footer">monitored</div>
+    </div>
+
+    <div class="kpi-cell">
+      <div class="kpi-header">
+        <span class="status-dot dot-live" aria-hidden="true"></span>
+        <span>REPORTING</span>
+      </div>
+      <div id="dev-kpi-reporting" class="kpi-number">{{ devices_stats.reporting }}</div>
+      <div class="kpi-footer">active heartbeat &amp; log stream</div>
+    </div>
+
+    <div class="kpi-cell">
+      <div class="kpi-header">
+        <span class="status-dot dot-paused" aria-hidden="true"></span>
+        <span>SILENT (NO ALERTS IN 15 MIN)</span>
+      </div>
+      <div id="dev-kpi-silent" class="kpi-number">{{ devices_stats.silent }}</div>
+      <div class="kpi-footer">no alert in 15 min · telemetry online</div>
+    </div>
+  </div>
+
+  <!-- Device Cards Grid (Rule Section 5: Danh tính -> Telemetry #f7f5ef / Silent #fbf6e6 -> Security alerts) -->
+  <div class="devices-grid">
+    {% for d in devices %}
+    <div class="device-card {% if d.status == 'Silent' %}silent{% endif %}">
+      <!-- Top Identity Section -->
+      <div class="soc-card-pad">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <div style="width: 40px; height: 40px; border-radius: var(--radius-md); background-color: var(--color-surface-card-subtle); color: var(--color-text-primary); display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid {{ d.icon }}" style="font-size: 16px;" aria-hidden="true"></i>
+          </div>
+          <span class="soc-badge {% if d.status == 'Reporting' %}badge-reporting{% else %}badge-silent{% endif %}">
+            {{ d.status }}
+          </span>
+        </div>
+        <div class="font-mono" style="font-size: 16px; font-weight: 700; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ d.name }}">{{ d.name }}</div>
+        <div style="font-size: 13px; color: var(--color-text-muted); margin-top: 2px;">{{ d.role }}</div>
+      </div>
+
+      <!-- Middle Telemetry Section (Rule Section 5: Telemetry #f7f5ef; thẻ Silent #fbf6e6) -->
+      <div class="device-telemetry-strip {% if d.status == 'Silent' %}silent{% endif %}">
+        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted);">TELEMETRY</div>
+        <div style="font-size: 12px; font-weight: 600; color: var(--color-text-primary);">{{ d.lastEventRel }}</div>
+        <div class="font-mono" style="font-size: 11px; color: var(--color-text-muted);">{{ d.lastEventTs }}</div>
+        <p style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.45;">{{ d.note }}</p>
+      </div>
+
+      <!-- Bottom Security Alerts Section -->
+      <div class="soc-card-pad" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted);">SECURITY ALERTS</div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 24px; font-weight: 700; color: var(--color-text-primary);">{{ d.alertCount }}</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: {% if d.alertCount == 0 %}0%{% else %}{{ [100, d.alertCount * 25] | min }}%{% endif %};"></div>
+          </div>
+        </div>
+        <a href="/alerts?asset={{ d.name }}"
+           hx-get="/views/alerts?asset={{ d.name }}"
+           hx-target="#main-content"
+           hx-push-url="/alerts?asset={{ d.name }}"
+           class="soc-btn soc-btn-outline" style="width: 100%; font-size: 12px;">
+          View alerts for this device →
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</section>

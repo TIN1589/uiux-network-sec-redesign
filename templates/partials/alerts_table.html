@@ -1,0 +1,101 @@
+<!-- DETECTIONS TABLE PARTIAL -->
+<div class="soc-card soc-card-pad">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+    <div>
+      <h2 class="soc-card-title">Detections</h2>
+      <p id="al-events-found-sub" style="font-size: 12px; color: var(--color-text-muted); margin-top: 2px;">
+        {{ alerts | length }} events match
+      </p>
+    </div>
+  </div>
+
+  <div class="soc-table-wrap">
+    <table class="soc-table" style="table-layout: fixed; min-width: 980px;">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 36px;">
+            <input type="checkbox" id="al-select-all" aria-label="Select all matching alerts"
+                   onchange="toggleSelectAllAlerts(this.checked)" class="soc-checkbox" />
+          </th>
+          <th scope="col" style="width: 90px;">SEVERITY</th>
+          <th scope="col" style="min-width: 280px;">DETECTION</th>
+          <th scope="col" style="width: 150px;">SOURCE / DESTINATION</th>
+          <th scope="col" style="width: 140px;">ASSET</th>
+          <th scope="col" style="width: 130px;">OBSERVED</th>
+          <th scope="col" style="width: 110px;">STATE</th>
+          <th scope="col" style="width: 120px; text-align: right;"><span class="sr-only">Action</span></th>
+        </tr>
+      </thead>
+      <tbody id="al-table-body">
+        {% if alerts | length == 0 %}
+        <tr>
+          <td colspan="8" style="padding: 48px 16px; text-align: center;">
+            <div style="font-size: 16px; font-weight: 700; color: var(--color-text-primary);">No alerts match these filters</div>
+            <p style="font-size: 13px; color: var(--color-text-muted); margin-top: 4px;">
+              Try broadening your time window, clearing search terms, or resetting filters.
+            </p>
+            <button type="button" onclick="resetAllAlertFilters()" class="soc-btn soc-btn-outline" style="margin-top: 14px;">
+              Reset filters
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        {% for a in alerts %}
+        <tr class="clickable" onclick="openAlertDrawer('{{ a.eventId }}')">
+          <td onclick="event.stopPropagation();">
+            <input type="checkbox" data-event-id="{{ a.eventId }}"
+                   onchange="toggleSelectOneAlert('{{ a.eventId }}', this.checked)"
+                   aria-label="Select alert {{ a.eventId }}" class="soc-checkbox alert-row-checkbox" />
+          </td>
+          <td>
+            <span class="soc-badge badge-{{ a.severity | lower }}">{{ a.severity }}</span>
+          </td>
+          <td>
+            <div style="font-weight: 600; color: var(--color-text-primary); line-height: 1.35;">{{ a.title }}</div>
+            <div class="font-mono" style="font-size: 11px; color: var(--color-text-muted); margin-top: 2px; white-space: nowrap;">{{ a.ruleId }}</div>
+          </td>
+          <td class="font-mono" style="font-size: 13px; color: var(--color-text-primary); white-space: nowrap;">
+            <div>{{ a.srcIp }}</div>
+            <div style="color: var(--color-text-muted); margin-top: 2px;">→ {{ a.dstIp }}</div>
+          </td>
+          <td style="white-space: nowrap;">
+            <div style="font-weight: 500; color: var(--color-text-primary); overflow: hidden; text-overflow: ellipsis;">{{ a.asset }}</div>
+            <div style="font-size: 12px; color: var(--color-text-muted); margin-top: 2px;">{{ a.assetType }}</div>
+          </td>
+          <td class="font-mono" style="font-size: 13px; color: var(--color-text-secondary); white-space: nowrap;">
+            <div>{{ a.observedDate }}</div>
+            <div style="color: var(--color-text-muted); margin-top: 2px;">{{ a.observedTime }}</div>
+          </td>
+          <td>
+            <span class="soc-badge badge-{{ a.state | lower }}">{{ a.state }}</span>
+          </td>
+          <td style="text-align: right; white-space: nowrap;" onclick="event.stopPropagation();">
+            <button type="button" onclick="openAlertDrawer('{{ a.eventId }}')" class="soc-btn soc-btn-outline soc-btn-sm">
+              {% if a.state == 'Resolved' %}Open →{% else %}Investigate →{% endif %}
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Footer -->
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 18px; margin-top: 8px; border-top: 1px solid var(--color-border-divider); font-size: 12px; color: var(--color-text-muted);">
+    <span id="al-footer-count">
+      Showing 1–{{ alerts | length }} of {{ alerts | length }} · 15 rows per page
+    </span>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <button type="button" disabled class="soc-btn soc-btn-secondary soc-btn-sm" style="opacity: 0.5; cursor: not-allowed;">
+        Previous
+      </button>
+      <span style="width: 32px; height: 32px; border-radius: var(--radius-full); background-color: var(--color-obsidian-900); color: #FFFFFF; font-weight: 600; display: flex; align-items: center; justify-content: center;">
+        1
+      </span>
+      <button type="button" disabled class="soc-btn soc-btn-secondary soc-btn-sm" style="opacity: 0.5; cursor: not-allowed;">
+        Next
+      </button>
+    </div>
+  </div>
+</div>

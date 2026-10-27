@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>{% block title %}Network Security Monitor – SOC Command Center{% endblock %}</title>
+
+  <!-- Typography: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Icons: FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Modern Vanilla CSS3 Design System (No Tailwind!) -->
+  <link rel="stylesheet" href="/static/css/style.css?v=2.4.2" />
+
+  <!-- Chart.js 4.x & HTMX 2.x -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+
+  <!-- MOBILE SIDEBAR BACKDROP (< 1024px) -->
+  <div id="sidebar-backdrop" onclick="closeMobileSidebar()" class="hidden" aria-hidden="true"></div>
+
+  <!-- MAIN APPLICATION LAYOUT SHELL -->
+  <div class="app-shell">
+
+    <!-- PRIMARY SIDEBAR NAVIGATION -->
+    {% include 'components/sidebar.html' %}
+
+    <!-- MAIN WARM-STONE WORKSPACE -->
+    <div id="workspace-scroll" class="workspace-scroll">
+
+      <!-- STICKY TOPBAR UTILITY HEADER -->
+      {% include 'components/topbar.html' %}
+
+      <!-- MAIN PAGE CONTENT (HTMX SWAP TARGET) -->
+      <main id="main-content" class="content-shell" style="flex: 1;">
+        {% block content %}{% endblock %}
+      </main>
+
+    </div>
+  </div>
+
+  <!-- RIGHT SLIDE-OVER ALERT DRAWER -->
+  {% include 'components/drawer.html' %}
+
+  <!-- 50/50 SPLIT SIGN-IN SCREEN MODAL -->
+  {% include 'components/signin_modal.html' %}
+
+  <!-- FLOATING TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-stack" class="toast-stack" role="status" aria-live="polite"></div>
+
+  <!-- MOBILE BOTTOM TAB BAR (< 768px, Req 10) -->
+  <nav id="mobile-bottom-bar" class="mobile-bottom-bar" aria-label="Mobile Navigation">
+    <a href="/"
+       hx-get="/views/overview"
+       hx-target="#main-content"
+       hx-push-url="/"
+       onclick="if(window.switchTab && document.getElementById('tab-alerts')) { event.preventDefault(); window.switchTab('overview'); }"
+       class="mob-tab-btn active"
+       id="mob-nav-overview">
+      <i class="fa-solid fa-border-all" aria-hidden="true"></i>
+      <span>Overview</span>
+    </a>
+    <a href="/alerts"
+       hx-get="/views/alerts"
+       hx-target="#main-content"
+       hx-push-url="/alerts"
+       onclick="if(window.switchTab && document.getElementById('tab-alerts')) { event.preventDefault(); window.switchTab('alerts'); }"
+       class="mob-tab-btn"
+       id="mob-nav-alerts">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <span>Alerts</span>
+    </a>
+    <a href="/devices"
+       hx-get="/views/devices"
+       hx-target="#main-content"
+       hx-push-url="/devices"
+       onclick="if(window.switchTab && document.getElementById('tab-devices')) { event.preventDefault(); window.switchTab('devices'); }"
+       class="mob-tab-btn"
+       id="mob-nav-devices">
+      <i class="fa-solid fa-desktop" aria-hidden="true"></i>
+      <span>Devices</span>
+    </a>
+    <a href="/scenarios"
+       hx-get="/views/scenarios"
+       hx-target="#main-content"
+       hx-push-url="/scenarios"
+       onclick="if(window.switchTab && document.getElementById('tab-scenarios')) { event.preventDefault(); window.switchTab('scenarios'); }"
+       class="mob-tab-btn"
+       id="mob-nav-scenarios">
+      <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+      <span>Scenarios</span>
+    </a>
+  </nav>
+
+  <!-- VANILLA ES6+ APPLICATION ENGINE -->
+  <script type="module" src="/static/js/app.js?v=2.4.2"></script>
+  {% block scripts %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,124 @@
+/* ==========================================================================
+   CHART.JS LAYOUT & STYLING
+   Responsive Canvas Wrappers and Legends
+   ========================================================================== */
+
+/* General Chart Container */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* Donut Chart Container & Center Value Overlay (Req 5: Donut 150px, label ALERTS 8px) */
+.donut-chart-container {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-chart-container canvas {
+  position: relative;
+  z-index: 2;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.donut-center-metric {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 0.15s ease-out;
+}
+
+.donut-center-metric .metric-val {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.donut-center-metric .metric-label {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5F5B53;
+  margin-top: 3px;
+}
+
+/* Hourly Bar Chart Container (Req 6: Height 200px) */
+.hourly-chart-container {
+  position: relative;
+  height: 200px;
+  width: 100%;
+}
+
+.hourly-chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Sparkline Trend Canvas */
+.kpi-sparkline-wrap {
+  width: 72px;
+  height: 24px;
+}
+
+.kpi-sparkline-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Chart Legend Styling (Req 5: Gap 10px) */
+.chart-legend-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.chart-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chart-legend-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #5F5B53;
+}
+
+.chart-legend-val {
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.chart-legend-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #5F5B53;
+}

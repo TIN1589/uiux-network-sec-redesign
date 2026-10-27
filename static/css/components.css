@@ -1,0 +1,1171 @@
+/* ==========================================================================
+   COMPONENTS DESIGN SYSTEM
+   Modern Vanilla CSS3 Components
+   ========================================================================== */
+
+/* ==========================================================================
+   1. CARDS & SURFACES
+   ========================================================================== */
+.soc-card {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  border: 1px solid #E7E4DC;
+  padding: 24px;
+  box-sizing: border-box;
+  box-shadow: none !important;
+}
+
+.soc-card-pad {
+  padding: 24px;
+}
+
+.soc-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.soc-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.soc-card-subtitle {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   2. BUTTONS (Rule Section 5: 3 distinct types only)
+   ========================================================================== */
+.soc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 999px;
+  padding: 8px 16px;
+  min-height: 34px;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.soc-btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid #141413 !important;
+  outline-offset: 2px !important;
+}
+
+input, select, textarea {
+  outline: none !important;
+}
+
+/* Button Type 1: Primary (bg #121212, text white, pill, height 40px) */
+.soc-btn-primary {
+  background-color: #121212;
+  color: #FFFFFF;
+  border: 1px solid #121212;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 14px;
+  border-radius: 999px;
+}
+
+.soc-btn-primary:hover {
+  background-color: #262626;
+  border-color: #262626;
+}
+
+/* Button Type 2: Secondary / Outline (bg white, border 1px #141413, pill, min-height 34px) */
+.soc-btn-outline,
+.soc-btn-secondary {
+  background-color: #FFFFFF;
+  color: #141413;
+  border: 1px solid #141413;
+  min-height: 34px;
+  padding: 6px 16px;
+  border-radius: 999px;
+}
+
+.soc-btn-outline:hover,
+.soc-btn-secondary:hover {
+  background-color: #F3F1EC;
+  color: #141413;
+}
+
+.soc-btn-sm {
+  min-height: 34px;
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.soc-btn-lg {
+  min-height: 40px;
+  height: 40px;
+  padding: 0 24px;
+  font-size: 14px;
+}
+
+/* Button Type 3: Icon-only (36x36, pill, must have aria-label) */
+.soc-btn-icon {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  max-width: 36px;
+  max-height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.soc-btn-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+}
+
+.soc-btn-link:hover {
+  color: var(--color-text-secondary);
+}
+
+/* ==========================================================================
+   3. PILLS & BADGES
+   ========================================================================== */
+.soc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.badge-critical {
+  background-color: var(--color-sev-critical-bg);
+  color: var(--color-sev-critical-text);
+}
+
+.badge-high {
+  background-color: var(--color-sev-high-bg);
+  color: var(--color-sev-high-text);
+}
+
+.badge-medium {
+  background-color: var(--color-sev-medium-bg);
+  color: var(--color-sev-medium-text);
+}
+
+.badge-low {
+  background-color: var(--color-sev-low-bg);
+  color: var(--color-sev-low-text);
+}
+
+.badge-new {
+  background-color: var(--color-state-new-bg);
+  color: var(--color-state-new-text);
+}
+
+.badge-investigating {
+  background-color: var(--color-state-investigating-bg);
+  border: 1px solid var(--color-state-investigating-border);
+  color: var(--color-state-investigating-text);
+}
+
+.badge-acknowledged {
+  background-color: var(--color-state-ack-bg);
+  color: var(--color-state-ack-text);
+}
+
+.badge-resolved {
+  background-color: var(--color-state-resolved-bg);
+  color: var(--color-state-resolved-text);
+}
+
+.badge-reporting {
+  background-color: #DCFCE7;
+  color: #166534;
+}
+
+.badge-silent {
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+/* Dot indicator */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+}
+
+.dot-critical { background-color: var(--color-sev-critical); }
+.dot-high { background-color: var(--color-sev-high); }
+.dot-medium { background-color: var(--color-sev-medium); }
+.dot-low { background-color: var(--color-sev-low); }
+.dot-live { background-color: var(--color-status-live); }
+.dot-paused { background-color: var(--color-status-paused); }
+.dot-disconnected { background-color: var(--color-status-disconnected); }
+.dot-dark { background-color: var(--color-obsidian-900); }
+.dot-lime { background-color: var(--color-accent-lime); }
+
+/* ==========================================================================
+   4. KPI STRIPS (Req 3: Card liền, grid 5 cột, border-left 1px, pad 20px 24px)
+   ========================================================================== */
+.kpi-strip {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  border: 1px solid #E7E4DC;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.kpi-strip-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.kpi-strip-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.kpi-strip-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.kpi-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.kpi-cell {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  border-left: 1px solid #E7E4DC;
+  transition: background-color var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.kpi-cell:first-child {
+  border-left: none;
+}
+
+.kpi-cell.clickable {
+  cursor: pointer;
+}
+
+.kpi-cell.clickable:hover {
+  background-color: #F3F1EC;
+}
+
+.kpi-cell.clickable:focus-visible {
+  outline: 2px solid #141413;
+  outline-offset: -2px;
+}
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5F5B53;
+  min-height: 16px;
+  margin: 0;
+}
+
+.kpi-number {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-text-primary);
+  margin-top: 10px;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-footer {
+  font-size: 12px;
+  color: #5F5B53;
+  line-height: 1.4;
+  margin: 0;
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .kpi-strip,
+  .kpi-strip-5,
+  .kpi-strip-4 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .kpi-strip,
+  .kpi-strip-5,
+  .kpi-strip-4,
+  .kpi-strip-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .kpi-cell {
+    border-left: none;
+    border-top: 1px solid #E7E4DC;
+  }
+  .kpi-cell:nth-child(1),
+  .kpi-cell:nth-child(2) {
+    border-top: none;
+  }
+  .kpi-cell:nth-child(2n) {
+    border-left: 1px solid #E7E4DC;
+  }
+}
+
+/* ==========================================================================
+   5. SEGMENTED CONTROLS & PILLS
+   ========================================================================== */
+.segmented-pill-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  background-color: rgba(229, 228, 220, 0.85);
+  font-size: 12px;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.segmented-pill-btn {
+  min-height: 32px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.segmented-pill-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.segmented-pill-btn.active {
+  background-color: var(--color-obsidian-900);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-2xs);
+}
+
+/* ==========================================================================
+   6. FORMS & INPUTS
+   ========================================================================== */
+.soc-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.soc-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: block;
+}
+
+.soc-form-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.soc-label-sub {
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin-left: 4px;
+}
+
+/* Input Wrapper (Smooth Focus-Within & No Double Border) */
+.soc-input-wrap,
+.soc-input-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--color-border-input);
+  background-color: #FFFFFF;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.soc-input-wrap:focus-within,
+.soc-input-icon-wrap:focus-within {
+  border-color: #141413 !important;
+  box-shadow: 0 0 0 1px #141413 !important;
+}
+
+/* Inner inputs inside wrappers: borderless, outline-less, transparent */
+.soc-input-wrap input,
+.soc-input-wrap select,
+.soc-input-wrap textarea,
+.soc-input-icon-wrap input,
+.soc-input-icon-wrap select,
+.soc-input-icon-wrap textarea {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  height: 100% !important;
+  width: 100% !important;
+  padding: 0 14px;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  border-radius: var(--radius-input);
+  box-sizing: border-box;
+}
+
+.soc-input,
+.soc-select {
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--color-border-input);
+  background-color: #FFFFFF;
+  color: var(--color-text-primary);
+  box-sizing: border-box;
+  outline: none !important;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.soc-textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 14px;
+  font-size: 14px;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--color-border-input);
+  background-color: #FFFFFF;
+  color: var(--color-text-primary);
+  box-sizing: border-box;
+  outline: none !important;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.soc-select {
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.soc-input:focus,
+.soc-select:focus,
+.soc-textarea:focus,
+.soc-input:focus-visible,
+.soc-select:focus-visible,
+.soc-textarea:focus-visible {
+  outline: none !important;
+  border-color: #141413 !important;
+  box-shadow: 0 0 0 1px #141413 !important;
+}
+
+.soc-input-icon-wrap i {
+  position: absolute;
+  left: 14px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.soc-input-icon-wrap .soc-input,
+.soc-input-icon-wrap input {
+  padding-left: 38px !important;
+}
+
+.soc-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border-input);
+  cursor: pointer;
+  accent-color: #121212;
+}
+
+/* Active filter chips */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 12px;
+  border-radius: var(--radius-full);
+  background-color: rgba(229, 228, 220, 0.95);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.filter-chip-remove {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.filter-chip-remove:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: var(--color-text-primary);
+}
+
+/* ==========================================================================
+   7. TABLES (Req 8: Top triggered rules styling)
+   ========================================================================== */
+.soc-table-wrap {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.soc-table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}
+
+.soc-table th {
+  position: relative;
+  padding-bottom: 12px;
+  padding-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5F5B53;
+  border-bottom: 1px solid #E7E4DC;
+  white-space: nowrap;
+}
+
+.soc-table td {
+  padding: 14px 12px;
+  font-size: 13px;
+  border-top: 1px solid #EFECE5;
+  border-bottom: none;
+  vertical-align: middle;
+}
+
+.soc-table .font-mono,
+.soc-table td.font-mono {
+  white-space: nowrap;
+}
+
+.soc-table tbody tr:first-child td {
+  border-top: none;
+}
+
+.soc-table tr.clickable {
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.soc-table tr.clickable:hover {
+  background-color: #F3F1EC;
+}
+
+.soc-table tr.highlighted {
+  background-color: var(--color-surface-highlight);
+}
+
+/* Rules Table Fixed Column Widths (Req 8: RULE 110, SEV 120, HITS 80, LAST SEEN 120, DESC rest) */
+.rules-table {
+  table-layout: fixed;
+}
+
+.rules-table .rule-col {
+  width: 110px;
+  color: #5F5B53;
+  font-size: 12px;
+}
+
+.rules-table .desc-col {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rules-table .sev-col {
+  width: 120px;
+}
+
+.rules-table .hits-col {
+  width: 80px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.rules-table .last-seen-col {
+  width: 120px;
+  text-align: right;
+  color: #5F5B53;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   7A. ROW ACTION MENU & DROPDOWN / DROPUP (Test results & Data tables)
+   ========================================================================== */
+.row-action-cell {
+  position: relative;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.row-action-menu-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+/* Stacking context management:
+   Elevate active row/cell to z-index 50 so its dropdown is never covered
+   by elements or buttons in subsequent rows */
+tr.menu-open,
+tr.menu-open td,
+td.row-action-cell.menu-open,
+.row-action-menu-wrap.menu-open {
+  position: relative !important;
+  z-index: 50 !important;
+}
+
+/* Row Action Dropdown Menu Container */
+.row-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 124px;
+  background: var(--color-bg-surface, #FFFFFF);
+  border: 1px solid var(--color-border-subtle, #E7E4DC);
+  border-radius: var(--radius-dropdown, 10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.04);
+  z-index: 100 !important;
+  padding: 4px 0;
+  text-align: left;
+}
+
+/* Dropup: When near bottom or on bottom rows, pop upward above the row */
+.row-menu-dropdown.dropup,
+.soc-table tbody tr:not(:first-child):last-child .row-menu-dropdown,
+.soc-table tbody tr:not(:first-child):nth-last-child(2) .row-menu-dropdown {
+  top: auto !important;
+  bottom: calc(100% + 4px) !important;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12), 0 -2px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+.row-menu-item {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary, #141413);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background var(--transition-fast, 0.15s ease);
+}
+
+.row-menu-item:hover {
+  background: var(--color-bg-hover, #F5F4EF);
+}
+
+.row-menu-item.danger {
+  color: var(--color-danger, #D92D20);
+}
+
+.row-menu-item.danger:hover {
+  background: #FEE4E2;
+}
+
+/* ==========================================================================
+   7B. DISTRIBUTION LIST (Req 7: Top source IPs / Device type)
+   ========================================================================== */
+.distribution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.distribution-row {
+  display: grid;
+  grid-template-columns: 112px 1fr 64px;
+  align-items: center;
+  gap: 12px;
+}
+
+.dist-label {
+  width: 112px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dist-bar-track {
+  height: 6px;
+  width: 100%;
+  border-radius: 3px;
+  background-color: #EBE8E0;
+  overflow: hidden;
+}
+
+.dist-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background-color: #141413;
+  transition: width 0.3s ease;
+}
+
+.dist-val {
+  width: 64px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #5F5B53;
+}
+
+.distribution-divider {
+  padding-top: 24px;
+  border-top: 1px solid #E7E4DC;
+  margin-top: 24px;
+}
+
+/* ==========================================================================
+   8. BULK ACTION BAR
+   ========================================================================== */
+.bulk-action-bar {
+  position: sticky;
+  top: 56px;
+  z-index: 15;
+  background-color: var(--color-obsidian-900);
+  color: #FFFFFF;
+  border-radius: var(--radius-xl);
+  padding: 12px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: var(--shadow-md);
+  animation: slideDownFade 0.2s ease-out forwards;
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   9. SLIDE-OVER ALERT DRAWER
+   ========================================================================== */
+.soc-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 19, 20, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+}
+
+.soc-drawer-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.soc-drawer {
+  width: 100%;
+  max-width: 520px;
+  height: 88vh;
+  background-color: #FFFFFF;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  box-shadow: var(--shadow-2xl);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform var(--transition-drawer);
+}
+
+@media (min-width: 768px) {
+  .soc-drawer-backdrop {
+    align-items: stretch;
+  }
+  .soc-drawer {
+    height: 100vh;
+    border-radius: 0;
+    padding: 30px;
+    transform: translateX(100%);
+  }
+}
+
+.soc-drawer-backdrop.active .soc-drawer {
+  transform: translate(0, 0);
+}
+
+.drawer-grab-handle {
+  width: 44px;
+  height: 5px;
+  background-color: #D6D3D1;
+  border-radius: var(--radius-full);
+  margin: -8px auto 16px;
+}
+
+@media (min-width: 768px) {
+  .drawer-grab-handle {
+    display: none;
+  }
+}
+
+/* Raw payload snippet box */
+.code-payload-well {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-obsidian-900);
+  color: var(--color-accent-lime);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  user-select: text;
+}
+
+/* Playbook well */
+.playbook-well {
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-highlight);
+}
+
+/* ==========================================================================
+   10. SIGN-IN MODAL (50/50 SPLIT)
+   ========================================================================== */
+.signin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background-color: var(--color-bg-workspace);
+  overflow-y: auto;
+  display: none;
+}
+
+.signin-modal-backdrop.active {
+  display: block;
+}
+
+.signin-split-grid {
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .signin-split-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.signin-left-matte {
+  background-color: var(--color-obsidian-900);
+  color: #FFFFFF;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+@media (min-width: 768px) {
+  .signin-left-matte {
+    padding: 64px;
+  }
+}
+
+.signin-right-form {
+  background-color: var(--color-bg-workspace);
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .signin-right-form {
+    padding: 64px;
+  }
+}
+
+.signin-form-box {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ==========================================================================
+   11. TOAST NOTIFICATIONS
+   ========================================================================== */
+.toast-stack {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  padding: 12px 18px;
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow-lg);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-dark {
+  background-color: var(--color-obsidian-900);
+  color: #FFFFFF;
+}
+
+.toast-light {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border-card);
+  color: var(--color-text-primary);
+}
+
+.toast-error {
+  background-color: var(--color-sev-critical-bg);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  color: var(--color-sev-critical-text);
+}
+
+/* ==========================================================================
+   12. DEVICES CARDS GRID
+   ========================================================================== */
+.devices-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--block-gap);
+}
+
+@media (min-width: 640px) {
+  .devices-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .devices-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.device-card {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.device-telemetry-strip {
+  padding: 16px 20px;
+  background-color: #F7F5EF;
+  border-top: 1px solid var(--color-border-divider);
+  border-bottom: 1px solid var(--color-border-divider);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.device-telemetry-strip.silent {
+  background-color: #FBF6E6;
+}
+
+/* Progress bar inside cards (Rule Section 5: height 6px, radius 3, bg #ebe8e0, fill #141413) */
+.bar-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background-color: #EBE8E0;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background-color: #141413;
+  transition: width 0.3s ease;
+}
+
+/* ==========================================================================
+   13. ATTACK SCENARIO COMPUTED DELTA WELL
+   ========================================================================== */
+.delta-well {
+  background-color: var(--color-surface-card-subtle);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+.delta-gauge-track {
+  position: relative;
+  height: 8px;
+  width: 100%;
+  border-radius: 3px;
+  background-color: #EBE8E0;
+}
+
+.delta-gauge-fill {
+  height: 100%;
+  border-radius: 3px;
+  background-color: #141413;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.delta-target-marker {
+  position: absolute;
+  top: -6px;
+  bottom: 0;
+  left: 83.33%; /* 5s of 6s */
+  width: 2px;
+  height: 20px;
+  background-color: var(--color-obsidian-900);
+}
+
+.delta-target-label {
+  position: absolute;
+  top: -20px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* =========================================================
+   ROLE SWITCHER & ANALYST DROPDOWN — ASSUMPTION-03
+   ========================================================= */
+.role-switcher-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.role-switcher-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--color-text-primary);
+}
+
+.role-btn-active {
+  background: rgba(163, 230, 53, 0.12) !important;
+  color: var(--color-text-primary) !important;
+  font-weight: 600;
+}
+
+/* Role-gated elements: hide when role is insufficient */
+[data-min-role="tier2"].role-hidden,
+[data-min-role="admin"].role-hidden {
+  display: none !important;
+}
+
+/* Demo role badge in topbar */
+#topbar-role-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: rgba(163, 230, 53, 0.15);
+  color: var(--color-accent-lime);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}

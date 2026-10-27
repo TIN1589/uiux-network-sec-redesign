@@ -1,0 +1,87 @@
+<!-- 50/50 SPLIT SIGN-IN SCREEN MODAL -->
+<div id="signin-modal" role="dialog" aria-modal="true" aria-labelledby="signin-heading" class="signin-modal-backdrop">
+  <div class="signin-split-grid">
+    <!-- Left Matte-Black Half -->
+    <div class="signin-left-matte">
+      <div>
+        <div style="width: 44px; height: 44px; border-radius: var(--radius-lg); background-color: var(--color-accent-lime); color: var(--color-obsidian-900); display: flex; align-items: center; justify-content: center;">
+          <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" />
+          </svg>
+        </div>
+      </div>
+
+      <div style="margin-block: auto; padding-block: 32px;">
+        <h1 style="font-size: clamp(36px, 4vw, 56px); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; color: #FFFFFF;">
+          Network<br />Security<br />Monitor
+        </h1>
+        <p style="color: #A8A29E; font-size: 16px; margin-top: 16px;">Security Operations Center</p>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #D6D3D1;">
+          <span class="status-dot dot-lime" aria-hidden="true"></span>
+          <span>Live monitoring</span>
+        </div>
+        <button type="button" onclick="closeSignInModal()" style="font-size: 12px; color: #A8A29E; text-decoration: underline; cursor: pointer;">
+          Return to SOC Console →
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Warm-Stone Half -->
+    <div class="signin-right-form">
+      <div class="signin-form-box">
+        <div>
+          <h2 id="signin-heading" style="font-size: 28px; font-weight: 700; color: var(--color-text-primary); letter-spacing: -0.02em;">
+            Sign in
+          </h2>
+          <p style="font-size: 14px; color: var(--color-text-secondary); margin-top: 4px;">
+            Sign in to view network alerts and manage incidents.
+          </p>
+        </div>
+
+        <!-- Error Banner -->
+        <div id="signin-err-banner" role="alert" class="hidden" style="padding: 12px 16px; border-radius: var(--radius-md); background-color: var(--color-sev-critical-bg); color: var(--color-sev-critical-text); font-size: 13px; font-weight: 500;">
+          Invalid username or password
+        </div>
+
+        <form id="signin-form" onsubmit="submitSignInForm(event)" style="display: flex; flex-direction: column; gap: 16px;">
+          <input type="hidden" id="signin-csrf" name="csrf_token" value="" />
+          <div class="soc-form-group">
+            <label for="signin-user" class="soc-label">Username</label>
+            <div class="soc-input-wrap">
+              <input type="text" id="signin-user" value="admin" required autocomplete="username"
+                oninput="hideSignInError()"
+                class="soc-input" />
+            </div>
+          </div>
+
+          <div class="soc-form-group">
+            <label for="signin-pwd" class="soc-label">Password</label>
+            <div class="soc-input-wrap">
+              <input type="password" id="signin-pwd" required autocomplete="current-password"
+                oninput="hideSignInError()" onkeyup="checkCapsLock(event)" onkeydown="checkCapsLock(event)"
+                class="soc-input" style="padding-right: 64px;" />
+              <button type="button" onclick="toggleSignInPwd()" id="signin-pwd-btn"
+                style="position: absolute; right: 12px; font-size: 12px; font-weight: 700; color: var(--color-text-primary); cursor: pointer; background: none; border: none;">
+                Show
+              </button>
+            </div>
+            <div id="signin-capslock-hint" class="hidden" style="font-size: 12px; color: #B45309; font-weight: 500; margin-top: 4px;">
+              <i class="fa-solid fa-circle-exclamation" style="margin-right: 4px;" aria-hidden="true"></i>Caps Lock is on
+            </div>
+          </div>
+
+          <button type="submit" class="soc-btn soc-btn-primary soc-btn-lg" style="margin-top: 8px;">
+            Sign in
+          </button>
+        </form>
+
+        <div style="font-size: 12px; color: var(--color-text-muted);">
+          Authorized personnel only · VNPT Cybersecurity SOC
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

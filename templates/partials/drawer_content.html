@@ -1,0 +1,108 @@
+<!-- INNER ALERT DRAWER CONTENT -->
+<div style="display: flex; flex-direction: column; gap: 24px;">
+  <!-- Mobile Grab Handle -->
+  <div class="drawer-grab-handle" aria-hidden="true"></div>
+
+  <!-- Header Pills & Close Button -->
+  <div style="display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span id="dw-severity" class="soc-badge badge-{{ alert.severity | lower }}">
+        {{ alert.severity }}
+      </span>
+      <span id="dw-state" class="soc-badge badge-{{ alert.state | lower }}">
+        {{ alert.state }}
+      </span>
+    </div>
+    <button type="button" id="dw-close-btn" onclick="closeAlertDrawer()" class="soc-btn soc-btn-secondary soc-btn-sm">
+      Close
+    </button>
+  </div>
+
+  <!-- Alert Title & Rule / Event ID Meta -->
+  <div>
+    <h2 id="dw-title" style="font-size: 22px; font-weight: 700; color: var(--color-text-primary); line-height: 1.25;">
+      {{ alert.title }}
+    </h2>
+    <p id="dw-rule-meta" style="font-family: var(--font-mono); font-size: 12px; color: var(--color-text-muted); margin-top: 6px;">
+      Rule {{ alert.ruleId }} · {{ alert.eventId }}
+    </p>
+  </div>
+
+  <!-- 2x2 Metadata Grid -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; padding-top: 16px; border-top: 1px solid var(--color-border-divider);">
+    <div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">OBSERVED</div>
+      <div id="dw-observed" style="font-family: var(--font-mono); font-size: 13px; color: var(--color-text-primary); margin-top: 4px; line-height: 1.4;">
+        {{ alert.observedDate }}<br>{{ alert.observedTime }}
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">ASSET</div>
+      <div id="dw-asset" style="font-family: var(--font-mono); font-size: 13px; color: var(--color-text-primary); margin-top: 4px;">
+        {{ alert.asset }}
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">SOURCE / DESTINATION</div>
+      <div id="dw-src-dst" style="font-family: var(--font-mono); font-size: 13px; color: var(--color-text-primary); margin-top: 4px;">
+        {{ alert.srcIp }} → {{ alert.dstIp }}
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">MITRE ATT&CK</div>
+      <div id="dw-mitre" style="font-family: var(--font-mono); font-size: 13px; color: var(--color-text-primary); margin-top: 4px;">
+        {{ alert.mitre }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Raw Payload Box -->
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">RAW PAYLOAD</span>
+      <button type="button" onclick="copyDrawerPayload()" class="soc-btn soc-btn-outline soc-btn-sm" style="padding: 4px 12px; min-height: 28px;">
+        Copy
+      </button>
+    </div>
+    <div id="dw-payload" class="code-payload-well">
+      {{ alert.rawSyslog }}
+    </div>
+  </div>
+
+  <!-- Recommended Response Playbook -->
+  <div class="playbook-well">
+    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #3F6212; margin-bottom: 6px;">RECOMMENDED RESPONSE</div>
+    <p id="dw-playbook" style="font-family: var(--font-mono); font-size: 12px; color: #1E293B; line-height: 1.5; white-space: pre-line;">
+      {{ alert.playbook }}
+    </p>
+  </div>
+</div>
+
+<!-- Bottom Action Pills -->
+<div style="padding-top: 24px; border-top: 1px solid var(--color-border-divider); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 20px;">
+  <button type="button"
+          hx-post="/api/alerts/{{ alert.eventId }}/state"
+          hx-vals='{"state": "Acknowledged"}'
+          hx-target="#alert-drawer-container"
+          class="soc-btn soc-btn-primary"
+          style="flex: 1;">
+    Acknowledge
+  </button>
+  <button type="button"
+          data-min-role="tier2"
+          hx-post="/api/alerts/{{ alert.eventId }}/state"
+          hx-vals='{"state": "Investigating"}'
+          hx-target="#alert-drawer-container"
+          class="soc-btn soc-btn-outline"
+          style="flex: 1;">
+    Mark investigating
+  </button>
+  <button type="button"
+          data-min-role="tier2"
+          hx-post="/api/alerts/{{ alert.eventId }}/state"
+          hx-vals='{"state": "Resolved"}'
+          hx-target="#alert-drawer-container"
+          class="soc-btn soc-btn-secondary">
+    Resolve
+  </button>
+</div>

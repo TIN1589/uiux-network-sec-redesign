@@ -1,0 +1,215 @@
+<!-- =================================================================== -->
+<!-- PAGE 2: ALERTS (ALERT QUEUE)                                        -->
+<!-- =================================================================== -->
+<section id="tab-alerts" class="stack-blocks" aria-label="Alert Queue">
+
+  <!-- Title & Export CSV Button (Rule Section 4: Export CSV căn đáy với dòng phụ đề) -->
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;">
+    <div>
+      <h1 class="fluid-h1">Alert queue</h1>
+      <p style="font-size: 15px; color: var(--color-text-secondary); margin-top: 2px;">
+        Triage detections, inspect affected entities, and prioritize analyst response.
+      </p>
+    </div>
+    <a data-min-role="tier2" href="/api/export/alerts.csv" download="soc_alerts_export.csv" class="soc-btn soc-btn-outline">
+      <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
+      Export CSV
+    </a>
+  </div>
+
+  <!-- Unified 4-Column KPI Strip (Rule Section 3: 40px/700, line-height 1) -->
+  <div class="kpi-strip kpi-strip-4">
+    <div class="kpi-cell">
+      <div class="kpi-header">
+        <span class="status-dot dot-dark" aria-hidden="true"></span>
+        <span>MATCHING ALERTS</span>
+      </div>
+      <div id="al-kpi-matching" class="kpi-number">{{ alerts_stats.total }}</div>
+      <div class="kpi-footer">current query</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-header">
+        <span class="status-dot dot-low" aria-hidden="true"></span>
+        <span>NEW</span>
+      </div>
+      <div id="al-kpi-new" class="kpi-number">{{ alerts_stats.new }}</div>
+      <div class="kpi-footer">on this page</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-header">
+        <span class="status-dot dot-critical" aria-hidden="true"></span>
+        <span>CRITICAL</span>
+      </div>
+      <div id="al-kpi-crit" class="kpi-number">{{ alerts_stats.crit }}</div>
+      <div class="kpi-footer">immediate review</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-header">
+        <span class="status-dot dot-high" aria-hidden="true"></span>
+        <span>HIGH</span>
+      </div>
+      <div id="al-kpi-high" class="kpi-number">{{ alerts_stats.high }}</div>
+      <div class="kpi-footer">prioritize next</div>
+    </div>
+  </div>
+
+  <!-- State Quick-Filter Segmented Pills -->
+  <div class="segmented-pill-group" role="group" aria-label="Filter alerts by state">
+    <button type="button"
+            hx-get="/api/alerts/filter?state=ALL"
+            hx-target="#alerts-table-container"
+            hx-include="#alerts-filter-form"
+            onclick="const h = document.getElementById('al-state-hidden'); if(h) h.value='ALL'; document.querySelectorAll('.state-pill').forEach(b => b.classList.remove('active')); this.classList.add('active');"
+            class="segmented-pill-btn state-pill {% if not current_state or current_state == 'ALL' %}active{% endif %}">
+      All <span style="margin-left: 4px; opacity: 0.8;">{{ total_count }}</span>
+    </button>
+    <button type="button"
+            hx-get="/api/alerts/filter?state=New"
+            hx-target="#alerts-table-container"
+            hx-include="#alerts-filter-form"
+            onclick="const h = document.getElementById('al-state-hidden'); if(h) h.value='New'; document.querySelectorAll('.state-pill').forEach(b => b.classList.remove('active')); this.classList.add('active');"
+            class="segmented-pill-btn state-pill {% if current_state == 'New' %}active{% endif %}">
+      New <span style="margin-left: 4px; opacity: 0.8;">{{ alerts_stats.new }}</span>
+    </button>
+    <button type="button"
+            hx-get="/api/alerts/filter?state=Investigating"
+            hx-target="#alerts-table-container"
+            hx-include="#alerts-filter-form"
+            onclick="const h = document.getElementById('al-state-hidden'); if(h) h.value='Investigating'; document.querySelectorAll('.state-pill').forEach(b => b.classList.remove('active')); this.classList.add('active');"
+            class="segmented-pill-btn state-pill {% if current_state == 'Investigating' %}active{% endif %}">
+      Investigating <span style="margin-left: 4px; opacity: 0.8;">{{ alerts_stats.investigating }}</span>
+    </button>
+    <button type="button"
+            hx-get="/api/alerts/filter?state=Resolved"
+            hx-target="#alerts-table-container"
+            hx-include="#alerts-filter-form"
+            onclick="const h = document.getElementById('al-state-hidden'); if(h) h.value='Resolved'; document.querySelectorAll('.state-pill').forEach(b => b.classList.remove('active')); this.classList.add('active');"
+            class="segmented-pill-btn state-pill {% if current_state == 'Resolved' %}active{% endif %}">
+      Resolved <span style="margin-left: 4px; opacity: 0.8;">{{ alerts_stats.resolved }}</span>
+    </button>
+  </div>
+
+  <!-- Floating Sticky Bulk Selection Action Bar -->
+  <div id="bulk-action-bar" class="bulk-action-bar hidden" role="region" aria-label="Bulk actions">
+    <div style="font-weight: 600; font-size: 15px;">
+      <span id="bulk-count-text">0 selected</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+      <button type="button" onclick="executeBulkState('Acknowledged')" class="soc-btn soc-btn-sm" style="background-color: #FFFFFF; color: var(--color-obsidian-900);">
+        Acknowledge
+      </button>
+      <button type="button" data-min-role="tier2" onclick="executeBulkState('Investigating')" class="soc-btn soc-btn-sm" style="border: 1px solid #78716C; color: #FFFFFF;">
+        Mark investigating
+      </button>
+      <button type="button" data-min-role="tier2" onclick="executeBulkState('Resolved')" class="soc-btn soc-btn-sm" style="border: 1px solid #78716C; color: #FFFFFF;">
+        Resolve
+      </button>
+      <button type="button" onclick="clearBulkSelection()" style="font-size: 12px; color: #A8A29E; text-decoration: underline; margin-left: 4px; cursor: pointer;">
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <!-- Search & Collapsible Advanced Filters Card -->
+  <div class="soc-card soc-card-pad" style="display: flex; flex-direction: column; gap: 16px;">
+    <form id="alerts-filter-form"
+          hx-get="/api/alerts/filter"
+          hx-target="#alerts-table-container"
+          hx-trigger="input from:#al-search delay:200ms, change from:#al-time, change from:#al-severity, input from:#al-rule-id delay:200ms, input from:#al-src-ip delay:200ms, change from:#al-asset">
+      <input type="hidden" id="al-state-hidden" name="state" value="{{ current_state or 'ALL' }}" />
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
+        <div style="grid-column: span 2;">
+          <label for="al-search" class="soc-label">Search alerts</label>
+          <div class="soc-input-icon-wrap" style="margin-top: 6px;">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input type="text" id="al-search" name="q" placeholder="Rule, device, IP, or event text" class="soc-input" />
+          </div>
+        </div>
+
+        <div>
+          <label for="al-time" class="soc-label">Time range</label>
+          <div class="soc-input-wrap" style="margin-top: 6px;">
+            <select id="al-time" name="time" class="soc-select">
+              <option value="Last 24 hours">Last 24 hours</option>
+              <option value="Last 1 hour">Last 1 hour</option>
+              <option value="Last 7 days">Last 7 days</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="al-severity" class="soc-label">Severity</label>
+          <div class="soc-input-wrap" style="margin-top: 6px;">
+            <select id="al-severity" name="severity" class="soc-select">
+              <option value="ALL" {% if not current_severity or current_severity == 'ALL' %}selected{% endif %}>All severities</option>
+              <option value="Critical" {% if current_severity == 'Critical' %}selected{% endif %}>Critical</option>
+              <option value="High" {% if current_severity == 'High' %}selected{% endif %}>High</option>
+              <option value="Medium" {% if current_severity == 'Medium' %}selected{% endif %}>Medium</option>
+              <option value="Low" {% if current_severity == 'Low' %}selected{% endif %}>Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <button type="submit" class="soc-btn soc-btn-primary" style="width: 100%; min-height: 40px;">
+            Apply filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Filter Toggle Controls -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; margin-top: 4px;">
+        <button type="button" onclick="toggleAdvancedFilters()" id="adv-filter-toggle-btn" aria-expanded="false" class="soc-btn-link" style="display: flex; align-items: center; gap: 6px;">
+          <i id="adv-filter-caret" class="fa-solid fa-caret-right" aria-hidden="true" style="transition: transform 0.2s;"></i>
+          <span>Advanced filters</span>
+        </button>
+
+        <button type="button" onclick="resetAllAlertFilters()" class="soc-btn-link">
+          Reset filters
+        </button>
+      </div>
+
+      <!-- Collapsible Advanced Filters Inputs -->
+      <div id="adv-filters-panel" class="hidden" style="padding-top: 14px; border-top: 1px solid var(--color-border-divider); margin-top: 10px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+          <div class="soc-form-group">
+            <label for="al-rule-id" class="soc-label">Rule ID</label>
+            <div class="soc-input-wrap">
+              <input type="text" id="al-rule-id" name="rule" placeholder="e.g. 100201" class="soc-input font-mono" />
+            </div>
+          </div>
+          <div class="soc-form-group">
+            <label for="al-src-ip" class="soc-label">Source IP</label>
+            <div class="soc-input-wrap">
+              <input type="text" id="al-src-ip" name="ip" placeholder="e.g. 203.0.113.45" class="soc-input font-mono" />
+            </div>
+          </div>
+          <div class="soc-form-group">
+            <label for="al-asset" class="soc-label">Asset</label>
+            <div class="soc-input-wrap">
+              <select id="al-asset" name="asset" class="soc-select">
+                <option value="ALL">All assets</option>
+                <option value="vnpt-edge-fw-01">vnpt-edge-fw-01</option>
+                <option value="vnpt-core-router-01">vnpt-core-router-01</option>
+                <option value="vnpt-agg-switch-05">vnpt-agg-switch-05</option>
+                <option value="vnpt-access-sw-02">vnpt-access-sw-02</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Detections Table Card (Container swapped by HTMX) -->
+  <div id="alerts-table-container"
+    hx-get="/api/alerts/filter"
+    hx-trigger="every 10s"
+    hx-target="this"
+    hx-swap="innerHTML"
+    hx-include="#alerts-filter-form">
+    {% include 'partials/alerts_table.html' %}
+  </div>
+
+</section>

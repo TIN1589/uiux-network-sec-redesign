@@ -1,0 +1,310 @@
+<!-- =================================================================== -->
+<!-- PAGE 1: OVERVIEW (SOC COMMAND CENTER)                               -->
+<!-- =================================================================== -->
+<section id="tab-overview" class="stack-blocks" aria-label="SOC Command Center Overview" data-window="{{ current_window or '24h' }}">
+
+  <!-- Title & Segmented Time Pill -->
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;">
+    <div>
+      <h1 class="fluid-h1">SOC Command Center</h1>
+      <p style="font-size: 15px; color: var(--color-text-secondary); margin-top: 2px;">
+        Triage and investigate network threats.
+      </p>
+    </div>
+
+    <!-- 1h / 24h / 7d Pill Switcher -->
+    <div class="segmented-pill-group" role="group" aria-label="Time window filter">
+      <button type="button"
+              hx-get="/api/overview/stats?window=1h"
+              hx-target="#tab-overview"
+              hx-swap="outerHTML"
+              id="time-btn-1h"
+              class="segmented-pill-btn {% if current_window == '1h' %}active{% endif %}">
+        1h
+      </button>
+      <button type="button"
+              hx-get="/api/overview/stats?window=24h"
+              hx-target="#tab-overview"
+              hx-swap="outerHTML"
+              id="time-btn-24h"
+              class="segmented-pill-btn {% if current_window == '24h' or not current_window %}active{% endif %}">
+        24h
+      </button>
+      <button type="button"
+              hx-get="/api/overview/stats?window=7d"
+              hx-target="#tab-overview"
+              hx-swap="outerHTML"
+              id="time-btn-7d"
+              class="segmented-pill-btn {% if current_window == '7d' %}active{% endif %}">
+        7d
+      </button>
+    </div>
+  </div>
+
+  <!-- Unified 5-Column KPI Strip Card -->
+  {% set time_sub = 'last 1h' if current_window == '1h' else ('last 7d' if current_window == '7d' else 'last 24 hours') %}
+  <div id="ov-kpi-strip" class="kpi-strip kpi-strip-5">
+    <!-- Total Alerts -->
+    <div class="kpi-cell">
+      <div class="kpi-header">
+        <span class="status-dot dot-dark" aria-hidden="true"></span>
+        <span>TOTAL ALERTS</span>
+      </div>
+      <div id="ov-kpi-total" class="kpi-number">{{ stats.total }}</div>
+      <div class="kpi-footer">
+        <span id="ov-kpi-window-sub">{{ time_sub }}</span>
+      </div>
+    </div>
+
+    <!-- Critical -->
+    <div class="kpi-cell clickable"
+         hx-get="/views/alerts?severity=Critical"
+         hx-target="#main-content"
+         hx-push-url="/alerts"
+         role="button" tabindex="0" aria-label="Filter Critical alerts">
+      <div class="kpi-header">
+        <span class="status-dot dot-critical" aria-hidden="true"></span>
+        <span>CRITICAL</span>
+      </div>
+      <div id="ov-kpi-crit" class="kpi-number">{{ stats.crit }}</div>
+      <div class="kpi-footer">immediate review</div>
+    </div>
+
+    <!-- High -->
+    <div class="kpi-cell clickable"
+         hx-get="/views/alerts?severity=High"
+         hx-target="#main-content"
+         hx-push-url="/alerts"
+         role="button" tabindex="0" aria-label="Filter High alerts">
+      <div class="kpi-header">
+        <span class="status-dot dot-high" aria-hidden="true"></span>
+        <span>HIGH</span>
+      </div>
+      <div id="ov-kpi-high" class="kpi-number">{{ stats.high }}</div>
+      <div class="kpi-footer">investigate soon</div>
+    </div>
+
+    <!-- Medium -->
+    <div class="kpi-cell clickable"
+         hx-get="/views/alerts?severity=Medium"
+         hx-target="#main-content"
+         hx-push-url="/alerts"
+         role="button" tabindex="0" aria-label="Filter Medium alerts">
+      <div class="kpi-header">
+        <span class="status-dot dot-medium" aria-hidden="true"></span>
+        <span>MEDIUM</span>
+      </div>
+      <div id="ov-kpi-med" class="kpi-number">{{ stats.med }}</div>
+      <div class="kpi-footer">scheduled review</div>
+    </div>
+
+    <!-- Low -->
+    <div class="kpi-cell clickable"
+         hx-get="/views/alerts?severity=Low"
+         hx-target="#main-content"
+         hx-push-url="/alerts"
+         role="button" tabindex="0" aria-label="Filter Low alerts">
+      <div class="kpi-header">
+        <span class="status-dot dot-low" aria-hidden="true"></span>
+        <span>LOW</span>
+      </div>
+      <div id="ov-kpi-low" class="kpi-number">{{ stats.low }}</div>
+      <div class="kpi-footer">no active threats</div>
+    </div>
+  </div>
+
+  <!-- Row 1: Investigation Queue + Severity Mix (Grid 2fr 1fr, gap 24px) -->
+  <div class="ov-mid-grid">
+    <!-- Investigation Queue Card -->
+    <div id="ov-queue-card" class="soc-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div class="soc-card-header">
+          <h2 class="soc-card-title">Investigation queue</h2>
+          <a href="/alerts"
+             hx-get="/views/alerts"
+             hx-target="#main-content"
+             hx-push-url="/alerts"
+             class="soc-btn-link">
+            View all alerts
+          </a>
+        </div>
+
+        <div id="ov-queue-container" style="display: flex; flex-direction: column; gap: 8px;">
+          {% for a in queue_alerts %}
+          <div role="button" tabindex="0" aria-label="Inspect alert {{ a.title }}"
+               onclick="openAlertDrawer('{{ a.eventId }}')"
+               class="queue-row {% if loop.first and a.severity == 'Critical' %}critical-first{% else %}normal{% endif %}">
+            <div class="q-badge">
+              <span class="soc-badge badge-{{ a.severity | lower }}">{{ a.severity }}</span>
+            </div>
+            <div class="q-info">
+              <h3 class="q-title" title="{{ a.title }}">{{ a.title }}</h3>
+              <div class="q-meta font-mono" title="{{ a.asset }} · {{ a.srcIp }}">{{ a.asset }} · {{ a.srcIp }}</div>
+            </div>
+            <div class="q-status">
+              <span class="soc-badge badge-{{ a.state | lower }}">{{ a.state }}</span>
+              <span class="q-status-time">{{ a.observedRel }}</span>
+            </div>
+            <div class="q-action" onclick="event.stopPropagation()">
+              {% if a.state == 'New' %}
+              <button type="button"
+                      hx-post="/api/alerts/{{ a.eventId }}/ack"
+                      hx-target="#tab-overview"
+                      hx-swap="outerHTML"
+                      class="soc-btn soc-btn-outline">
+                Acknowledge
+              </button>
+              {% else %}
+              <button type="button" onclick="openAlertDrawer('{{ a.eventId }}')" class="soc-btn soc-btn-outline">
+                Open
+              </button>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Severity Mix Card -->
+    <div class="soc-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+      <h2 class="soc-card-title">Severity mix</h2>
+
+      <div class="donut-chart-container">
+        <canvas id="severityDonutChart" role="img" aria-label="Severity mix doughnut chart"></canvas>
+        <div class="donut-center-metric">
+          <span id="ov-donut-total" class="metric-val">{{ stats.total }}</span>
+          <span class="metric-label">ALERTS</span>
+        </div>
+      </div>
+
+      <div id="ov-severity-legend" class="chart-legend-stack">
+        <div class="chart-legend-row">
+          <span class="chart-legend-label">
+            <span class="status-dot dot-critical" aria-hidden="true"></span>Critical
+          </span>
+          <span class="chart-legend-val font-mono">{{ stats.crit }}</span>
+        </div>
+        <div class="chart-legend-row">
+          <span class="chart-legend-label">
+            <span class="status-dot dot-high" aria-hidden="true"></span>High
+          </span>
+          <span class="chart-legend-val font-mono">{{ stats.high }}</span>
+        </div>
+        <div class="chart-legend-row">
+          <span class="chart-legend-label">
+            <span class="status-dot dot-medium" aria-hidden="true"></span>Medium
+          </span>
+          <span class="chart-legend-val font-mono">{{ stats.med }}</span>
+        </div>
+        <div class="chart-legend-row">
+          <span class="chart-legend-label">
+            <span class="status-dot dot-low" aria-hidden="true"></span>Low
+          </span>
+          <span class="chart-legend-val font-mono">{{ stats.low }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Alerts per hour + Top Source IPs / Devices (Grid 2fr 1fr, gap 24px) -->
+  <div class="ov-split-grid">
+    <!-- Alerts per hour Card -->
+    <div class="soc-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+      <div class="soc-card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <h2 class="soc-card-title">Alerts per hour</h2>
+          <span id="ov-hourly-sub" style="font-size: 12px; color: var(--color-text-muted);">
+            {% if current_window == '1h' %}per 5 min{% elif current_window == '7d' %}per day{% else %}per hour{% endif %}
+          </span>
+        </div>
+
+        <!-- Inline Legend with all 4 levels -->
+        <div class="chart-legend-inline">
+          <span class="chart-legend-item">
+            <span class="status-dot dot-critical" aria-hidden="true"></span>Critical
+          </span>
+          <span class="chart-legend-item">
+            <span class="status-dot dot-high" aria-hidden="true"></span>High
+          </span>
+          <span class="chart-legend-item">
+            <span class="status-dot dot-medium" aria-hidden="true"></span>Medium
+          </span>
+          <span class="chart-legend-item">
+            <span class="status-dot dot-low" aria-hidden="true"></span>Low
+          </span>
+        </div>
+      </div>
+
+      <!-- Chart.js Stacked Bar Canvas -->
+      <div class="hourly-chart-container">
+        <canvas id="hourlyBarChart" role="img" aria-label="Hourly alerts distribution stacked bar chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Right Combined Card: Top Source IPs + By device type -->
+    <div class="soc-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <h2 class="soc-card-title" style="margin-bottom: 14px;">Top source IPs</h2>
+        <div class="distribution-list">
+          {% for ip in top_ips %}
+          <div class="distribution-row">
+            <span class="dist-label font-mono">{{ ip.ip }}</span>
+            <div class="dist-bar-track">
+              <div class="dist-bar-fill" style="width: {{ ip.pct }}%;"></div>
+            </div>
+            <span class="dist-val">{{ ip.count }} · {{ ip.pct }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="distribution-divider">
+        <h2 class="soc-card-title" style="margin-bottom: 14px;">By device type</h2>
+        <div class="distribution-list">
+          {% for dev in dev_types %}
+          <div class="distribution-row">
+            <span class="dist-label" style="text-transform: capitalize;">{{ dev.type }}</span>
+            <div class="dist-bar-track">
+              <div class="dist-bar-fill" style="width: {{ dev.pct }}%;"></div>
+            </div>
+            <span class="dist-val">{{ dev.count }} · {{ dev.pct }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Card: Top Triggered Rules -->
+  <div class="soc-card">
+    <h2 class="soc-card-title" style="margin-bottom: 16px;">Top triggered rules</h2>
+    <div class="soc-table-wrap">
+      <table class="soc-table rules-table">
+        <thead>
+          <tr>
+            <th scope="col" style="width: 110px;">RULE</th>
+            <th scope="col">DESCRIPTION</th>
+            <th scope="col" style="width: 120px;">SEVERITY</th>
+            <th scope="col" style="width: 80px; text-align: right;">HITS</th>
+            <th scope="col" style="width: 120px; text-align: right;">LAST SEEN</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in top_rules %}
+          <tr class="clickable" onclick="openAlertDrawer('{{ a.eventId }}')">
+            <td class="font-mono rule-col">{{ a.ruleId }}</td>
+            <td class="desc-col">{{ a.title }}</td>
+            <td class="sev-col">
+              <span class="soc-badge badge-{{ a.severity | lower }}">{{ a.severity }}</span>
+            </td>
+            <td class="hits-col font-mono">{{ a.hits }}</td>
+            <td class="last-seen-col font-mono">{{ a.observedRel }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</section>

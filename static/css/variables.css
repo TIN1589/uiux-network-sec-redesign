@@ -1,0 +1,120 @@
+/* ==========================================================================
+   VARIABLES & DESIGN TOKENS - NETWORK SECURITY MONITOR SOC COMMAND CENTER
+   Modern Vanilla CSS3 Custom Properties
+   ========================================================================== */
+
+:root {
+  /* Brand Core Palette */
+  --color-bg-workspace: #F3F1EC;         /* bg/page: Warm Stone canvas (#f3f1ec) */
+  --color-surface-card: #FFFFFF;         /* bg/surface: Crisp white card surface */
+  --color-surface-card-subtle: #F3F1EC;  /* bg/inset: Inset panel (#f3f1ec) */
+  --color-surface-highlight: #F4F7E6;    /* Soft lime highlight */
+  
+  --color-obsidian-950: #0C0D0E;         /* Deepest black */
+  --color-obsidian-900: #121212;         /* side/bg: Primary SOC matte dark (#121212) */
+  --color-obsidian-850: #1C1E20;         /* Secondary dark / hover */
+  --color-obsidian-800: #262626;         /* side/active: Active nav item (#262626) */
+  
+  --color-accent-lime: #C6F135;          /* accent: Signature Cyber Lime (#c6f135) - strictly accents only */
+  --color-accent-lime-hover: #D6FB57;
+  --color-accent-lime-soft: rgba(198, 241, 53, 0.15);
+
+  /* Text & Neutral Palette */
+  --color-text-primary: #141413;         /* text/primary: Deep graphite (#141413) */
+  --color-text-secondary: #5F5B53;       /* text/muted: Subtext (#5f5b53) - AA compliant */
+  --color-text-muted: #5F5B53;           /* text/muted: Subtext (#5f5b53) */
+  --color-text-subtle: #5F5B53;          /* Fallback subtext (not darker than #5f5b53) */
+  --color-text-inverse: #FFFFFF;         /* Pure white */
+  --color-text-sidebar-muted: #A8A49B;   /* side/muted: Subtext on dark sidebar (#a8a49b) */
+  
+  --color-border-subtle: #EFECE5;        /* border/row: Table row divider (#efece5) */
+  --color-border-card: #E7E4DC;          /* border/default: Card border (#e7e4dc) */
+  --color-border-divider: #E7E4DC;       /* border/default */
+  --color-border-input: #D9D5CA;         /* border/input: Form control border (#d9d5ca) */
+  --color-border-strong: #141413;
+
+  /* Severity Tokens (Single source of truth) */
+  --color-sev-critical: #D92D20;         /* Critical dot/chart: #d92d20 */
+  --color-sev-critical-bg: #FDE8E6;      /* Critical chip bg: #fde8e6 */
+  --color-sev-critical-text: #B42318;    /* Critical chip text: #b42318 */
+  --color-sev-critical-border: #FEE4E2;
+  --color-sev-critical-card: #FDF0EE;    /* Row Critical: bg #fdf0ee */
+  --color-sev-critical-card-border: #F6CDC8; /* Row Critical: border #f6cdc8 */
+
+  --color-sev-high: #DC6803;             /* High dot/chart: #dc6803 */
+  --color-sev-high-bg: #FEF0C7;          /* High chip bg: #fef0c7 */
+  --color-sev-high-text: #93370D;        /* High chip text: #93370d */
+  --color-sev-high-border: #FEDF89;
+
+  --color-sev-medium: #EAB308;           /* Medium dot/chart: #eab308 */
+  --color-sev-medium-bg: #FEFCE8;
+  --color-sev-medium-text: #A16207;
+  --color-sev-medium-border: #FEF08A;
+
+  --color-sev-low: #2F6FE4;              /* Low dot/chart: #2f6fe4 */
+  --color-sev-low-bg: #EFF8FF;
+  --color-sev-low-text: #175CD3;
+  --color-sev-low-border: #B2DDFF;
+
+  /* Operational States */
+  --color-state-new-bg: #DBEAFE;          /* New chip bg: #dbeafe */
+  --color-state-new-text: #1D4ED8;        /* New chip text: #1d4ed8 */
+  --color-state-ack-bg: #E7E4DC;
+  --color-state-ack-text: #141413;
+  --color-state-investigating-bg: #FFFFFF;/* Investigating: white bg, border #141413 */
+  --color-state-investigating-border: #141413;
+  --color-state-investigating-text: #141413;
+  --color-state-resolved-bg: #DCFCE7;     /* Reporting/Detected/Within target bg: #dcfce7 */
+  --color-state-resolved-text: #166534;   /* Reporting/Detected/Within target text: #166534 */
+  --color-state-silent-bg: #FEF3C7;       /* Silent chip bg: #fef3c7 */
+  --color-state-silent-text: #92400E;     /* Silent chip text: #92400e */
+
+  --color-status-live: #16A34A;
+  --color-status-paused: #D97706;
+  --color-status-disconnected: #D92D20;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Spacing & Dimensions (Spacing scale 4/8/12/16/24/32/40) */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+
+  --content-pad-x: 40px;
+  --block-gap: 24px;
+  --card-pad: 24px;
+  --queue-row-pad-y: 14px;
+
+  /* Sidebar Widths */
+  --sidebar-w-desktop: 248px;
+  --sidebar-w-tablet: 72px;
+
+  /* Border Radii (6 chip, 10 input, 12 list row/panel, 16 card, 999 pill/button) */
+  --radius-xs: 6px;
+  --radius-chip: 6px;
+  --radius-sm: 6px;
+  --radius-input: 10px;
+  --radius-md: 12px;
+  --radius-panel: 12px;
+  --radius-lg: 16px;
+  --radius-card: 16px;
+  --radius-xl: 16px;
+  --radius-2xl: 16px;
+  --radius-full: 999px;
+
+  /* Elevation & Shadows */
+  --shadow-2xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 24px -3px rgba(0, 0, 0, 0.12), 0 4px 8px -2px rgba(0, 0, 0, 0.06);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-drawer: 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}

@@ -1,0 +1,92 @@
+<!-- PRIMARY SIDEBAR (>=1280px: 248px | 1024-1279px: 72px | <1024px: Off-canvas) -->
+<aside id="app-sidebar" aria-label="Primary Sidebar Navigation">
+  <div>
+    <!-- Brand Header with Lime Shield Icon -->
+    <div class="sidebar-brand-wrap">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="sidebar-brand-logo" title="Network Security Monitor">
+          <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" />
+          </svg>
+        </div>
+        <div class="sidebar-brand-text">
+          <div>Network Security</div>
+          <div>Monitor</div>
+        </div>
+      </div>
+      <button type="button" onclick="closeMobileSidebar()" class="sidebar-close-btn" style="color: #A8A49B; padding: 8px; border-radius: 8px; background: none; border: none; cursor: pointer;" aria-label="Close navigation menu">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <!-- Navigation (HTMX-powered with Push URL) -->
+    <nav class="sidebar-nav" aria-label="Main modules">
+      <a href="/"
+         hx-get="/views/overview"
+         hx-target="#main-content"
+         hx-push-url="/"
+         onclick="if(window.switchTab && document.getElementById('tab-alerts')) { event.preventDefault(); window.switchTab('overview'); }"
+         id="nav-overview"
+         data-tooltip="Overview"
+         title="Overview"
+         class="nav-btn active"
+         aria-current="page">
+        <span class="nav-btn-inner">
+          <i class="fa-solid fa-border-all" aria-hidden="true"></i>
+          <span class="nav-label">Overview</span>
+        </span>
+      </a>
+
+      <a href="/alerts"
+         hx-get="/views/alerts"
+         hx-target="#main-content"
+         hx-push-url="/alerts"
+         onclick="if(window.switchTab && document.getElementById('tab-alerts')) { event.preventDefault(); window.switchTab('alerts'); }"
+         id="nav-alerts"
+         data-tooltip="Alerts"
+         title="Alerts"
+         class="nav-btn">
+        <span class="nav-btn-inner">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span class="nav-label">Alerts</span>
+        </span>
+      </a>
+
+      <a href="/devices"
+         hx-get="/views/devices"
+         hx-target="#main-content"
+         hx-push-url="/devices"
+         onclick="if(window.switchTab && document.getElementById('tab-devices')) { event.preventDefault(); window.switchTab('devices'); }"
+         id="nav-devices"
+         data-tooltip="Devices"
+         title="Devices"
+         class="nav-btn">
+        <span class="nav-btn-inner">
+          <i class="fa-solid fa-desktop" aria-hidden="true"></i>
+          <span class="nav-label">Devices</span>
+        </span>
+      </a>
+
+      <a href="/scenarios"
+         hx-get="/views/scenarios"
+         hx-target="#main-content"
+         hx-push-url="/scenarios"
+         onclick="if(window.switchTab && document.getElementById('tab-scenarios')) { event.preventDefault(); window.switchTab('scenarios'); }"
+         id="nav-scenarios"
+         data-tooltip="Attack scenarios"
+         title="Attack scenarios"
+         class="nav-btn">
+        <span class="nav-btn-inner">
+          <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+          <span class="nav-label">Attack scenarios</span>
+        </span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="sidebar-footer">
+    <div style="font-size: 11px; color: #A8A49B; font-family: var(--font-mono);">
+      VNPT SOC v2.4 · E2E
+    </div>
+  </div>
+</aside>

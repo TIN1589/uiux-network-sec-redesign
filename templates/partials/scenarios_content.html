@@ -1,0 +1,183 @@
+<!-- =================================================================== -->
+<!-- PAGE 4: ATTACK SCENARIOS                                            -->
+<!-- =================================================================== -->
+<section id="tab-scenarios" class="stack-blocks" aria-label="Attack Scenarios">
+
+  <!-- Header & Export CSV -->
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px;">
+    <div>
+      <h1 class="fluid-h1">Attack scenarios</h1>
+      <p style="font-size: 15px; color: var(--color-text-secondary); margin-top: 2px;">
+        Record detection tests and compare them with your rules.
+      </p>
+    </div>
+    <a data-min-role="tier2" href="/api/export/scenarios.csv" download="soc_attack_scenarios.csv" class="soc-btn soc-btn-outline">
+      <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
+      Export CSV
+    </a>
+  </div>
+
+  <!-- Unified 4-Column KPI Strip (Rule Section 3: 40px/700) -->
+  <div class="kpi-strip kpi-strip-4">
+    <div class="kpi-cell">
+      <div class="kpi-header">TESTS RUN</div>
+      <div id="sc-kpi-runs" class="kpi-number">{{ scenario_stats.runs }}</div>
+      <div class="kpi-footer">this month</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-header">DETECTION RATE</div>
+      <div id="sc-kpi-rate" class="kpi-number">{{ scenario_stats.rate }}%</div>
+      <div id="sc-kpi-rate-sub" class="kpi-footer">{{ scenario_stats.detected }} of {{ scenario_stats.runs }} detected</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-header">AVG DETECTION TIME</div>
+      <div id="sc-kpi-avg" class="kpi-number">{{ scenario_stats.avg }} s</div>
+      <div class="kpi-footer">target ≤ 5 s</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-header">RULES COVERED</div>
+      <div id="sc-kpi-rules" class="kpi-number">{{ scenario_stats.rules_count }}</div>
+      <div id="sc-kpi-rules-sub" class="kpi-footer font-mono">{{ scenario_stats.rules_covered | join(', ') }}</div>
+    </div>
+  </div>
+
+  <!-- New / Edit Test Card (Admin only — ASSUMPTION-03) -->
+  <div id="sc-form-card" data-min-role="admin" class="soc-card soc-card-pad" style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+      <h2 id="sc-form-heading" class="soc-card-title">New test</h2>
+      <span id="sc-editing-badge" class="soc-badge badge-high hidden">
+        Editing existing test
+      </span>
+    </div>
+
+    <form id="scenario-test-form"
+          hx-post="/api/scenarios"
+          hx-target="#scenarios-table-container"
+          hx-on::after-request="if(event.detail.successful) { cancelScenarioEdit(true); }"
+          style="display: flex; flex-direction: column; gap: 20px;">
+
+      <input type="hidden" id="sc-edit-id-input" name="id" value="" />
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-start;">
+        <div class="soc-form-group">
+          <label for="sc-technique" class="soc-label">Attack technique</label>
+          <div class="soc-input-wrap">
+            <select id="sc-technique" name="code" onchange="handleScenarioTechniqueChange()" class="soc-select">
+              <option value="T1046">T1046 – Network Service Scanning</option>
+              <option value="T1110">T1110 – SSH Credential Brute Force</option>
+              <option value="T1557">T1557 – Spanning-Tree BPDU Spoofing</option>
+              <option value="T1498">T1498 – SYN Flood Denial of Service</option>
+            </select>
+          </div>
+          <span class="soc-form-hint">MITRE ATT&amp;CK</span>
+        </div>
+
+        <div class="soc-form-group">
+          <label for="sc-tool" class="soc-label">Tool</label>
+          <div class="soc-input-wrap">
+            <input type="text" id="sc-tool" name="tool" value="nmap 7.94" class="soc-input" />
+          </div>
+        </div>
+
+        <div class="soc-form-group">
+          <label for="sc-rule" class="soc-label">Expected rule</label>
+          <div class="soc-input-wrap">
+            <select id="sc-rule" name="rule" onchange="handleScenarioRuleChange()" class="soc-select font-mono">
+              <option value="100200">100200</option>
+              <option value="100210">100210</option>
+              <option value="100999">100999</option>
+              <option value="100305">100305</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="soc-form-group">
+          <label for="sc-linked-alert" class="soc-label">Linked live alert</label>
+          <div class="soc-input-wrap">
+            <select id="sc-linked-alert" name="linkedEventId" onchange="updateComputedDeltaWell()" class="soc-select font-mono">
+              <option value="EVT-2610-089">Rule 100200 · Port scan detected · 01:10:47.8</option>
+              <option value="EVT-2610-092">Rule 100210 · SSH Brute-force attempt · 01:07:11.4</option>
+              <option value="EVT-2610-099">Rule 100999 · Root Bridge BPDU inject · 01:12:04.6</option>
+              <option value="EVT-2610-095">Rule 100305 · SYN flood threshold · 01:08:42.1</option>
+            </select>
+          </div>
+          <span class="soc-form-hint">sets detection time</span>
+        </div>
+      </div>
+
+      <!-- DETECTION TIME · COMPUTED FROM THE LINKED ALERT (Rule Section 5: ba giá trị mono 20px, Delta đậm hơn) -->
+      <div class="delta-well" style="width: 100%; box-sizing: border-box; overflow-x: hidden;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-secondary);">
+            DETECTION TIME · COMPUTED FROM THE LINKED ALERT
+          </span>
+          <span id="sc-target-badge" class="soc-badge badge-resolved">
+            Within target
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; align-items: baseline; width: 100%; box-sizing: border-box;">
+          <div>
+            <div style="font-size: 12px; color: var(--color-text-muted);">Test started</div>
+            <div id="sc-start-ts" class="font-mono" style="font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-top: 2px;">01:10:46.0</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; color: var(--color-text-muted);">Alert observed</div>
+            <div id="sc-obs-ts" class="font-mono" style="font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-top: 2px;">01:10:47.8</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; color: var(--color-text-muted);">Delta</div>
+            <div id="sc-delta-display" class="font-mono" style="font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">1.8 s</div>
+          </div>
+        </div>
+
+        <!-- Horizontal Gauge Bar with 5s Target Marker -->
+        <div style="padding-top: 6px; width: 100%; box-sizing: border-box;">
+          <div class="delta-gauge-track" style="width: 100%; box-sizing: border-box;">
+            <div id="sc-delta-bar" class="delta-gauge-fill" style="width: 30%;"></div>
+            <div class="delta-target-marker">
+              <span class="delta-target-label">target 5 s</span>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-muted); margin-top: 6px;">
+            <span>0 s</span>
+            <span>6 s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes, Detected Checkbox & Submit Action (Unified Compact Row) -->
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px;">
+        <div style="padding-bottom: 10px;">
+          <label for="sc-detected-check" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+            <input type="checkbox" id="sc-detected-check" name="detected" checked class="soc-checkbox" />
+            <span style="font-size: 14px; font-weight: 600; color: var(--color-text-primary);">Detected</span>
+          </label>
+        </div>
+
+        <div class="soc-form-group" style="flex: 1; min-width: 260px;">
+          <label for="sc-notes" class="soc-label">Notes</label>
+          <div class="soc-input-wrap">
+            <input type="text" id="sc-notes" name="notes" placeholder="What happened, what was observed" class="soc-input" value="Kịch bản kiểm thử E2E tự động hóa Playwright đạt chuẩn nghiệm thu VNPT N4.2." />
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: auto;">
+          <button type="button" id="sc-cancel-edit-btn" onclick="cancelScenarioEdit()" class="soc-btn soc-btn-outline hidden">
+            Cancel edit
+          </button>
+          <button type="submit" id="sc-submit-btn" class="soc-btn soc-btn-primary" style="height: 40px;">
+            Record test
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Test Results Table Card (Swappable by HTMX) -->
+  <div id="scenarios-table-container">
+    {% include 'partials/scenarios_table.html' %}
+  </div>
+
+</section>

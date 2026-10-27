@@ -1,0 +1,11 @@
+<!-- RIGHT SLIDE-OVER ALERT DRAWER BACKDROP -->
+<div id="alert-drawer-backdrop" onclick="closeAlertDrawer()" role="dialog" aria-modal="true" aria-labelledby="dw-title"
+  class="soc-drawer-backdrop">
+  
+  <div id="alert-drawer-container" onclick="event.stopPropagation()" class="soc-drawer">
+    <!-- Populated dynamically via HTMX partial or initial load -->
+    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--color-text-muted); font-size: 13px;">
+      Loading alert details...
+    </div>
+  </div>
+</div>
