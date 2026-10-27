@@ -1961,8 +1961,37 @@
   <script>
     // Client-side fallback for static mode (when FastAPI is not running)
     window.addEventListener('DOMContentLoaded', () => {
-      // If running via file: or non-FastAPI port, attach fallback listeners
+      // Dual-Mode Fallback (Rule 3.2):
+      // Nếu người duyệt mở trực tiếp file index.html qua file:// hoặc không chạy server FastAPI (cổng 8000),
+      // kích hoạt bộ điều hướng client-side giả lập (window.switchTab) để cho phép chuyển tab
+      // mượt mà mà không làm vỡ trải nghiệm xem trước giao diện.
       if (window.location.protocol === 'file:' || (window.location.port !== '8000' && window.location.port !== '')) {
+        /**
+         * Chuyển đổi tab hiển thị ở chế độ xem trước tĩnh (Static Standalone Mode).
+         * @param {string} tabId - Tên tab cần kích hoạt ('overview' | 'alerts' | 'devices' | 'scenarios').
+         */
+        window.switchTab = function(tabId) {
+          const tabs = ['overview', 'alerts', 'devices', 'scenarios'];
+          tabs.forEach(id => {
+            const el = document.getElementById(`tab-${id}`);
+            if (el) {
+              if (id === tabId) {
+                el.style.display = '';
+                el.classList.remove('hidden');
+              } else {
+                el.style.display = 'none';
+                el.classList.add('hidden');
+              }
+            }
+          });
+          document.querySelectorAll('.soc-nav-item').forEach(link => {
+            const href = link.getAttribute('href');
+            const isActive = (tabId === 'overview' && href === '/') || href === `/${tabId}`;
+            link.classList.toggle('active', isActive);
+            if (isActive) link.setAttribute('aria-current', 'page');
+            else link.removeAttribute('aria-current');
+          });
+        };
         // Static Time Filter Fallback
         ['1h', '24h', '7d'].forEach(win => {
           const btn = document.getElementById(`time-btn-${win}`);
