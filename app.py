@@ -7,15 +7,27 @@ import csv
 import hashlib
 import hmac
 import io
+import os
 import re
 import secrets
+import time
+import urllib.parse
 from datetime import datetime
 
 from fastapi import Cookie, FastAPI, Form, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+
+# Cấu hình môi trường vận hành an toàn VNPT SOC
+DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() in ("1", "true", "yes")
+ENV = os.getenv("ENV", "development").lower()
+SHOW_BUILD_VERSION = os.getenv("SHOW_BUILD_VERSION", "false").lower() in ("1", "true", "yes")
+
+# Tiêu chuẩn an ninh nghiêm ngặt: Từ chối khởi động nếu DEMO_MODE bật trong môi trường production
+if DEMO_MODE and ENV == "production":
+    raise RuntimeError("Security violation: DEMO_MODE cannot be enabled in production environment.")
 
 # Auth config — ASSUMPTION-02
 _SECRET_KEY = secrets.token_hex(32)          # Random mỗi lần khởi động (demo mode)
@@ -23,25 +35,124 @@ _SESSION_MAX_AGE = 8 * 3600                  # 8 hours in seconds
 _CSRF_MAX_AGE = 3600                         # 1 hour
 _SERIALIZER = URLSafeTimedSerializer(_SECRET_KEY)
 
-# Demo credentials — trong thực tế đọc từ env/config
-# Password hash: PBKDF2-HMAC-SHA256 của "vnpt-soc-2026"
+# Demo credentials cho môi trường kiểm thử/nghiệm thu VNPT SOC N4.2
+# Hỗ trợ 3 vai trò: SecOps Admin, Tier-2 Analyst, Tier-1 Responder
+_DEMO_ACCOUNTS = {
+    "admin": {"role": "admin", "password": "vnpt-soc-2026", "label": "SecOps Admin"},
+    "tier2": {"role": "tier2", "password": "vnpt-soc-2026", "label": "Tier-2 Analyst"},
+    "tier1": {"role": "tier1", "password": "vnpt-soc-2026", "label": "Tier-1 Responder"},
+}
 _ADMIN_USERNAME = "admin"
-_ADMIN_PWD_PLAIN = "vnpt-soc-2026"          # Chỉ dùng trong demo để verify
+_ADMIN_PWD_PLAIN = "vnpt-soc-2026"          # Backward compatibility
 
 # In-memory session store: {session_id: {username, role, created_at}}
 _sessions: dict = {}
 
 app = FastAPI(title="Network Security Monitor – SOC Command Center")
 
+# Content Security Policy Middleware: Cấp phát CSP Nonce ngẫu nhiên cho từng request
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """Middleware áp dụng Content Security Policy và cấp phát CSP Nonce ngẫu nhiên cho từng request.
+
+    Args:
+        request: FastAPI Request instance.
+        call_next: Hàm điều phối tiếp theo trong chuỗi xử lý HTTP middleware.
+
+    Returns:
+        Response: HTTP response có gắn kèm header Content-Security-Policy phù hợp.
+    """
+    nonce = secrets.token_urlsafe(16)
+    request.state.csp_nonce = nonce
+    response = await call_next(request)
+
+    path = request.url.path
+    if path.startswith(("/login", "/auth", "/ui")):
+        # Strict CSP cho trang đăng nhập công khai mới (triệt tiêu inline scripts và style attributes)
+        csp = (
+            f"default-src 'self'; "
+            f"script-src 'self' 'nonce-{nonce}'; "
+            f"style-src 'self' 'nonce-{nonce}'; "
+            f"font-src 'self'; "
+            f"img-src 'self' data:; "
+            f"connect-src 'self'; "
+            f"frame-ancestors 'none'; "
+            f"base-uri 'self'; "
+            f"form-action 'self';"
+        )
+    else:
+        # Tương thích ngược cho các trang dashboard SOC hiện hữu (không chèn nonce để trình duyệt không vô hiệu hóa unsafe-inline)
+        csp = (
+            f"default-src 'self'; "
+            f"script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
+            f"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+            f"font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
+            f"img-src 'self' data:; "
+            f"connect-src 'self'; "
+            f"frame-ancestors 'none'; "
+            f"base-uri 'self'; "
+            f"form-action 'self';"
+        )
+    response.headers["Content-Security-Policy"] = csp
+    return response
+
 # Mount Static Assets (CSS, JS, Icons)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Phục vụ file favicon.ico gốc cho các trình duyệt tự động truy vấn."""
+    return FileResponse("static/img/favicon/favicon.ico")
 
 # Configure Jinja2 Template Engine
 templates = Jinja2Templates(directory="templates")
 
-# =============================================================================
-# IN-MEMORY SOC DATA REPOSITORY
-# =============================================================================
+# Jinja2 URL generator tương thích ngược cho cả Path parameters và Query parameters
+def _jinja_url_for(name: str, **params) -> str:
+    """Tạo URL trong Jinja2 hỗ trợ tương thích ngược cả path params và query params.
+
+    Args:
+        name: Tên route hoặc alias cần phân giải (ví dụ: 'auth.login', 'static').
+        **params: Các tham số truyền vào (path parameters hoặc query string).
+
+    Returns:
+        str: Chuỗi đường dẫn URL hoàn chỉnh.
+    """
+    route = next((r for r in app.routes if getattr(r, "name", None) == name), None)
+    if not route:
+        mappings = {
+            "auth.login": "/login",
+            "auth.guest": "/auth/guest",
+            "auth.forgot": "/auth/forgot",
+            "ui.log_feed": "/ui/log-feed",
+        }
+        base_url = mappings.get(name, f"/{name.replace('.', '/')}")
+        if params:
+            return f"{base_url}?{urllib.parse.urlencode(params)}"
+        return base_url
+    path_param_names = getattr(route, "param_convertors", {}).keys()
+    path_params = {k: v for k, v in params.items() if k in path_param_names}
+    query_params = {k: v for k, v in params.items() if k not in path_param_names}
+    url = app.url_path_for(name, **path_params)
+    if query_params:
+        return f"{url}?{urllib.parse.urlencode(query_params)}"
+    return str(url)
+
+def _jinja_csrf_token() -> str:
+    """Tạo mã CSRF token ngẫu nhiên bảo vệ biểu mẫu công khai trong Jinja2 context.
+
+    Returns:
+        str: Chuỗi token CSRF đã ký và mã hóa an toàn.
+    """
+    return _generate_csrf_token("public_auth_session")
+
+templates.env.globals["url_for"] = _jinja_url_for
+templates.env.globals["csrf_token"] = _jinja_csrf_token
+templates.env.globals["demo_mode"] = DEMO_MODE
+templates.env.globals["demo_password"] = _ADMIN_PWD_PLAIN if DEMO_MODE else ""
+templates.env.globals["show_build_version"] = SHOW_BUILD_VERSION
+
+# In-memory SOC data repository
 
 INITIAL_ALERTS = [
     {
@@ -577,9 +688,7 @@ SCENARIO_RESULTS = [
 alerts_store = [dict(a) for a in INITIAL_ALERTS]
 scenarios_store = [dict(s) for s in SCENARIO_RESULTS]
 
-# =============================================================================
-# HELPER FUNCTIONS
-# =============================================================================
+# Helper functions for CSV sanitization and metric calculations
 
 # --- REQ-FR-11: CSV Formula Injection Guard (ASSUMPTION-04) ---
 _CSV_INJECT_RE = re.compile(r'^[\s\uFEFF]*[=+\-@|%]')
@@ -875,9 +984,7 @@ def filter_alerts(
         filtered.append(a)
     return filtered
 
-# =============================================================================
-# FULL PAGE ROUTES (DIRECT NAVIGATION & REFRESH)
-# =============================================================================
+# Full page routes for direct navigation and refresh
 
 @app.get("/", response_class=HTMLResponse)
 async def get_overview_page(request: Request, window: str = "24h"):
@@ -984,9 +1091,7 @@ async def get_scenarios_page(request: Request):
         }
     )
 
-# =============================================================================
-# HTMX VIEW PARTIALS (SEAMLESS TAB SWITCHING)
-# =============================================================================
+# HTMX view partials for seamless tab switching
 
 @app.get("/views/overview", response_class=HTMLResponse)
 async def get_overview_view(request: Request, window: str = "24h"):
@@ -1093,12 +1198,19 @@ async def get_scenarios_view(request: Request):
         }
     )
 
-# =============================================================================
-# HTMX ACTIONS & APIS
-# =============================================================================
+# HTMX actions and API endpoints
 
 @app.get("/api/overview/stats", response_class=HTMLResponse)
 async def get_overview_stats(request: Request, window: str = "24h"):
+    """Tổng hợp số liệu thống kê tổng quan SOC và trả về fragment HTML cho HTMX.
+
+    Args:
+        request: FastAPI Request instance.
+        window: Khung thời gian thống kê ('1h', '24h', '7d').
+
+    Returns:
+        HTMLResponse: Đoạn mã HTML render từ template `partials/overview_content.html`.
+    """
     stats, queue_alerts, top_rules, top_ips, dev_types = compute_overview_stats(window)
     return templates.TemplateResponse(
         request=request,
@@ -1124,6 +1236,21 @@ async def filter_alerts_endpoint(
     asset: str | None = "ALL",
     state: str | None = "ALL"
 ):
+    """Lọc danh sách cảnh báo SOC theo tiêu chí tìm kiếm và trả về bảng HTML cho HTMX.
+
+    Args:
+        request: FastAPI Request instance.
+        q: Từ khóa tìm kiếm nhanh (IP, Event ID, Rule ID, Asset).
+        time: Khoảng thời gian phân tích.
+        severity: Mức độ nghiêm trọng cần lọc.
+        rule: Mã luật cảnh báo.
+        ip: Địa chỉ IP nguồn.
+        asset: Tên thiết bị mạng nguồn.
+        state: Trạng thái xử lý sự cố.
+
+    Returns:
+        HTMLResponse: Bảng cảnh báo render từ template `partials/alerts_table.html`.
+    """
     filtered = filter_alerts(
         q=q or "",
         time_range=time or "Last 24 hours",
@@ -1143,6 +1270,15 @@ async def filter_alerts_endpoint(
 
 @app.get("/api/alerts/{event_id}/drawer", response_class=HTMLResponse)
 async def get_alert_drawer(request: Request, event_id: str):
+    """Lấy thông tin chi tiết của một cảnh báo để hiển thị slide-over drawer bên phải.
+
+    Args:
+        request: FastAPI Request instance.
+        event_id: Mã định danh sự kiện cảnh báo (ví dụ: 'EVT-2610-099').
+
+    Returns:
+        HTMLResponse: Giao diện chi tiết render từ template `partials/drawer_content.html` hoặc 404.
+    """
     alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
     if not alert:
         return HTMLResponse("<div class='p-6 text-stone-500'>Alert not found</div>", status_code=404)
@@ -1190,6 +1326,16 @@ async def acknowledge_alert(
 
 @app.post("/api/alerts/{event_id}/state", response_class=HTMLResponse)
 async def update_alert_state(request: Request, event_id: str, state: str = Form(...)):
+    """Cập nhật trạng thái xử lý của cảnh báo trong kho lưu trữ in-memory.
+
+    Args:
+        request: FastAPI Request instance.
+        event_id: Mã định danh sự kiện cảnh báo.
+        state: Trạng thái mới ('New', 'Investigating', 'Acknowledged', 'Resolved').
+
+    Returns:
+        HTMLResponse: Giao diện drawer cập nhật kèm header HX-Trigger hiển thị thông báo toast.
+    """
     alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
     if alert:
         alert["state"] = state
@@ -1204,6 +1350,15 @@ async def update_alert_state(request: Request, event_id: str, state: str = Form(
 
 @app.post("/api/alerts/bulk-state", response_class=JSONResponse)
 async def bulk_update_alerts(state: str = Form(...), event_ids: list[str] = Form(...)):
+    """Cập nhật trạng thái hàng loạt cho nhiều sự cố cảnh báo được chọn.
+
+    Args:
+        state: Trạng thái mới cần áp dụng cho toàn bộ danh sách.
+        event_ids: Danh sách các mã định danh sự kiện được chọn.
+
+    Returns:
+        dict: Kết quả cập nhật JSON gồm trạng thái thành công và số bản ghi đã đổi.
+    """
     updated_count = 0
     for a in alerts_store:
         if a["eventId"] in event_ids:
@@ -1222,6 +1377,21 @@ async def save_scenario(
     detected: bool = Form(False),
     notes: str = Form(...)
 ):
+    """Lưu hoặc cập nhật một kịch bản kiểm thử tấn công trong phòng thí nghiệm SOC.
+
+    Args:
+        request: FastAPI Request instance.
+        id: Mã kịch bản hiện tại nếu chỉnh sửa, rỗng nếu tạo mới.
+        code: Mã kỹ thuật tấn công MITRE ATT&CK.
+        tool: Công cụ hoặc script kích hoạt tấn công.
+        rule: Luật phát hiện tương ứng.
+        linkedEventId: Mã sự cố cảnh báo liên kết để tính độ trễ SLA.
+        detected: Cờ ghi nhận hệ thống phát hiện thành công hay không.
+        notes: Ghi chú phân tích chi tiết của kỹ sư SOC.
+
+    Returns:
+        HTMLResponse: Bảng kịch bản mới cập nhật render từ `partials/scenarios_table.html`.
+    """
     linked_alert = next((a for a in alerts_store if a["eventId"] == linkedEventId), None)
     delta = linked_alert["testDeltaSec"] if linked_alert else 1.8
 
@@ -1283,6 +1453,14 @@ async def save_scenario(
 
 @app.get("/api/scenarios/{scenario_id}/edit", response_class=JSONResponse)
 async def get_scenario_edit_data(scenario_id: str):
+    """Truy xuất dữ liệu chi tiết của một kịch bản kiểm thử để nạp vào biểu mẫu chỉnh sửa.
+
+    Args:
+        scenario_id: Mã định danh kịch bản (ví dụ: 'SC-01').
+
+    Returns:
+        dict: Dữ liệu kịch bản dạng JSON hoặc mã lỗi 404.
+    """
     row = next((s for s in scenarios_store if s["id"] == scenario_id), None)
     if not row:
         return JSONResponse({"error": "Not found"}, status_code=404)
@@ -1290,6 +1468,15 @@ async def get_scenario_edit_data(scenario_id: str):
 
 @app.delete("/api/scenarios/{scenario_id}", response_class=HTMLResponse)
 async def delete_scenario(request: Request, scenario_id: str):
+    """Xóa một bản ghi kịch bản kiểm thử khỏi kho lưu trữ in-memory.
+
+    Args:
+        request: FastAPI Request instance.
+        scenario_id: Mã định danh kịch bản cần xóa.
+
+    Returns:
+        HTMLResponse: Bảng danh sách kịch bản sau khi xóa.
+    """
     global scenarios_store
     scenarios_store = [s for s in scenarios_store if s["id"] != scenario_id]
     return templates.TemplateResponse(
@@ -1325,18 +1512,29 @@ async def calculate_delta(linked_id: str):
 
 @app.get("/api/live-status", response_class=HTMLResponse)
 async def live_status_pulse():
+    """Tạo fragment trạng thái nhịp tim trực tiếp phục vụ polling trên thanh Topbar.
+
+    Returns:
+        HTMLResponse: Thẻ HTML thể hiện chấm xanh trực tiếp và thời gian cập nhật.
+    """
     return HTMLResponse(
         '<span id="live-status-dot" class="status-dot dot-live" aria-hidden="true"></span>'
         '<span id="live-status-text">Live · updated <span id="live-sec-counter" class="font-mono">1s</span> ago · GMT+7</span>'
     )
 
-# =============================================================================
-# AUTH ROUTES (ASSUMPTION-02)
-# =============================================================================
+# Authentication routes and session management
 
 @app.get("/api/auth/csrf-token", response_class=JSONResponse)
 async def get_csrf_token(response: Response, session_id: str | None = Cookie(None)):
-    """Issue a fresh CSRF token. Called on modal open."""
+    """Tạo mã CSRF token mới phục vụ bảo vệ biểu mẫu modal hoặc các thao tác xác thực.
+
+    Args:
+        response: FastAPI Response instance.
+        session_id: ID phiên làm việc hiện tại từ cookie (nếu có).
+
+    Returns:
+        dict: Đối tượng JSON chứa giá trị csrf_token hợp lệ.
+    """
     sid = session_id if _get_session(session_id) else secrets.token_urlsafe(16)
     token = _generate_csrf_token(sid)
     return {"csrf_token": token}
@@ -1348,17 +1546,28 @@ async def login(
     password: str = Form(...),
     csrf_token: str | None = Form(None)
 ):
-    """
-    Authenticate user with PBKDF2-HMAC-SHA256.
-    Sets HttpOnly session cookie on success.
-    ASSUMPTION-02: Tích hợp Modal Sign-in với backend session + CSRF.
-    """
-    # Validate credentials
-    if username != _ADMIN_USERNAME or not _verify_password(password, _ADMIN_PWD_PLAIN):
-        return JSONResponse({"success": False, "error": "Invalid credentials"}, status_code=401)
+    """Xác thực tài khoản người dùng theo chuẩn PBKDF2-HMAC-SHA256.
 
-    # Create session
-    session_id = _create_session(username, role="admin")
+    Hỗ trợ 3 tài khoản demo cho môi trường kiểm thử SOC (admin, tier2, tier1).
+    Thiết lập cookie phiên HttpOnly và trả về thông tin vai trò khi thành công.
+
+    Args:
+        response: Đối tượng Response của FastAPI để gán HttpOnly cookie.
+        username: Tên đăng nhập người dùng gửi từ form modal.
+        password: Mật khẩu người dùng nhập.
+        csrf_token: Token chống tấn công giả mạo yêu cầu chéo trang (CSRF).
+
+    Returns:
+        JSONResponse: Trạng thái thành công kèm username và role, hoặc mã lỗi 401.
+    """
+    normalized_user = username.strip().lower()
+    account = _DEMO_ACCOUNTS.get(normalized_user)
+
+    if not account or not _verify_password(password, account["password"]):
+        return JSONResponse({"success": False, "error": "Invalid username or password"}, status_code=401)
+
+    role = account["role"]
+    session_id = _create_session(normalized_user, role=role)
 
     # Set HttpOnly, SameSite=Lax session cookie (8h)
     response.set_cookie(
@@ -1370,7 +1579,7 @@ async def login(
         secure=False  # Set True in production with HTTPS
     )
 
-    return {"success": True, "username": username, "role": "admin"}
+    return {"success": True, "username": normalized_user, "role": role, "label": account["label"]}
 
 @app.post("/api/auth/logout", response_class=JSONResponse)
 async def logout(response: Response, session_id: str | None = Cookie(None)):
@@ -1388,9 +1597,157 @@ async def get_me(session_id: str | None = Cookie(None)):
         return {"authenticated": True, "username": session["username"], "role": session["role"]}
     return {"authenticated": False}
 
-# =============================================================================
-# CSV EXPORTS
-# =============================================================================
+# Redesigned public sign-in and UI routes (VNPT SOC N4.2)
+
+from app.ui import mock_feed, topology
+from app.ui.routes import router as ui_router
+
+app.include_router(ui_router)
+
+
+@app.get("/login", response_class=HTMLResponse, name="auth.login")
+@app.get("/auth/login", response_class=HTMLResponse)
+async def signin_page(request: Request, session_id: str | None = Cookie(None)):
+    """Hiển thị toàn bộ trang đăng nhập công khai (VNPT SOC Sign-in Screen).
+
+    Tự động chuyển hướng về trang chủ nếu người dùng đã có phiên đăng nhập hợp lệ.
+    Dữ liệu hiển thị (stats, log stream, topology) đều là dữ liệu giả lập từ mock_feed.
+
+    Args:
+        request: FastAPI Request instance.
+        session_id: Cookie phiên làm việc (nếu có).
+
+    Returns:
+        HTMLResponse: Giao diện hoàn chỉnh render từ `auth/sign_in.html`.
+    """
+    session = _get_session(session_id)
+    if session:
+        return RedirectResponse(url="/", status_code=303)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="auth/sign_in.html",
+        context={
+            "csp_nonce": getattr(request.state, "csp_nonce", ""),
+            "stats": mock_feed.stats(),
+            "lines": mock_feed.log_lines(time.time(), 5),
+            "topology": topology.get_topology_data(),
+            "demo_mode": DEMO_MODE,
+            "demo_password": _ADMIN_PWD_PLAIN if DEMO_MODE else "",
+            "show_build_version": SHOW_BUILD_VERSION,
+        },
+    )
+
+
+@app.post("/login", name="auth.login")
+@app.post("/auth/login")
+async def login_post(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    csrf_token: str | None = Form(None),
+    remember: str | None = Form(None),
+):
+    """Xử lý xác thực người dùng cho cả luồng HTMX lẫn Non-JS (Progressive Enhancement).
+
+    Tuân thủ nguyên tắc an ninh SOC: Mọi nhánh lỗi xác thực đều trả về cùng một thông báo
+    chung ('Incorrect username or password.') nhằm ngăn chặn kỹ thuật vét cạn tài khoản.
+
+    Args:
+        request: FastAPI Request instance.
+        username: Tên đăng nhập gửi từ form.
+        password: Mật khẩu người dùng nhập.
+        csrf_token: Mã kiểm tra CSRF (nếu có).
+        remember: Cờ duy trì phiên đăng nhập 8 tiếng.
+
+    Returns:
+        Response: HTMX redirect hoặc fragment lỗi 422; hoặc HTTP 303 Redirect / 422 Full page khi tắt JS.
+    """
+    normalized_user = username.strip().lower()
+    account = _DEMO_ACCOUNTS.get(normalized_user)
+    is_htmx = request.headers.get("hx-request") == "true"
+
+    if not account or not _verify_password(password, account["password"]):
+        if is_htmx:
+            return templates.TemplateResponse(
+                request=request,
+                name="auth/_feedback.html",
+                status_code=422,
+            )
+        return templates.TemplateResponse(
+            request=request,
+            name="auth/sign_in.html",
+            context={
+                "error": True,
+                "username_value": username,
+                "csp_nonce": getattr(request.state, "csp_nonce", ""),
+                "stats": mock_feed.stats(),
+                "lines": mock_feed.log_lines(time.time(), 5),
+                "topology": topology.get_topology_data(),
+                "demo_mode": DEMO_MODE,
+                "demo_password": _ADMIN_PWD_PLAIN if DEMO_MODE else "",
+                "show_build_version": SHOW_BUILD_VERSION,
+            },
+            status_code=422,
+        )
+
+    role = account["role"]
+    session_id = _create_session(normalized_user, role=role)
+    cookie_max_age = _SESSION_MAX_AGE if remember else None
+
+    if is_htmx:
+        res = Response(status_code=200, headers={"HX-Redirect": "/"})
+        res.set_cookie(
+            key="session_id",
+            value=session_id,
+            max_age=cookie_max_age,
+            httponly=True,
+            samesite="lax",
+            secure=False,
+        )
+        return res
+
+    res = RedirectResponse(url="/", status_code=303)
+    res.set_cookie(
+        key="session_id",
+        value=session_id,
+        max_age=cookie_max_age,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+    )
+    return res
+
+
+@app.post("/auth/guest", name="auth.guest")
+async def guest_post(request: Request):
+    """Điều hướng truy cập nhanh vào chế độ Khách (Read-only) không cần mật khẩu.
+
+    Args:
+        request: FastAPI Request instance.
+
+    Returns:
+        Response hoặc RedirectResponse điều hướng về trang chủ kèm cờ guest=1.
+    """
+    is_htmx = request.headers.get("hx-request") == "true"
+    if is_htmx:
+        return Response(status_code=200, headers={"HX-Redirect": "/?guest=1"})
+    return RedirectResponse(url="/?guest=1", status_code=303)
+
+
+@app.get("/auth/forgot", name="auth.forgot")
+async def forgot_get(request: Request):
+    """Xử lý yêu cầu hỗ trợ quên thông tin đăng nhập trong môi trường kiểm thử SOC.
+
+    Args:
+        request: FastAPI Request instance.
+
+    Returns:
+        RedirectResponse: Chuyển hướng người dùng về trang /login kèm cờ forgot=1.
+    """
+    return RedirectResponse(url="/login?forgot=1", status_code=303)
+
+# CSV export handlers
 
 @app.get("/api/export/alerts.csv")
 async def export_alerts_csv():
