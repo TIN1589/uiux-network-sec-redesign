@@ -76,6 +76,8 @@ async def security_headers_middleware(request: Request, call_next):
             f"font-src 'self'; "
             f"img-src 'self' data:; "
             f"connect-src 'self'; "
+            f"worker-src 'self'; "
+            f"manifest-src 'self'; "
             f"frame-ancestors 'none'; "
             f"base-uri 'self'; "
             f"form-action 'self';"
@@ -89,6 +91,8 @@ async def security_headers_middleware(request: Request, call_next):
             f"font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
             f"img-src 'self' data:; "
             f"connect-src 'self'; "
+            f"worker-src 'self'; "
+            f"manifest-src 'self'; "
             f"frame-ancestors 'none'; "
             f"base-uri 'self'; "
             f"form-action 'self';"
@@ -103,6 +107,28 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def favicon():
     """Phục vụ file favicon.ico gốc cho các trình duyệt tự động truy vấn."""
     return FileResponse("static/img/favicon/favicon.ico")
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+async def webmanifest():
+    """Phục vụ file Web App Manifest chuẩn cho PWA trên iOS và Android."""
+    return FileResponse("static/manifest.webmanifest", media_type="application/manifest+json")
+
+@app.get("/sw.js", include_in_schema=False)
+async def service_worker():
+    """Phục vụ Service Worker tại root scope để có toàn quyền điều phối cache và offline."""
+    return FileResponse(
+        "static/sw.js",
+        media_type="application/javascript",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Service-Worker-Allowed": "/",
+        },
+    )
+
+@app.get("/offline", include_in_schema=False)
+async def offline_page():
+    """Phục vụ trang thông báo mất kết nối mạng khi thiết bị offline hoàn toàn."""
+    return FileResponse("static/offline.html")
 
 # Configure Jinja2 Template Engine
 templates = Jinja2Templates(directory="templates")
@@ -1812,4 +1838,5 @@ async def export_scenarios_csv():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+

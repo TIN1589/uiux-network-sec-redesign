@@ -1,24 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-motion="on">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>{% block title %}Sign in · Network Security Monitor – VNPT SOC{% endblock %}</title>
 
+  <!-- Critical Inline CSS: Đồng bộ canvas Warm Stone (#F3F1EC) chuẩn VNPT SOC -->
+  <style nonce="{{ csp_nonce }}">
+    html, body {
+      background-color: #F3F1EC !important;
+      color: #141413;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+
   <!-- Favicon & Touch Icons -->
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/favicon/nsm-favicon.svg') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='img/favicon/nsm-favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', path='img/favicon/nsm-favicon-192.png') }}">
   <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', path='img/favicon/nsm-favicon-512.png') }}">
   <link rel="shortcut icon" href="{{ url_for('static', path='img/favicon/favicon.ico') }}">
-  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', path='img/favicon/nsm-favicon-512.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', path='img/favicon/nsm-apple-icon-180.png') }}">
+
+  <!-- PWA & Apple WebKit Standalone Specs -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="VNPT SOC">
+  <meta name="theme-color" content="#F3F1EC">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Apple Touch Startup Splash Screens (Khử giật khung hình Springboard khi mở app từ màn hình chính iOS) -->
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1290-2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1179-2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1284-2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1170-2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1242-2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-828-1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-750-1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
 
   <!-- Preload font Inter variable tự host để tối ưu hóa thời gian hiển thị (FCP / LCP) -->
   <link rel="preload" as="font" type="font/woff2" href="{{ url_for('static', path='fonts/Inter-Variable.woff2') }}" crossorigin>
 
   <!-- Nạp Modern Vanilla CSS3 theo thứ tự tuần tự chuẩn hóa -->
-  <link rel="stylesheet" href="{{ url_for('static', path='css/tokens.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/signin.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/motion.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/tokens.css') }}?v=2.4.4">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/signin.css') }}?v=2.4.4">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/motion.css') }}?v=2.4.4">
 
   <!-- Cấu hình bảo mật HTMX ngăn chặn eval và script injection -->
   <meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"selfRequestsOnly":true,"includeIndicatorStyles":false}'>

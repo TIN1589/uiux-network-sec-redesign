@@ -5,7 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>{% block title %}Network Security Monitor – SOC Command Center{% endblock %}</title>
 
-  <!-- Typography: Inter & JetBrains Mono -->
+  <!-- Critical Inline CSS: Đồng bộ canvas Warm Stone (#F3F1EC) chuẩn hệ thống VNPT SOC v2.4 -->
+  <style>
+    html, body {
+      background-color: #F3F1EC !important;
+      color: #141413 !important;
+      margin: 0;
+      padding: 0;
+    }
+    .app-shell, .workspace-scroll, #main-content {
+      background-color: #F3F1EC !important;
+    }
+
+    /* PWA Splash Screen Overlay (Đảm bảo 100% hiển thị màn hình đen logo khi mở app) */
+    #pwa-splash-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background-color: #0A0A0A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s ease;
+      pointer-events: auto;
+    }
+    #pwa-splash-overlay.splash-fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .pwa-splash-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      animation: pwaSplashPulse 1.2s ease-in-out infinite alternate;
+    }
+    .pwa-splash-logo {
+      width: 108px;
+      height: 108px;
+      object-fit: contain;
+      filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.9));
+    }
+    .pwa-splash-title {
+      margin-top: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #EDEDED;
+    }
+    .pwa-splash-subtitle {
+      margin-top: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      color: #71717A;
+    }
+    @keyframes pwaSplashPulse {
+      from { transform: scale(0.97); opacity: 0.95; }
+      to { transform: scale(1.03); opacity: 1; }
+    }
+  </style>
+
+  <!-- Typography Preload & Google Fonts -->
+  <link rel="preload" as="font" type="font/woff2" href="/static/fonts/Inter-Variable.woff2" crossorigin />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -16,18 +82,52 @@
   <!-- Favicon & Touch Icons -->
   <link rel="icon" type="image/svg+xml" href="/static/img/favicon/nsm-favicon.svg" />
   <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon/nsm-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/img/favicon/nsm-favicon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/static/img/favicon/nsm-favicon-512.png" />
   <link rel="shortcut icon" href="/static/img/favicon/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/img/favicon/nsm-favicon-512.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/img/favicon/nsm-apple-icon-180.png" />
+
+  <!-- PWA & Apple WebKit Standalone Specs -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="VNPT SOC" />
+  <meta name="theme-color" content="#F3F1EC" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <!-- Apple Touch Startup Splash Screens (Khử giật khung hình Springboard khi mở app từ màn hình chính iOS) -->
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-default.png" />
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1320-2868.png" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1290-2796.png" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1206-2622.png" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1179-2556.png" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1284-2778.png" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1170-2532.png" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1125-2436.png" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-1242-2688.png" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-828-1792.png" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-750-1334.png" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
 
   <!-- Modern Vanilla CSS3 Design System (No Tailwind!) -->
-  <link rel="stylesheet" href="/static/css/style.css?v=2.4.2" />
+  <link rel="stylesheet" href="/static/css/style.css?v=2.4.3" />
 
-  <!-- Chart.js 4.x & HTMX 2.x -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <!-- Core Engines: Vendored cục bộ & Deferred để giải phóng Main Thread khi mở app -->
+  <script defer src="/static/vendor/htmx.min.js"></script>
+  <script defer src="/static/vendor/chart.umd.min.js"></script>
 </head>
 <body>
+
+  <!-- APP COLD BOOT SPLASH SCREEN OVERLAY (Đảm bảo 100% hiển thị màn hình khởi động native đen tuyền logo VNPT) -->
+  <div id="pwa-splash-overlay" aria-hidden="true">
+    <div class="pwa-splash-content">
+      <div class="pwa-splash-logo-wrap">
+        <img src="/static/img/favicon/nsm-favicon.svg" alt="VNPT SOC" class="pwa-splash-logo" width="108" height="108" />
+      </div>
+      <div class="pwa-splash-title">VNPT SOC</div>
+      <div class="pwa-splash-subtitle">CYBERSECURITY COMMAND CENTER</div>
+    </div>
+  </div>
 
   <!-- MOBILE SIDEBAR BACKDROP (< 1024px) -->
   <div id="sidebar-backdrop" onclick="closeMobileSidebar()" class="hidden" aria-hidden="true"></div>
@@ -110,9 +210,35 @@
     </a>
   </nav>
 
+  <!-- IOS PWA INSTALL GUIDANCE BANNER -->
+  {% include 'components/pwa_prompt.html' %}
+
   <!-- VANILLA ES6+ APPLICATION ENGINE -->
   <script type="module" src="/static/js/app.js?v=2.4.3"></script>
   {% block scripts %}{% endblock %}
+
+  <!-- Tự động giải phóng Splash Screen mượt mà khi ứng dụng sẵn sàng -->
+  <script>
+    (function() {
+      function hideSplash() {
+        var splash = document.getElementById('pwa-splash-overlay');
+        if (splash && !splash.classList.contains('splash-fade-out')) {
+          splash.classList.add('splash-fade-out');
+          setTimeout(function() {
+            if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+          }, 450);
+        }
+      }
+      if (document.readyState === 'complete') {
+        setTimeout(hideSplash, 450);
+      } else {
+        window.addEventListener('load', function() {
+          setTimeout(hideSplash, 450);
+        });
+      }
+      setTimeout(hideSplash, 1200);
+    })();
+  </script>
 
 </body>
 </html>

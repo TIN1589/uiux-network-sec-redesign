@@ -1,0 +1,213 @@
+{# Component: iOS PWA Installation Guidance Banner
+   Hướng dẫn người dùng iPhone cài đặt ứng dụng SOC ra màn hình chính (Add to Home Screen)
+   chạy ở chế độ Standalone không thanh URL.
+#}
+<div id="ios-pwa-banner" class="ios-pwa-banner hidden" role="dialog" aria-labelledby="ios-pwa-title" aria-describedby="ios-pwa-desc">
+  <div class="ios-pwa-content">
+    <div class="ios-pwa-header">
+      <div class="ios-pwa-icon" aria-hidden="true">
+        <img src="/static/img/favicon/nsm-apple-icon-180.png" alt="VNPT SOC Icon" width="36" height="36" />
+      </div>
+      <div class="ios-pwa-title-wrap">
+        <h3 id="ios-pwa-title" class="ios-pwa-title">Cài đặt VNPT SOC trên iPhone</h3>
+        <p id="ios-pwa-desc" class="ios-pwa-subtitle">Chạy toàn màn hình, mượt mà và tối ưu RAM</p>
+      </div>
+      <button type="button" class="ios-pwa-close-btn" onclick="dismissIosPwaBanner(true)" aria-label="Đóng thông báo">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="ios-pwa-steps">
+      <div class="ios-pwa-step">
+        <span class="ios-pwa-step-num">1</span>
+        <span>Nhấn vào biểu tượng <strong>Chia sẻ</strong> <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true" style="color: #60A5FA;"></i> ở thanh dưới Safari</span>
+      </div>
+      <div class="ios-pwa-step">
+        <span class="ios-pwa-step-num">2</span>
+        <span>Cuộn xuống và chọn <strong>Thêm vào MH chính</strong> <i class="fa-regular fa-square-plus" aria-hidden="true" style="color: #C6F135;"></i></span>
+      </div>
+    </div>
+    <div class="ios-pwa-actions">
+      <button type="button" class="ios-pwa-ack-btn" onclick="dismissIosPwaBanner(true)">
+        Đã hiểu
+      </button>
+      <button type="button" class="ios-pwa-later-btn" onclick="dismissIosPwaBanner(false)">
+        Để sau
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ios-pwa-banner {
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    z-index: 999;
+    background: rgba(20, 20, 20, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(198, 241, 53, 0.15);
+    animation: iosBannerSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes iosBannerSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .ios-pwa-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .ios-pwa-icon img {
+    border-radius: 8px;
+    display: block;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+
+  .ios-pwa-title-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ios-pwa-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #EDEDED;
+    margin: 0;
+    line-height: 1.25;
+  }
+
+  .ios-pwa-subtitle {
+    font-size: 12px;
+    color: #8E8B82;
+    margin: 2px 0 0 0;
+  }
+
+  .ios-pwa-close-btn {
+    background: transparent;
+    border: none;
+    color: #71717A;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+  }
+
+  .ios-pwa-close-btn:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .ios-pwa-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+
+  .ios-pwa-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #D4D4D8;
+    line-height: 1.4;
+  }
+
+  .ios-pwa-step-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(198, 241, 53, 0.15);
+    color: #C6F135;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .ios-pwa-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .ios-pwa-ack-btn {
+    flex: 1;
+    background: #C6F135;
+    color: #0A0A0A;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .ios-pwa-ack-btn:active {
+    opacity: 0.9;
+    transform: scale(0.99);
+  }
+
+  .ios-pwa-later-btn {
+    background: rgba(255, 255, 255, 0.06);
+    color: #A1A1AA;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+  }
+
+  .ios-pwa-later-btn:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+</style>
+
+<script>
+  (function initIosPwaBanner() {
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    const isDismissed = localStorage.getItem('soc_ios_pwa_dismissed') === 'true';
+
+    // Chỉ hiển thị trên thiết bị iOS chưa cài đặt standalone và chưa nhấn "Đã hiểu"
+    if (isIos && !isStandalone && !isDismissed) {
+      // Hiển thị sau 3 giây để không chắn trải nghiệm đầu tiên
+      setTimeout(() => {
+        const banner = document.getElementById('ios-pwa-banner');
+        if (banner) banner.classList.remove('hidden');
+      }, 3000);
+    }
+
+    window.dismissIosPwaBanner = function(persist = false) {
+      const banner = document.getElementById('ios-pwa-banner');
+      if (banner) banner.classList.add('hidden');
+      if (persist) {
+        localStorage.setItem('soc_ios_pwa_dismissed', 'true');
+      }
+    };
+  })();
+</script>

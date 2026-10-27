@@ -1,0 +1,37 @@
+{
+  "name": "Network Security Monitor – VNPT SOC Command Center",
+  "short_name": "VNPT SOC",
+  "description": "Trung tâm điều hành và giám sát an ninh mạng thời gian thực VNPT SOC",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F3F1EC",
+  "theme_color": "#F3F1EC",
+  "lang": "vi",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/static/img/favicon/nsm-favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/favicon/nsm-favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/img/favicon/nsm-apple-icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": [
+    "security",
+    "utilities",
+    "productivity"
+  ]
+}
