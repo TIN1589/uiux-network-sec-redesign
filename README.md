@@ -1,17 +1,17 @@
 # Network Security Monitor – SOC Command Center
 
-> **Phiên bản thiết kế & giao diện chuẩn cho Trung tâm điều hành an toàn thông tin (SOC Command Center v2.4).**
-> Dự án được tối ưu hóa cho cả hai mục đích: **Tham khảo quy chuẩn UI/UX** cho các thành viên và **Bản trình duyệt Frontend thực nghiệm** hoàn chỉnh để xem xét phê duyệt.
+> Phiên bản thiết kế & giao diện chuẩn cho Trung tâm điều hành an toàn thông tin (SOC Command Center v2.4 / VNPT N4.2).
+> Dự án được tối ưu hóa cho hai mục đích: **Tham khảo quy chuẩn UI/UX** cho các thành viên và **Bản trình duyệt Frontend thực nghiệm** hoàn chỉnh phục vụ thẩm định phê duyệt.
 
 ---
 
-## ⚡ Quick Preview (Dành cho người xem xét & Thành viên)
+## ⚡ Quick Preview (Dành cho người thẩm định & Thành viên)
 
 Bạn có thể chạy dự án bằng **1 trong 2 cách** tùy vào nhu cầu:
 
 ### Cách 1: Xem nhanh giao diện tĩnh (Zero Setup - Standalone Preview)
-*Phù hợp cho sếp / người duyệt / thành viên muốn xem nhanh UI/UX mà không cần cài đặt Python:*
-- Mở trực tiếp file [`index.html`](file:///d:/AllCourse/Học%20Kì%20Doanh%20Nghiệp_10-1(26-27)/UIUX-NetWorkSec/redesign/index.html) bằng bất kỳ trình duyệt nào (Chrome, Edge, Firefox), hoặc dùng extension **Live Server** trên VS Code.
+*Phù hợp cho người thẩm định hoặc thành viên muốn xem nhanh UI/UX mà không cần cài đặt Python:*
+- Mở trực tiếp file [`index.html`](file:///d:/AllCourse/Học%20Kì%20Doanh%20Nghiệp_10-1(26-27)/UIUX-NetWorkSec/redesign/index.html) bằng trình duyệt (Chrome, Edge, Firefox), hoặc sử dụng extension **Live Server** trên VS Code.
 - Đầy đủ layout 4 trang, Chart.js tương tác, slide-over drawer, modal sign-in và responsive 3 breakpoint.
 
 ### Cách 2: Chạy đầy đủ tính năng với Backend FastAPI (Full Dynamic App)
@@ -33,17 +33,17 @@ Bạn có thể chạy dự án bằng **1 trong 2 cách** tùy vào nhu cầu:
 
 ## 🛠 Tech Stack & Kiến trúc
 
-Dự án loại bỏ hoàn toàn các framework cồng kềnh, tối ưu hiệu năng cao và tốc độ tải trang cực nhanh:
+Dự án sử dụng kiến trúc Hypermedia-Driven hiệu năng cao, giảm thiểu phụ thuộc framework cồng kềnh:
 
 - **[Jinja2](https://jinja.palletsprojects.com/)**: Server-side template engine dạng module hóa (Master layout, Components, Pages, HTMX Partials).
 - **[HTMX 2.0](https://htmx.org/)**: Điều hướng không tải lại trang (`hx-get`), tìm kiếm debounce thời gian thực (`hx-trigger="input changed delay:200ms"`), slide-over drawer và cập nhật trạng thái alert linh hoạt.
 - **Modern Vanilla CSS3**: 
   - Toàn bộ Design Tokens được định nghĩa tập trung qua CSS Custom Properties (màu sắc, spacing, typography, shadow).
-  - Không phụ thuộc Tailwind, dễ dàng tinh chỉnh và bảo trì.
+  - Không phụ thuộc Tailwind, tối ưu hóa kích thước stylesheet và kiểm soát 100% cascade.
   - Sử dụng CSS Grid, Flexbox, `@container` queries và fluid typography (`clamp()`).
-- **Vanilla JavaScript ES6+**: Kiến trúc module rõ ràng (`app.js`, `charts.js`, `toast.js`), hook trực tiếp vào vòng đời của HTMX và Chart.js.
+- **Vanilla JavaScript ES6+**: Kiến trúc module rõ ràng ([`app.js`](file:///d:/AllCourse/Học%20Kì%20Doanh%20Nghiệp_10-1(26-27)/UIUX-NetWorkSec/redesign/static/js/app.js), [`charts.js`](file:///d:/AllCourse/Học%20Kì%20Doanh%20Nghiệp_10-1(26-27)/UIUX-NetWorkSec/redesign/static/js/charts.js), [`toast.js`](file:///d:/AllCourse/Học%20Kì%20Doanh%20Nghiệp_10-1(26-27)/UIUX-NetWorkSec/redesign/static/js/toast.js)), hook trực tiếp vào vòng đời của HTMX và Chart.js.
 - **[Chart.js 4.x](https://www.chartjs.org/)**: Biểu đồ phân tích thị giác (Severity Mix Doughnut, 24-Hour Stacked Bar, Sparkline KPI).
-- **FastAPI (Python 3.10+)**: Backend bất đồng bộ hiệu năng cao, in-memory state store, CSV streaming export.
+- **FastAPI (Python 3.10+)**: Backend bất đồng bộ hiệu năng cao, in-memory state store, CSV streaming export có bảo vệ chống Formula Injection.
 
 ---
 
@@ -51,9 +51,6 @@ Dự án loại bỏ hoàn toàn các framework cồng kềnh, tối ưu hiệu 
 
 ```
 redesign/
-├── .agents/
-│   └── rules/
-│       └── AGENTs.md           # Quy chuẩn thiết kế, Design Tokens & nguyên tắc giao diện
 ├── static/
 │   ├── css/
 │   │   ├── variables.css       # Design tokens (màu nền ấm #f3f1ec, dark sidebar, text, border)
@@ -97,7 +94,7 @@ redesign/
 
 ## 🎨 Quy chuẩn UI/UX & Thiết kế (Design Guidelines)
 
-Chi tiết đầy đủ về quy tắc thiết kế có tại file [`.agents/rules/AGENTs.md`](file:///.agents/rules/AGENTs.md):
+Hệ thống quy chuẩn thiết kế được định nghĩa tập trung qua các Design Tokens trong file [`static/css/variables.css`](file:///d:/AllCourse/Học%20Kì%20Doanh%20Nghiệp_10-1(26-27)/UIUX-NetWorkSec/redesign/static/css/variables.css):
 
 1. **Bảng màu chủ đạo (Tone & Mood)**:
    - Nền trang ấm thanh lịch: `#f3f1ec` (không gây chói mắt cho analyst trực ca dài).
@@ -118,9 +115,9 @@ Chi tiết đầy đủ về quy tắc thiết kế có tại file [`.agents/rul
 
 ---
 
-## 🚀 Các tính năng nổi bật (Dành cho thẩm định FE)
+## 🚀 Các tính năng cốt lõi
 
-1. **Trải nghiệm mượt mà không tải lại trang**: HTMX hoán đổi nội dung `#main-content` đồng thời cập nhật đúng URL trình duyệt (`hx-push-url="true"`), hỗ trợ F5 refresh và nút Back/Forward tự nhiên.
+1. **Trải nghiệm không tải lại trang**: HTMX hoán đổi nội dung `#main-content` đồng thời cập nhật đúng URL trình duyệt (`hx-push-url="true"`), hỗ trợ F5 refresh và nút Back/Forward tự nhiên.
 2. **Bộ lọc tìm kiếm tức thì**: Lọc theo từ khóa, mức độ nghiêm trọng (Severity), khung thời gian và bộ lọc nâng cao (Rule ID, Source IP, Asset, Status).
 3. **Slide-over Drawer chi tiết cảnh báo**: Xem chi tiết log thô, MITRE ATT&CK technique, sao chép 1-click clipboard và thao tác nhanh trạng thái (Acknowledge / In Progress / Resolved).
 4. **Lab kiểm thử kịch bản tấn công**: Đo lường SLA delta độ trễ phát hiện so với ngưỡng 5.0 giây, hỗ trợ lưu trữ và xuất file CSV.
