@@ -22,6 +22,10 @@ export const state = {
 // =========================================================================
 // 1. NAVIGATION & MOBILE DRAWER
 // =========================================================================
+/**
+ * Mở thanh điều hướng sidebar ở chế độ off-canvas trên thiết bị di động (< 1024px).
+ * @returns {void}
+ */
 export function openMobileSidebar() {
   const sb = document.getElementById('app-sidebar');
   const bd = document.getElementById('sidebar-backdrop');
@@ -29,6 +33,10 @@ export function openMobileSidebar() {
   if (bd) bd.classList.remove('hidden');
 }
 
+/**
+ * Đóng thanh điều hướng sidebar mobile và ẩn lớp phủ nền mờ backdrop.
+ * @returns {void}
+ */
 export function closeMobileSidebar() {
   const sb = document.getElementById('app-sidebar');
   const bd = document.getElementById('sidebar-backdrop');
@@ -36,6 +44,11 @@ export function closeMobileSidebar() {
   if (bd) bd.classList.add('hidden');
 }
 
+/**
+ * Đồng bộ trạng thái active của mục điều hướng trên thanh sidebar theo URL hiện tại.
+ * @param {string} path - Đường dẫn URL cần đối soát (mặc định lấy từ window.location.pathname).
+ * @returns {void}
+ */
 export function syncActiveNav(path = window.location.pathname) {
   const navMap = {
     '/': 'overview',
@@ -72,6 +85,11 @@ export function syncActiveNav(path = window.location.pathname) {
   });
 }
 
+/**
+ * Điều phối chuyển đổi tab giao diện, hỗ trợ cả hai chế độ Dynamic HTMX và Static Standalone.
+ * @param {'overview'|'alerts'|'devices'|'scenarios'} tabId - Định danh trang tab cần chuyển.
+ * @returns {void}
+ */
 export function switchTab(tabId) {
   state.currentTab = tabId;
   const tabs = ['overview', 'alerts', 'devices', 'scenarios'];
@@ -621,7 +639,11 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// HTMX afterSwap Hook: auto-sync sidebar active nav & re-init Chart.js if on overview
+// Vòng đời HTMX & Khử rò rỉ bộ nhớ (Rule 3.1):
+// HTMX hoán đổi phần tử #main-content mà không tải lại toàn trang.
+// BẮT BUỘC phải hủy (destroy) biểu đồ Chart.js cũ trước khi khởi tạo lại,
+// nếu không Chart.js sẽ bắn lỗi "Canvas is already in use by chart with id X"
+// và gây rò rỉ bộ nhớ (memory leak) trên trình duyệt của analyst trực ca dài.
 document.addEventListener('htmx:afterSwap', (evt) => {
   syncActiveNav(window.location.pathname);
   closeMobileSidebar();
