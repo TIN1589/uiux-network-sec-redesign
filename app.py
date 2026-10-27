@@ -3,19 +3,19 @@ Network Security Monitor – SOC Command Center
 Backend Architecture: FastAPI + Jinja2 + HTMX
 """
 
-import io
 import csv
-import re
-import secrets
 import hashlib
 import hmac
-from datetime import datetime, timedelta
-from typing import Optional, List
-from fastapi import FastAPI, Request, Form, Query, Cookie, Response
+import io
+import re
+import secrets
+from datetime import datetime
+
+from fastapi import Cookie, FastAPI, Form, Request, Response
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 # Auth config — ASSUMPTION-02
 _SECRET_KEY = secrets.token_hex(32)          # Random mỗi lần khởi động (demo mode)
@@ -98,8 +98,8 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.10.1",
         "asset": "vnpt-edge-fw-01",
         "assetType": "Firewall",
-        "observedRel": "2 min ago",
-        "ageMinutes": 2,
+        "observedRel": "5 min ago",
+        "ageMinutes": 5,
         "observedDate": "26 Oct 2026",
         "observedTime": "01:07:11 GMT+7",
         "mitre": "T1110 · Brute Force",
@@ -111,26 +111,70 @@ INITIAL_ALERTS = [
         "playbook": "1. Confirm automatic block of 198.51.100.44 in edge firewall blocklist.\n2. Verify SSH management access is restricted to Out-of-Band jump hosts.\n3. Audit recent successful logins on vnpt-edge-fw-01."
     },
     {
+        "eventId": "EVT-2610-090",
+        "ruleId": "100205",
+        "title": "BGP Origin AS Hijack Anomaly on Core Router",
+        "severity": "Critical",
+        "state": "New",
+        "srcIp": "198.51.100.100",
+        "dstIp": "10.0.0.1",
+        "asset": "vnpt-core-router-01",
+        "assetType": "Router",
+        "observedRel": "8 min ago",
+        "ageMinutes": 8,
+        "observedDate": "26 Oct 2026",
+        "observedTime": "01:04:19 GMT+7",
+        "mitre": "T1584.004 · Compromise Infrastructure: DNS / Route Hijacking",
+        "hits": 1,
+        "testStartTs": "01:04:17.5",
+        "testObsTs": "01:04:19.2",
+        "testDeltaSec": 1.7,
+        "rawSyslog": "Oct 26 01:04:19 vnpt-core-router-01 %BGP-3-HIJACK_ALERT: Conflicting origin AS announced for VNPT prefix 123.30.0.0/16 by unauthorized peer AS 64512.",
+        "playbook": "1. Verify RPKI ROA validation status on core-router.\n2. Filter unauthorized AS 64512 announcements on upstream eBGP session.\n3. Escalate to VNPT NOC Level 3 routing desk."
+    },
+    {
         "eventId": "EVT-2610-089",
         "ruleId": "100200",
-        "title": "Port scan detected",
+        "title": "Port scan detected against DMZ subnet",
         "severity": "High",
         "state": "New",
         "srcIp": "203.0.113.45",
         "dstIp": "10.0.10.20",
         "asset": "vnpt-edge-fw-01",
         "assetType": "Firewall",
-        "observedRel": "5 min ago",
-        "ageMinutes": 5,
+        "observedRel": "12 min ago",
+        "ageMinutes": 12,
         "observedDate": "26 Oct 2026",
-        "observedTime": "01:10:47 GMT+7",
+        "observedTime": "01:00:47 GMT+7",
         "mitre": "T1046 · Network Service Scanning",
         "hits": 3,
-        "testStartTs": "01:10:46.0",
-        "testObsTs": "01:10:47.8",
+        "testStartTs": "01:00:46.0",
+        "testObsTs": "01:00:47.8",
         "testDeltaSec": 1.8,
-        "rawSyslog": "Oct 26 01:10:47 vnpt-edge-fw-01 suricata[1082]: [1:100200:3] ET SCAN Nmap SYN Scan Detected {TCP} 203.0.113.45:49210 -> 10.0.10.20:1-1024.",
+        "rawSyslog": "Oct 26 01:00:47 vnpt-edge-fw-01 suricata[1082]: [1:100200:3] ET SCAN Nmap SYN Scan Detected {TCP} 203.0.113.45:49210 -> 10.0.10.20:1-1024.",
         "playbook": "1. Block scanning IP 203.0.113.45 at perimeter ACL.\n2. Correlate with E2E Playwright test schedule if sourced from authorized red-team subnet."
+    },
+    {
+        "eventId": "EVT-2610-087",
+        "ruleId": "100260",
+        "title": "VLAN Hopping double-tagged frame detected",
+        "severity": "High",
+        "state": "New",
+        "srcIp": "10.0.10.66",
+        "dstIp": "10.0.99.1",
+        "asset": "vnpt-agg-switch-05",
+        "assetType": "Switch",
+        "observedRel": "20 min ago",
+        "ageMinutes": 20,
+        "observedDate": "26 Oct 2026",
+        "observedTime": "00:52:10 GMT+7",
+        "mitre": "T1095 · Non-Application Layer Protocol",
+        "hits": 1,
+        "testStartTs": "00:52:06.8",
+        "testObsTs": "00:52:10.0",
+        "testDeltaSec": 3.2,
+        "rawSyslog": "Oct 26 00:52:10 vnpt-agg-switch-05 openvswitch: unexpected double-tagged 802.1Q frame on access port Gi0/12 (Outer VLAN 10, Inner VLAN 99).",
+        "playbook": "1. Disable DTP negotiation on trunk ports.\n2. Change native VLAN from default VLAN 1 to unused dedicated VLAN 999.\n3. Isolate source MAC on access switch port Gi0/12."
     },
     {
         "eventId": "EVT-2610-084",
@@ -142,17 +186,39 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.10.1",
         "asset": "vnpt-edge-fw-01",
         "assetType": "Firewall",
-        "observedRel": "18 min ago",
-        "ageMinutes": 18,
+        "observedRel": "35 min ago",
+        "ageMinutes": 35,
         "observedDate": "26 Oct 2026",
-        "observedTime": "00:54:12 GMT+7",
+        "observedTime": "00:37:12 GMT+7",
         "mitre": "T1078 · Valid Accounts",
         "hits": 1,
-        "testStartTs": "00:54:10.0",
-        "testObsTs": "00:54:12.1",
+        "testStartTs": "00:37:10.0",
+        "testObsTs": "00:37:12.1",
         "testDeltaSec": 2.1,
-        "rawSyslog": "Oct 26 00:54:12 vnpt-edge-fw-01 openvpn[4412]: TLS Auth OK: user=soc_duty_02 rip=192.0.2.88:61023 GeoIP=Unknown-ASN.",
+        "rawSyslog": "Oct 26 00:37:12 vnpt-edge-fw-01 openvpn[4412]: TLS Auth OK: user=soc_duty_02 rip=192.0.2.88:61023 GeoIP=Unknown-ASN.",
         "playbook": "1. Verify MFA token approval with analyst soc_duty_02.\n2. Revoke active VPN session if unrecognized."
+    },
+    {
+        "eventId": "EVT-2610-081",
+        "ruleId": "100710",
+        "title": "Broadband Network Gateway (BNG) PPPoE Session Exhaustion",
+        "severity": "Critical",
+        "state": "New",
+        "srcIp": "10.200.1.50",
+        "dstIp": "10.200.0.1",
+        "asset": "vnpt-bng-01",
+        "assetType": "Gateway",
+        "observedRel": "45 min ago",
+        "ageMinutes": 45,
+        "observedDate": "26 Oct 2026",
+        "observedTime": "00:27:08 GMT+7",
+        "mitre": "T1499 · Endpoint Denial of Service",
+        "hits": 1,
+        "testStartTs": "00:27:06.1",
+        "testObsTs": "00:27:08.5",
+        "testDeltaSec": 2.4,
+        "rawSyslog": "Oct 26 00:27:08 vnpt-bng-01 %BNG-2-RESOURCE_WARN: PPPoE active subscriber pool exceeded 98% threshold (64,200 active sessions on Slot 0/1). Suspected subscriber flood.",
+        "playbook": "1. Apply per-port PPPoE session limit on access OLT uplinks.\n2. Enable subscriber rate-limiting on BNG sub-interfaces.\n3. Inspect RADIUS authentication server latency."
     },
     {
         "eventId": "EVT-2610-079",
@@ -164,17 +230,193 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.10.15",
         "asset": "vnpt-edge-fw-01",
         "assetType": "Firewall",
-        "observedRel": "28 min ago",
-        "ageMinutes": 28,
+        "observedRel": "52 min ago",
+        "ageMinutes": 52,
         "observedDate": "26 Oct 2026",
-        "observedTime": "01:08:42 GMT+7",
+        "observedTime": "00:20:42 GMT+7",
         "mitre": "T1498.001 · Direct Network Flood",
         "hits": 2,
-        "testStartTs": "01:08:40.0",
-        "testObsTs": "01:08:42.1",
+        "testStartTs": "00:20:40.0",
+        "testObsTs": "00:20:42.1",
         "testDeltaSec": 2.1,
-        "rawSyslog": "Oct 26 01:08:42 vnpt-edge-fw-01 kernel: [UFW SYN-PROXY] SYN rate 14,500 pps from 203.0.113.99 to 10.0.10.15:443 exceeded threshold.",
+        "rawSyslog": "Oct 26 00:20:42 vnpt-edge-fw-01 kernel: [UFW SYN-PROXY] SYN rate 14,500 pps from 203.0.113.99 to 10.0.10.15:443 exceeded threshold.",
         "playbook": "1. Enable SYN cookies and rate-limiting on VIP 10.0.10.15:443.\n2. Divert upstream traffic through DDoS scrubbing center."
+    },
+    {
+        "eventId": "EVT-2610-072",
+        "ruleId": "100255",
+        "title": "Dynamic ARP Inspection (DAI) violation on access segment",
+        "severity": "Medium",
+        "state": "Investigating",
+        "srcIp": "10.0.10.77",
+        "dstIp": "10.0.10.1",
+        "asset": "vnpt-access-sw-02",
+        "assetType": "Switch",
+        "observedRel": "1.5 h ago",
+        "ageMinutes": 90,
+        "observedDate": "25 Oct 2026",
+        "observedTime": "23:42:15 GMT+7",
+        "mitre": "T1557.002 · ARP Cache Poisoning",
+        "hits": 1,
+        "testStartTs": "23:42:12.2",
+        "testObsTs": "23:42:15.0",
+        "testDeltaSec": 2.8,
+        "rawSyslog": "Oct 25 23:42:15 vnpt-access-sw-02 %SW_DAI-4-PACKET_BURST_RATE_EXCEEDED: 42 packets received in 100ms on Gi0/7. Dropping rogue ARP replies for gateway 10.0.10.1.",
+        "playbook": "1. Validate IP-MAC binding in DHCP Snooping database.\n2. Shut down untrusted access port Gi0/7.\n3. Clear ARP cache on adjacent switches."
+    },
+    {
+        "eventId": "EVT-2610-065",
+        "ruleId": "100240",
+        "title": "Core fiber interface state flapping",
+        "severity": "Medium",
+        "state": "Acknowledged",
+        "srcIp": "10.0.0.1",
+        "dstIp": "10.0.0.2",
+        "asset": "vnpt-core-router-01",
+        "assetType": "Router",
+        "observedRel": "3 h ago",
+        "ageMinutes": 180,
+        "observedDate": "25 Oct 2026",
+        "observedTime": "22:12:08 GMT+7",
+        "mitre": "T1498 · Network Denial of Service",
+        "hits": 4,
+        "testStartTs": "22:12:05.0",
+        "testObsTs": "22:12:08.3",
+        "testDeltaSec": 3.3,
+        "rawSyslog": "Oct 25 22:12:08 vnpt-core-router-01 %LINK-3-UPDOWN: Interface TenGigE0/0/1 changed state to down (Tx optical power dropped to -24dBm).",
+        "playbook": "1. Dispatch transmission field team to inspect ODF optical fiber patch.\n2. Switch traffic to secondary protected MPLS path."
+    },
+    {
+        "eventId": "EVT-2610-058",
+        "ruleId": "100410",
+        "title": "DNS Amplification anomaly querying root zone",
+        "severity": "Medium",
+        "state": "New",
+        "srcIp": "198.51.100.77",
+        "dstIp": "10.0.50.53",
+        "asset": "vnpt-dns-resolver",
+        "assetType": "Server",
+        "observedRel": "5.3 h ago",
+        "ageMinutes": 320,
+        "observedDate": "25 Oct 2026",
+        "observedTime": "19:52:14 GMT+7",
+        "mitre": "T1498.002 · Reflection Amplification",
+        "hits": 2,
+        "testStartTs": "19:52:11.8",
+        "testObsTs": "19:52:14.0",
+        "testDeltaSec": 2.2,
+        "rawSyslog": "Oct 25 19:52:14 vnpt-dns-resolver named[1844]: query-errors: rate-limit: 1200 queries/sec for 'ANY .' from 198.51.100.77 exceeded limit.",
+        "playbook": "1. Apply Response Rate Limiting (RRL) on BIND named.\n2. Drop open recursive queries from external source IP ranges."
+    },
+    {
+        "eventId": "EVT-2610-051",
+        "ruleId": "100220",
+        "title": "Administrator login succeeded from jump host",
+        "severity": "Low",
+        "state": "Resolved",
+        "srcIp": "10.0.99.10",
+        "dstIp": "10.0.0.1",
+        "asset": "vnpt-core-router-01",
+        "assetType": "Router",
+        "observedRel": "7.5 h ago",
+        "ageMinutes": 450,
+        "observedDate": "25 Oct 2026",
+        "observedTime": "17:42:30 GMT+7",
+        "mitre": "T1078 · Valid Accounts",
+        "hits": 1,
+        "testStartTs": "17:42:29.0",
+        "testObsTs": "17:42:30.2",
+        "testDeltaSec": 1.2,
+        "rawSyslog": "Oct 25 17:42:30 vnpt-core-router-01 %SEC_LOGIN-5-LOGIN_SUCCESS: Login Success [user: netadmin] from 10.0.99.10 via SSH2 (OOB management network).",
+        "playbook": "1. Verify planned maintenance ticket ID.\n2. Confirm session logout timestamp after work completion."
+    },
+    {
+        "eventId": "EVT-2610-044",
+        "ruleId": "100235",
+        "title": "Daily automated configuration backup exported",
+        "severity": "Low",
+        "state": "Resolved",
+        "srcIp": "10.0.99.5",
+        "dstIp": "10.0.99.200",
+        "asset": "vnpt-agg-switch-05",
+        "assetType": "Switch",
+        "observedRel": "12 h ago",
+        "ageMinutes": 720,
+        "observedDate": "25 Oct 2026",
+        "observedTime": "13:12:00 GMT+7",
+        "mitre": "T1005 · Data from Local System",
+        "hits": 1,
+        "testStartTs": "13:11:58.5",
+        "testObsTs": "13:12:00.0",
+        "testDeltaSec": 1.5,
+        "rawSyslog": "Oct 25 13:12:00 vnpt-agg-switch-05 %SYS-5-CONFIG_I: Configured from tftp://10.0.99.200/configs/vnpt-agg-switch-05.cfg by cron_backup.",
+        "playbook": "1. Verify MD5 hash checksum on central TFTP backup repository."
+    },
+    {
+        "eventId": "EVT-2610-033",
+        "ruleId": "100230",
+        "title": "Unauthorized device configuration modification",
+        "severity": "High",
+        "state": "Acknowledged",
+        "srcIp": "10.0.99.10",
+        "dstIp": "10.0.0.1",
+        "asset": "vnpt-core-router-01",
+        "assetType": "Router",
+        "observedRel": "1.1 d ago",
+        "ageMinutes": 1600,
+        "observedDate": "24 Oct 2026",
+        "observedTime": "22:32:10 GMT+7",
+        "mitre": "T1565.001 · Stored Data Manipulation",
+        "hits": 1,
+        "testStartTs": "22:32:08.0",
+        "testObsTs": "22:32:10.5",
+        "testDeltaSec": 2.5,
+        "rawSyslog": "Oct 24 22:32:10 vnpt-core-router-01 commit: configuration changed by netadmin: route-map RM_BGP_OUT permit 20 modified.",
+        "playbook": "1. Diff running-config against golden repository.\n2. Revert unauthorized route-map changes if unapproved."
+    },
+    {
+        "eventId": "EVT-2610-022",
+        "ruleId": "100265",
+        "title": "DHCP Snooping dropped untrusted rogue DHCP offer",
+        "severity": "Low",
+        "state": "Resolved",
+        "srcIp": "10.0.10.199",
+        "dstIp": "255.255.255.255",
+        "asset": "vnpt-access-sw-02",
+        "assetType": "Switch",
+        "observedRel": "1.9 d ago",
+        "ageMinutes": 2800,
+        "observedDate": "24 Oct 2026",
+        "observedTime": "02:30:15 GMT+7",
+        "mitre": "T1557 · Adversary-in-the-Middle",
+        "hits": 1,
+        "testStartTs": "02:30:13.2",
+        "testObsTs": "02:30:15.0",
+        "testDeltaSec": 1.8,
+        "rawSyslog": "Oct 24 02:30:15 vnpt-access-sw-02 %DHCP_SNOOPING-5-DHCP_OFFER_DROPPED: Rogue DHCP OFFER received on untrusted port Gi0/14 from 10.0.10.199.",
+        "playbook": "1. Identify rogue DHCP server device plugged into port Gi0/14.\n2. Enable errdisable on port to prevent lease poisoning."
+    },
+    {
+        "eventId": "EVT-2610-015",
+        "ruleId": "100615",
+        "title": "GPON OLT optical power degradation on PON port",
+        "severity": "Medium",
+        "state": "Resolved",
+        "srcIp": "10.100.0.1",
+        "dstIp": "10.100.0.10",
+        "asset": "vnpt-olt-01",
+        "assetType": "Gateway",
+        "observedRel": "3.1 d ago",
+        "ageMinutes": 4500,
+        "observedDate": "22 Oct 2026",
+        "observedTime": "18:10:40 GMT+7",
+        "mitre": "T1489 · Service Stop",
+        "hits": 1,
+        "testStartTs": "18:10:35.4",
+        "testObsTs": "18:10:40.0",
+        "testDeltaSec": 4.6,
+        "rawSyslog": "Oct 22 18:10:40 vnpt-olt-01 %OLT-3-OPTICAL_DEGRADE: PON Port 0/1/4 RX power -29.2 dBm dropped below critical threshold. 32 ONUs affected.",
+        "playbook": "1. Dispatch line maintenance crew to clean optical connector at splitter cabinet.\n2. Verify ONU transmit power levels."
     }
 ]
 
@@ -197,7 +439,7 @@ DEVICES = [
         "lastEventRel": "Last event received 8s ago",
         "lastEventTs": "26 Oct 2026, 01:12:14 GMT+7",
         "note": "Active BGP & NetFlow v9 telemetry stream (520 EPS).",
-        "alertCount": 1
+        "alertCount": 5
     },
     {
         "name": "vnpt-agg-switch-05",
@@ -207,7 +449,7 @@ DEVICES = [
         "lastEventRel": "Last event received just now",
         "lastEventTs": "26 Oct 2026, 01:12:20 GMT+7",
         "note": "Active SNMPv3 trap & L2 STP telemetry stream (195 EPS).",
-        "alertCount": 1
+        "alertCount": 3
     },
     {
         "name": "vnpt-access-sw-02",
@@ -217,7 +459,37 @@ DEVICES = [
         "lastEventRel": "Last alert received 2 h ago",
         "lastEventTs": "26 Oct 2026, 00:19:56 GMT+7",
         "note": "No alert in 15 min. This does not always mean the device is offline.",
-        "alertCount": 0
+        "alertCount": 2
+    },
+    {
+        "name": "vnpt-bng-01",
+        "role": "Gateway",
+        "icon": "fa-network-wired",
+        "status": "Reporting",
+        "lastEventRel": "Last event received 45s ago",
+        "lastEventTs": "26 Oct 2026, 01:11:35 GMT+7",
+        "note": "Active RADIUS & PPPoE subscriber telemetry stream (680 EPS).",
+        "alertCount": 1
+    },
+    {
+        "name": "vnpt-olt-01",
+        "role": "Gateway",
+        "icon": "fa-sitemap",
+        "status": "Reporting",
+        "lastEventRel": "Last event received 2m ago",
+        "lastEventTs": "26 Oct 2026, 01:10:00 GMT+7",
+        "note": "Active OMCI & GPON optical telemetry stream (140 EPS).",
+        "alertCount": 1
+    },
+    {
+        "name": "vnpt-dns-resolver",
+        "role": "Server",
+        "icon": "fa-database",
+        "status": "Reporting",
+        "lastEventRel": "Last event received 5s ago",
+        "lastEventTs": "26 Oct 2026, 01:12:15 GMT+7",
+        "note": "Active BIND named query log telemetry stream (850 QPS).",
+        "alertCount": 1
     }
 ]
 
@@ -259,6 +531,45 @@ SCENARIO_RESULTS = [
         "detected": True,
         "delta": 1.4,
         "notes": "Cổng Gi0/24 chuyển sang trạng thái Root-Inconsistent ngay lập tức.",
+        "highlighted": False
+    },
+    {
+        "id": "SC-04",
+        "testedTs": "26 Oct, 00:20",
+        "code": "T1498",
+        "name": "SYN Flood DoS Attack",
+        "tool": "hping3 3.0",
+        "rule": "100305",
+        "linkedEventId": "EVT-2610-079",
+        "detected": True,
+        "delta": 2.1,
+        "notes": "Kích hoạt SYN cookies và chuyển hướng dòng lưu lượng qua DDoS scrubber.",
+        "highlighted": False
+    },
+    {
+        "id": "SC-05",
+        "testedTs": "26 Oct, 00:37",
+        "code": "T1078",
+        "name": "VPN Login Anomaly",
+        "tool": "openvpn-client",
+        "rule": "100280",
+        "linkedEventId": "EVT-2610-084",
+        "detected": True,
+        "delta": 2.1,
+        "notes": "Xác thực MFA bổ sung và cách ly phiên VPN bất thường từ dải IP lạ.",
+        "highlighted": False
+    },
+    {
+        "id": "SC-06",
+        "testedTs": "25 Oct, 23:42",
+        "code": "T1557.002",
+        "name": "ARP Cache Poisoning",
+        "tool": "arpspoof 2.4",
+        "rule": "100255",
+        "linkedEventId": "EVT-2610-072",
+        "detected": True,
+        "delta": 2.8,
+        "notes": "Dynamic ARP Inspection trên switch tầng access ngăn chặn toàn bộ gói tin giả mạo gateway.",
         "highlighted": False
     }
 ]
@@ -378,7 +689,7 @@ def _create_session(username: str, role: str = "admin") -> str:
     }
     return session_id
 
-def _get_session(session_id: Optional[str]) -> Optional[dict]:
+def _get_session(session_id: str | None) -> dict | None:
     """Kiểm tra và truy xuất thông tin phiên làm việc từ cookie session_id.
 
     Args:
@@ -459,20 +770,33 @@ def compute_overview_stats(time_window: str = "24h") -> tuple:
         "low": low
     }
 
+    ip_counts: dict = {}
+    for a in active_alerts:
+        src = a.get("srcIp")
+        if src:
+            ip_counts[src] = ip_counts.get(src, 0) + 1
+    sorted_ips = sorted(ip_counts.items(), key=lambda item: item[1], reverse=True)[:5]
     top_ips = [
-        {"ip": "10.254.0.99", "count": 1, "pct": 33},
-        {"ip": "198.51.100.44", "count": 1, "pct": 33},
-        {"ip": "203.0.113.195", "count": 1, "pct": 33}
+        {"ip": ip, "count": cnt, "pct": round((cnt / total) * 100) if total else 0}
+        for ip, cnt in sorted_ips
     ]
+    if not top_ips:
+        top_ips = [{"ip": "—", "count": 0, "pct": 0}]
 
+    type_counts: dict = {}
+    for a in active_alerts:
+        t = a.get("assetType", "Other").lower()
+        type_counts[t] = type_counts.get(t, 0) + 1
+    sorted_types = sorted(type_counts.items(), key=lambda item: item[1], reverse=True)
     dev_types = [
-        {"type": "switch", "count": 1, "pct": 33},
-        {"type": "router", "count": 1, "pct": 33},
-        {"type": "firewall", "count": 1, "pct": 33}
+        {"type": t, "count": cnt, "pct": round((cnt / total) * 100) if total else 0}
+        for t, cnt in sorted_types
     ]
+    if not dev_types:
+        dev_types = [{"type": "none", "count": 0, "pct": 0}]
 
-    queue_alerts = active_alerts[:3]
-    top_rules = active_alerts[:4]
+    queue_alerts = active_alerts[:6]
+    top_rules = active_alerts[:5]
 
     return stats, queue_alerts, top_rules, top_ips, dev_types
 
@@ -581,7 +905,7 @@ async def get_overview_page(request: Request, window: str = "24h"):
     )
 
 @app.get("/alerts", response_class=HTMLResponse)
-async def get_alerts_page(request: Request, severity: Optional[str] = "ALL", asset: Optional[str] = "ALL"):
+async def get_alerts_page(request: Request, severity: str | None = "ALL", asset: str | None = "ALL"):
     """Hiển thị toàn bộ trang Hàng đợi cảnh báo (Alert Queue) kèm Layout Master.
 
     Args:
@@ -690,7 +1014,7 @@ async def get_overview_view(request: Request, window: str = "24h"):
     )
 
 @app.get("/views/alerts", response_class=HTMLResponse)
-async def get_alerts_view(request: Request, severity: Optional[str] = "ALL", asset: Optional[str] = "ALL"):
+async def get_alerts_view(request: Request, severity: str | None = "ALL", asset: str | None = "ALL"):
     """Trả về partial nội dung Alert Queue để HTMX hoán đổi mượt mà vào #main-content.
 
     Args:
@@ -792,13 +1116,13 @@ async def get_overview_stats(request: Request, window: str = "24h"):
 @app.get("/api/alerts/filter", response_class=HTMLResponse)
 async def filter_alerts_endpoint(
     request: Request,
-    q: Optional[str] = "",
-    time: Optional[str] = "Last 24 hours",
-    severity: Optional[str] = "ALL",
-    rule: Optional[str] = "",
-    ip: Optional[str] = "",
-    asset: Optional[str] = "ALL",
-    state: Optional[str] = "ALL"
+    q: str | None = "",
+    time: str | None = "Last 24 hours",
+    severity: str | None = "ALL",
+    rule: str | None = "",
+    ip: str | None = "",
+    asset: str | None = "ALL",
+    state: str | None = "ALL"
 ):
     filtered = filter_alerts(
         q=q or "",
@@ -834,8 +1158,8 @@ async def get_alert_drawer(request: Request, event_id: str):
 async def acknowledge_alert(
     request: Request,
     event_id: str,
-    source: Optional[str] = Form(None),
-    session_id: Optional[str] = Cookie(None)
+    source: str | None = Form(None),
+    session_id: str | None = Cookie(None)
 ):
     """
     Acknowledge an alert. Called from Web UI or Telegram webhook.
@@ -879,7 +1203,7 @@ async def update_alert_state(request: Request, event_id: str, state: str = Form(
     )
 
 @app.post("/api/alerts/bulk-state", response_class=JSONResponse)
-async def bulk_update_alerts(state: str = Form(...), event_ids: List[str] = Form(...)):
+async def bulk_update_alerts(state: str = Form(...), event_ids: list[str] = Form(...)):
     updated_count = 0
     for a in alerts_store:
         if a["eventId"] in event_ids:
@@ -890,7 +1214,7 @@ async def bulk_update_alerts(state: str = Form(...), event_ids: List[str] = Form
 @app.post("/api/scenarios", response_class=HTMLResponse)
 async def save_scenario(
     request: Request,
-    id: Optional[str] = Form(""),
+    id: str | None = Form(""),
     code: str = Form(...),
     tool: str = Form(...),
     rule: str = Form(...),
@@ -1011,7 +1335,7 @@ async def live_status_pulse():
 # =============================================================================
 
 @app.get("/api/auth/csrf-token", response_class=JSONResponse)
-async def get_csrf_token(response: Response, session_id: Optional[str] = Cookie(None)):
+async def get_csrf_token(response: Response, session_id: str | None = Cookie(None)):
     """Issue a fresh CSRF token. Called on modal open."""
     sid = session_id if _get_session(session_id) else secrets.token_urlsafe(16)
     token = _generate_csrf_token(sid)
@@ -1022,7 +1346,7 @@ async def login(
     response: Response,
     username: str = Form(...),
     password: str = Form(...),
-    csrf_token: Optional[str] = Form(None)
+    csrf_token: str | None = Form(None)
 ):
     """
     Authenticate user with PBKDF2-HMAC-SHA256.
@@ -1049,7 +1373,7 @@ async def login(
     return {"success": True, "username": username, "role": "admin"}
 
 @app.post("/api/auth/logout", response_class=JSONResponse)
-async def logout(response: Response, session_id: Optional[str] = Cookie(None)):
+async def logout(response: Response, session_id: str | None = Cookie(None)):
     """Invalidate session and clear cookie."""
     if session_id and session_id in _sessions:
         del _sessions[session_id]
@@ -1057,7 +1381,7 @@ async def logout(response: Response, session_id: Optional[str] = Cookie(None)):
     return {"success": True}
 
 @app.get("/api/auth/me", response_class=JSONResponse)
-async def get_me(session_id: Optional[str] = Cookie(None)):
+async def get_me(session_id: str | None = Cookie(None)):
     """Check current session status."""
     session = _get_session(session_id)
     if session:
