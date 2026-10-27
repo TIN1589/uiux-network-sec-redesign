@@ -7,6 +7,14 @@ let severityDonutInstance = null;
 let hourlyBarInstance = null;
 let sparklineInstance = null;
 
+/**
+ * Hủy toàn bộ các thể hiện (instances) của Chart.js đang hoạt động trên màn hình Overview.
+ * 
+ * BẮT BUỘC gọi hàm này trước khi HTMX swap trang hoặc khởi tạo lại canvas nhằm triệt tiêu
+ * hoàn toàn nguy cơ rò rỉ bộ nhớ (memory leak) và lỗi "Canvas is already in use by chart with id X".
+ *
+ * @returns {void}
+ */
 export function destroyOverviewCharts() {
   if (severityDonutInstance) {
     severityDonutInstance.destroy();
@@ -22,6 +30,13 @@ export function destroyOverviewCharts() {
   }
 }
 
+/**
+ * Khởi tạo hoặc vẽ mới toàn bộ các biểu đồ phân tích thị giác của trang Overview.
+ * Bao gồm: Severity Mix Doughnut Chart, 24-Hour Stacked Bar Chart, và Sparkline KPI.
+ *
+ * @param {Object|null} data - Bộ dữ liệu tùy chọn từ backend hoặc DOM dataset.
+ * @returns {void}
+ */
 export function initOverviewCharts(data = null) {
   // If Chart library is not loaded yet, abort gracefully
   if (typeof Chart === 'undefined') {
