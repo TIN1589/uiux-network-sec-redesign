@@ -44,10 +44,8 @@ export function initOverviewCharts(data = null) {
     return;
   }
 
-  // Tối ưu RAM đồ họa trên iPhone / Super Retina XDR (3x pixel ratio):
-  // Giới hạn devicePixelRatio tối đa 2 để tránh tiêu tốn gấp 9 lần bộ đệm bitmap,
-  // giảm hơn 50% RAM canvas mà vẫn giữ độ sắc nét hoàn hảo trên màn hình Retina.
-  Chart.defaults.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  // Đồng bộ devicePixelRatio tự nhiên của thiết bị để ngăn ngừa lệch tọa độ canvas trên màn hình Retina/High-DPI
+  Chart.defaults.devicePixelRatio = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
 
   destroyOverviewCharts();
 
@@ -82,7 +80,8 @@ export function initOverviewCharts(data = null) {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: true,
+        aspectRatio: 1,
         cutout: '76%',
         onHover: (event, activeElements) => {
           if (centerMetricEl) {

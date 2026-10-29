@@ -1079,3 +1079,87 @@ if ('serviceWorker' in navigator) {
       .catch((err) => console.debug('Service Worker registration skipped:', err));
   });
 }
+
+/**
+ * Quản lý tương tác Dropup Select phân loại kết quả đóng án (Alert Disposition) trong Drawer.
+ */
+export function toggleDispositionMenu(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const trigger = document.getElementById('dw-disposition-trigger');
+  const menu = document.getElementById('dw-disposition-menu');
+  if (!trigger || !menu) return;
+  const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+  trigger.setAttribute('aria-expanded', String(!isExpanded));
+  menu.classList.toggle('hidden', isExpanded);
+}
+
+export function selectDispositionOption(e, value, label) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  // Cập nhật giá trị thẻ hidden input phục vụ HTMX hx-include
+  const hiddenInput = document.getElementById('dw-disposition-select');
+  if (hiddenInput) {
+    hiddenInput.value = value;
+    hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  // Cập nhật nhãn hiển thị trên trigger button
+  const labelEl = document.querySelector('#dw-disposition-trigger .dw-disposition-label');
+  if (labelEl) {
+    labelEl.textContent = label;
+  }
+
+  // Đánh dấu mục đang chọn
+  const menu = document.getElementById('dw-disposition-menu');
+  if (menu) {
+    menu.querySelectorAll('.soc-custom-select-item').forEach((item) => {
+      const isSelected = item.getAttribute('data-value') === value;
+      item.classList.toggle('selected', isSelected);
+      item.setAttribute('aria-selected', String(isSelected));
+    });
+    menu.classList.add('hidden');
+  }
+
+  const trig = document.getElementById('dw-disposition-trigger');
+  if (trig) trig.setAttribute('aria-expanded', 'false');
+}
+
+export function closeDispositionMenu() {
+  const menu = document.getElementById('dw-disposition-menu');
+  if (menu && !menu.classList.contains('hidden')) {
+    menu.classList.add('hidden');
+    const trig = document.getElementById('dw-disposition-trigger');
+    if (trig) trig.setAttribute('aria-expanded', 'false');
+  }
+}
+
+window.toggleDispositionMenu = toggleDispositionMenu;
+window.selectDispositionOption = selectDispositionOption;
+window.closeDispositionMenu = closeDispositionMenu;
+
+// Đóng Dropup khi nhấp chuột ra ngoài vùng dropup (Capture phase)
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#dw-disposition-wrap')) {
+    closeDispositionMenu();
+  }
+}, true);
+
+// Đóng Dropup khi nhấn phím Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const menu = document.getElementById('dw-disposition-menu');
+    if (menu && !menu.classList.contains('hidden')) {
+      menu.classList.add('hidden');
+      const trigger = document.getElementById('dw-disposition-trigger');
+      if (trigger) {
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.focus();
+      }
+    }
+  }
+});

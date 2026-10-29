@@ -39,6 +39,58 @@
     </div>
   </div>
 
+  <!-- Chốt chặn 2: MITRE ATT&CK Network Coverage Matrix Card (CSS Grid 6 cột thuần) -->
+  <div class="soc-card soc-card-pad" style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+      <div>
+        <h2 class="soc-card-title">MITRE ATT&CK Network Coverage Matrix</h2>
+        <p style="font-size: 13px; color: var(--color-text-secondary); margin-top: 2px;">
+          Active rule detection coverage across 6 network infrastructure tactics &amp; 10 techniques.
+        </p>
+      </div>
+      <span class="soc-badge" style="background: #e2e8f0; color: #334155; font-family: var(--font-mono); font-size: 11px;">
+        VNPT SOC N4.2 Network Profile
+      </span>
+    </div>
+
+    <!-- CSS Grid 6 Columns for 6 Network Tactics -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;">
+      {% for tac in mitre_matrix %}
+      <div style="background: var(--color-bg-inset, #f3f1ec); border: 1px solid var(--color-border-default, #e7e4dc); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="border-bottom: 1px solid var(--color-border-divider, #e2e8f0); padding-bottom: 6px;">
+          <div class="font-mono" style="font-size: 10px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">{{ tac.tactic_id }}</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">{{ tac.tactic_name }}</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+          {% for tech in tac.techniques %}
+          <a href="https://attack.mitre.org/techniques/{{ tech.id }}" target="_blank" rel="noopener noreferrer"
+             style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: #ffffff; border: 1px solid {% if tech.active %}#bbf7d0{% else %}var(--color-border-default, #e7e4dc){% endif %}; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; {% if not tech.active %}opacity: 0.65;{% endif %}">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+              <span class="font-mono" style="font-size: 11px; font-weight: 700; color: {% if tech.active %}#166534{% else %}var(--color-text-muted){% endif %};">
+                {{ tech.id }}
+              </span>
+              {% if tech.active %}
+              <span class="soc-badge badge-resolved font-mono" style="font-size: 10px; padding: 1px 6px;">
+                {{ tech.hits }} hit{% if tech.hits > 1 %}s{% endif %}
+              </span>
+              {% else %}
+              <span class="font-mono" style="font-size: 10px; color: var(--color-text-muted);">
+                0 hits
+              </span>
+              {% endif %}
+            </div>
+            <div style="font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.3;">
+              {{ tech.name }}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
   <!-- New / Edit Test Card (Admin only — ASSUMPTION-03) -->
   <div id="sc-form-card" data-min-role="admin" class="soc-card soc-card-pad sc-accordion-card">
     <!-- Mobile Accordion Trigger Button (< 768px) -->

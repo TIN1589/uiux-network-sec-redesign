@@ -11,15 +11,16 @@
   position: relative;
   width: 150px;
   height: 150px;
-  margin: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-width: 150px;
+  min-height: 150px;
+  margin: 12px auto;
+  flex-shrink: 0;
 }
 
 .donut-chart-container canvas {
-  position: relative;
-  z-index: 2;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   width: 100% !important;
   height: 100% !important;
   display: block;
@@ -27,13 +28,17 @@
 
 .donut-center-metric {
   position: absolute;
-  inset: 0;
-  z-index: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  text-align: center;
+  width: 100%;
   transition: opacity 0.15s ease-out;
 }
 
