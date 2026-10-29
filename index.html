@@ -5185,7 +5185,7 @@
 
 
 
-        // Standalone MITRE Filter simulation
+        // Standalone MITRE Filter simulation (Visual parity with client-side filtering)
         window.filterAlertsByTechnique = function(techniqueId, techniqueName) {
           if (window.switchTab) window.switchTab('alerts');
           const banner = document.getElementById('mitre-active-filter-banner');
@@ -5195,15 +5195,32 @@
             banner.classList.remove('hidden');
             banner.style.display = 'flex';
           }
+          let matchCount = 0;
           const rows = document.querySelectorAll('#al-table-body tr.clickable');
           rows.forEach((row) => {
             const txt = row.textContent || '';
             const match = txt.includes(techniqueId) ||
-                          (techniqueId === 'T1498' && txt.includes('100999')) ||
-                          (techniqueId === 'T1078' && txt.includes('100280')) ||
-                          (techniqueId === 'T1046' && txt.includes('100200'));
+                          (techniqueId === 'T1498' && (txt.includes('100999') || txt.includes('SYN Flood') || txt.includes('DNS Amplification'))) ||
+                          (techniqueId === 'T1078' && (txt.includes('100280') || txt.includes('Valid Accounts'))) ||
+                          (techniqueId === 'T1046' && (txt.includes('100200') || txt.includes('Network Service Scan'))) ||
+                          (techniqueId === 'T1021.002' && (txt.includes('100240') || txt.includes('SMB')));
             row.style.display = match ? '' : 'none';
+            if (match) matchCount++;
           });
+          const cards = document.querySelectorAll('.mobile-alert-card');
+          cards.forEach((card) => {
+            const txt = card.textContent || '';
+            const match = txt.includes(techniqueId) ||
+                          (techniqueId === 'T1498' && (txt.includes('100999') || txt.includes('SYN Flood') || txt.includes('DNS Amplification'))) ||
+                          (techniqueId === 'T1078' && (txt.includes('100280') || txt.includes('Valid Accounts'))) ||
+                          (techniqueId === 'T1046' && (txt.includes('100200') || txt.includes('Network Service Scan'))) ||
+                          (techniqueId === 'T1021.002' && (txt.includes('100240') || txt.includes('SMB')));
+            card.style.display = match ? '' : 'none';
+          });
+          const matchingKpi = document.getElementById('al-kpi-matching');
+          if (matchingKpi) {
+            matchingKpi.textContent = matchCount;
+          }
         };
 
         window.clearMitreFilterStandalone = function() {
@@ -5214,6 +5231,12 @@
           }
           const rows = document.querySelectorAll('#al-table-body tr.clickable');
           rows.forEach((row) => { row.style.display = ''; });
+          const cards = document.querySelectorAll('.mobile-alert-card');
+          cards.forEach((card) => { card.style.display = ''; });
+          const matchingKpi = document.getElementById('al-kpi-matching');
+          if (matchingKpi) {
+            matchingKpi.textContent = rows.length;
+          }
         };
 
         // Dual-Mode Sign-in Modal & Quick Demo Fill Fallback
