@@ -115,3 +115,83 @@
   --transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-drawer: 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* DARK THEME DESIGN TOKENS (SOC 24/7 Operations Room & Video Wall) */
+html[data-theme="dark"] {
+  /* Brand Core Palette - Dark Mode */
+  --color-bg-workspace: #0E0F0C;         /* Obsidian Matte canvas (#0e0f0c) */
+  --color-surface-card: #16181A;         /* Deep charcoal surface */
+  --color-surface-card-subtle: #1C1E22;  /* Inset panel on dark */
+  --color-surface-highlight: #23271A;    /* Soft lime highlight on dark */
+  
+  --color-obsidian-950: #08090A;
+  --color-obsidian-900: #101113;
+  --color-obsidian-850: #16181A;
+  --color-obsidian-800: #22252A;
+  
+  --color-accent-lime: #C6F135;
+  --color-accent-lime-hover: #D6FB57;
+  --color-accent-lime-soft: rgba(198, 241, 53, 0.15);
+
+  /* Text & Neutral Palette - Dark Mode (WCAG AA Compliant) */
+  --color-text-primary: #F1F0EB;         /* High-contrast warm white */
+  --color-text-secondary: #9E9B93;       /* Subtext / labels */
+  --color-text-muted: #8E8B83;           /* Muted text */
+  --color-text-subtle: #7A7770;
+  --color-text-inverse: #141413;
+  --color-text-sidebar-muted: #8E8B83;
+  
+  --color-border-subtle: #202326;        /* Subtle divider */
+  --color-border-card: #272A2E;          /* Card borders */
+  --color-border-divider: #272A2E;
+  --color-border-input: #32363C;         /* Input borders */
+  --color-border-strong: #E2E0D8;
+
+  /* Severity Tokens - Dark Mode (Tuned luminescence) */
+  --color-sev-critical: #F04438;
+  --color-sev-critical-bg: rgba(240, 68, 56, 0.16);
+  --color-sev-critical-text: #FDA29B;
+  --color-sev-critical-border: rgba(240, 68, 56, 0.35);
+  --color-sev-critical-card: rgba(240, 68, 56, 0.08);
+  --color-sev-critical-card-border: rgba(240, 68, 56, 0.25);
+
+  --color-sev-high: #F79009;
+  --color-sev-high-bg: rgba(247, 144, 9, 0.16);
+  --color-sev-high-text: #FEC84B;
+  --color-sev-high-border: rgba(247, 144, 9, 0.35);
+
+  --color-sev-medium: #FACC15;
+  --color-sev-medium-bg: rgba(250, 204, 21, 0.15);
+  --color-sev-medium-text: #FEF08A;
+  --color-sev-medium-border: rgba(250, 204, 21, 0.3);
+
+  --color-sev-low: #3B82F6;
+  --color-sev-low-bg: rgba(59, 130, 246, 0.16);
+  --color-sev-low-text: #93C5FD;
+  --color-sev-low-border: rgba(59, 130, 246, 0.35);
+
+  /* Operational States - Dark Mode */
+  --color-state-new-bg: rgba(59, 130, 246, 0.18);
+  --color-state-new-text: #93C5FD;
+  --color-state-ack-bg: #272A2E;
+  --color-state-ack-text: #E2E0D8;
+  --color-state-investigating-bg: #1C1E22;
+  --color-state-investigating-border: #8E8B83;
+  --color-state-investigating-text: #F1F0EB;
+  --color-state-resolved-bg: rgba(22, 163, 74, 0.18);
+  --color-state-resolved-text: #86EFAC;
+  --color-state-silent-bg: rgba(217, 119, 6, 0.18);
+  --color-state-silent-text: #FDE68A;
+
+  --color-status-live: #22C55E;
+  --color-status-paused: #F59E0B;
+  --color-status-disconnected: #EF4444;
+
+  /* Shadows - Dark Mode */
+  --shadow-2xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 24px -3px rgba(0, 0, 0, 0.7), 0 4px 8px -2px rgba(0, 0, 0, 0.5);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+}
