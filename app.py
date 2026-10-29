@@ -13,7 +13,7 @@ import re
 import secrets
 import time
 import urllib.parse
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 from fastapi import Cookie, FastAPI, Form, Request, Response
 from fastapi.responses import (
@@ -1035,6 +1035,7 @@ DEVICES = [
 SCENARIO_RESULTS = [
     {
         "id": "SC-01",
+        "testedUtc": "2026-10-25T18:10:00Z",
         "testedTs": "26 Oct, 01:10",
         "code": "T1046",
         "name": "Network Service Scanning",
@@ -1048,6 +1049,7 @@ SCENARIO_RESULTS = [
     },
     {
         "id": "SC-02",
+        "testedUtc": "2026-10-25T18:07:00Z",
         "testedTs": "26 Oct, 01:07",
         "code": "T1110",
         "name": "SSH Credential Brute Force",
@@ -1061,6 +1063,7 @@ SCENARIO_RESULTS = [
     },
     {
         "id": "SC-03",
+        "testedUtc": "2026-10-25T18:12:00Z",
         "testedTs": "26 Oct, 01:12",
         "code": "T1557",
         "name": "Spanning-Tree BPDU Spoofing",
@@ -1074,6 +1077,7 @@ SCENARIO_RESULTS = [
     },
     {
         "id": "SC-04",
+        "testedUtc": "2026-10-25T17:20:00Z",
         "testedTs": "26 Oct, 00:20",
         "code": "T1498",
         "name": "SYN Flood DoS Attack",
@@ -1087,6 +1091,7 @@ SCENARIO_RESULTS = [
     },
     {
         "id": "SC-05",
+        "testedUtc": "2026-10-25T17:37:00Z",
         "testedTs": "26 Oct, 00:37",
         "code": "T1078",
         "name": "VPN Login Anomaly",
@@ -1100,6 +1105,7 @@ SCENARIO_RESULTS = [
     },
     {
         "id": "SC-06",
+        "testedUtc": "2026-10-25T16:42:00Z",
         "testedTs": "25 Oct, 23:42",
         "code": "T1557.002",
         "name": "ARP Cache Poisoning",
@@ -2130,9 +2136,13 @@ async def save_scenario(
     else:
         # Create new
         new_id = f"SC-{len(scenarios_store) + 1:02d}"
-        now_str = datetime.now().strftime("%d %b, %H:%M")
+        now_utc = datetime.now(UTC)
+        tested_utc_iso = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+        now_gmt7 = now_utc.astimezone(timezone(timedelta(hours=7)))
+        now_str = now_gmt7.strftime("%d %b, %H:%M")
         scenarios_store.insert(0, {
             "id": new_id,
+            "testedUtc": tested_utc_iso,
             "testedTs": now_str,
             "code": code,
             "name": name,
