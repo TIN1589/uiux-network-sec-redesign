@@ -4,7 +4,6 @@ Tuân thủ tiêu chuẩn: .agents/rules/testing-and-evidence.md
 3 Thành tố bắt buộc: Mục tiêu - Kịch bản - Minh chứng
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app import app
@@ -46,11 +45,13 @@ def test_service_worker_endpoint():
     assert response.headers.get("Service-Worker-Allowed") == "/"
     assert "CACHE_NAME" in response.text
     assert "PRECACHE_ASSETS" in response.text
-    assert "v1.0.2" in response.text
+    assert "v1.0.4-local-icons" in response.text
     assert "/static/css/charts.css" in response.text
     assert "/static/css/variables.css" in response.text
     assert "/static/vendor/htmx.min.js" in response.text
     assert "/static/vendor/chart.umd.min.js" in response.text
+    assert "/static/js/icons.js" in response.text
+    assert "ignoreSearch: true" in response.text
 
 
 def test_offline_page_endpoint():

@@ -6,7 +6,8 @@ Bao gồm 3 thành tố: Mục tiêu - Kịch bản - Minh chứng.
 
 import pytest
 from fastapi.testclient import TestClient
-from app import app, AUDIT_LOGS, alerts_store, deduplicate_composite_alerts
+
+from app import AUDIT_LOGS, alerts_store, app, deduplicate_composite_alerts
 
 
 @pytest.fixture

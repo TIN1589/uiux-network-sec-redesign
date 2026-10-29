@@ -1,8 +1,10 @@
 """Kiểm thử dịch vụ dòng log SOC công khai tuân thủ RFC 5737 và các ràng buộc bảo mật."""
 
 import re
+
 import pytest
 from fastapi.testclient import TestClient
+
 from app.ui import mock_feed
 
 
@@ -70,11 +72,7 @@ def test_all_mock_ips_in_test_net_range():
         line = mock_feed.make_line(tick)
         matches = ip_pattern.findall(line["text"])
         for ip in matches:
-            is_valid_test_net = (
-                ip.startswith("192.0.2.") or
-                ip.startswith("198.51.100.") or
-                ip.startswith("203.0.113.")
-            )
+            is_valid_test_net = ip.startswith(("192.0.2.", "198.51.100.", "203.0.113."))
             assert is_valid_test_net, f"IP {ip} không thuộc dải TEST-NET RFC 5737!"
 
 

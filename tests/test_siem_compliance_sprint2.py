@@ -5,9 +5,18 @@ Bao gồm đầy đủ 3 thành tố: Mục tiêu - Kịch bản - Minh chứng.
 """
 
 import re
+from datetime import datetime, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
-from app import app, alerts_store, compute_overview_stats, get_incident_timeline, NETWORK_MITRE_TECHNIQUES, alert_observed_to_utc_iso
+
+from app import (
+    alert_observed_to_utc_iso,
+    alerts_store,
+    app,
+    compute_overview_stats,
+    get_incident_timeline,
+)
 
 
 @pytest.fixture
@@ -92,7 +101,7 @@ def test_events_vs_incidents_mathematical_consistency():
     Minh chứng:
         Tổng số raw events đạt 24 trên 17 composite incidents, donut chart khớp 100% với tổng events.
     """
-    stats, queue_alerts, top_rules, top_ips, dev_types = compute_overview_stats("24h")
+    stats, _queue_alerts, _top_rules, _top_ips, _dev_types = compute_overview_stats("24h")
 
     expected_total_hits = sum(a.get("hits", 1) for a in alerts_store if a.get("ageMinutes", 0) <= 1440)
     expected_crit = sum(a.get("hits", 1) for a in alerts_store if a.get("ageMinutes", 0) <= 1440 and a["severity"] == "Critical")
@@ -317,6 +326,16 @@ def test_timezone_integrity_and_utcnow_deprecation():
 
     res_fallback = alert_observed_to_utc_iso({})
     assert res_fallback.endswith("Z")
+
+    # Kiểm tra tuân thủ Release Gate 4 đối với scenarios_store
+    from app import scenarios_store
+    for s in scenarios_store:
+        assert "testedUtc" in s, f"Scenario {s['id']} missing testedUtc"
+        assert s["testedUtc"].endswith("Z"), f"Scenario {s['id']} testedUtc must end with Z"
+        dt_utc = datetime.fromisoformat(s["testedUtc"])
+        dt_gmt7 = dt_utc + timedelta(hours=7)
+        expected_ts = dt_gmt7.strftime("%d %b, %H:%M")
+        assert s["testedTs"] == expected_ts, f"Mismatch in {s['id']}: {s['testedTs']} vs {expected_ts}"
 
 
 def test_keyboard_controller_guards_and_htmx_reset():

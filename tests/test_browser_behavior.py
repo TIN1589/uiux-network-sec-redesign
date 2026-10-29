@@ -6,8 +6,9 @@ Tuân thủ nghiêm ngặt quy chuẩn tại .agents/rules/release-gates.md:
 3. Kiểm tra ngăn ngừa FOUC khi tải nguội (Cold Load).
 """
 
-import pytest
 import re
+
+import pytest
 from playwright.sync_api import sync_playwright
 
 BASE_URL = "http://127.0.0.1:8000"
@@ -44,6 +45,43 @@ def browser_instance():
         browser = p.chromium.launch(headless=True)
         yield browser
         browser.close()
+
+
+def test_local_icons_and_compact_desktop_without_external_network(browser_instance):
+    """Icons and navigation remain usable when every external HTTPS request fails.
+
+    The 1200px viewport deliberately exercises the former icon-only sidebar
+    breakpoint and verifies that the compact card representation is used.
+    """
+    context = browser_instance.new_context(viewport={"width": 1200, "height": 850})
+    page = context.new_page()
+    page.route("https://**/*", lambda route: route.abort())
+    page.goto(f"{BASE_URL}/alerts?guest=1", wait_until="networkidle")
+    page.wait_for_function("document.querySelectorAll('#app-sidebar .local-icon').length >= 4")
+
+    result = page.evaluate(
+        """() => ({
+          sidebarWidth: document.getElementById('app-sidebar').getBoundingClientRect().width,
+          visibleLabels: [...document.querySelectorAll('#app-sidebar .nav-label')]
+            .filter((el) => getComputedStyle(el).display !== 'none').length,
+          renderedIcons: document.querySelectorAll('#app-sidebar .local-icon').length,
+          desktopTableVisible: getComputedStyle(document.querySelector('.desktop-table-wrap')).display !== 'none',
+          compactCardsVisible: getComputedStyle(document.querySelector('.mobile-alerts-list')).display !== 'none',
+          hasState: Boolean(document.querySelector('.mobile-alert-card .badge-new, .mobile-alert-card .badge-resolved, .mobile-alert-card .badge-investigating')),
+          hasDestination: Boolean(document.querySelector('.mobile-alert-card .m-alert-details')),
+          pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
+        })"""
+    )
+
+    assert result["sidebarWidth"] >= 240
+    assert result["visibleLabels"] >= 4
+    assert result["renderedIcons"] >= 4
+    assert not result["desktopTableVisible"]
+    assert result["compactCardsVisible"]
+    assert result["hasState"]
+    assert result["hasDestination"]
+    assert not result["pageOverflow"]
+    context.close()
 
 
 def test_mobile_computed_contrast_dark_mode(browser_instance):
@@ -123,7 +161,7 @@ def test_desktop_computed_contrast_dark_mode(browser_instance):
     page.wait_for_selector("#alert-drawer-backdrop.active", timeout=5000)
     page.wait_for_timeout(300)
 
-    drawer_bg = page.evaluate("() => window.getComputedStyle(document.querySelector('.soc-drawer')).backgroundColor")
+    page.evaluate("() => window.getComputedStyle(document.querySelector('.soc-drawer')).backgroundColor")
     pb_title_color = page.evaluate("() => window.getComputedStyle(document.querySelector('.playbook-well-title')).color")
     pb_well_bg = page.evaluate("() => window.getComputedStyle(document.querySelector('.playbook-well')).backgroundColor")
 
@@ -351,4 +389,65 @@ def test_charts_legend_and_signin_panel_contrast_dark_mode(browser_instance):
     assert _contrast_ratio_rgb(title_color, panel_bg) >= 7.0, "Sign-in title must pass WCAG AAA (7.0:1)"
     assert _contrast_ratio_rgb(inp_color, ctrl_bg) >= 7.0, "Sign-in input text must pass WCAG AAA (7.0:1)"
 
+    context.close()
+
+def test_service_worker_offline_cache_match_with_query_params(browser_instance):
+    """Mục tiêu: Đảm bảo Service Worker xử lý query params khi offline thật sự với ignoreSearch.
+
+    Kịch bản:
+        1. Mở trang /?guest=1 trên Chromium để kích hoạt đăng ký Service Worker /sw.js.
+        2. Chờ Service Worker sẵn sàng (navigator.serviceWorker.ready) và precache hoàn tất
+           vào đúng cache 'vnpt-soc-pwa-v1.0.4-local-icons'.
+        3. Chuyển context trình duyệt sang chế độ OFFLINE (context.set_offline(True)).
+        4. Thực hiện fetch('/static/js/icons.js?v=1.0.0'):
+           - Service Worker intercept request trong mạng offline.
+           - ignoreSearch: true giúp khớp tài nguyên precache dù có query string phiên bản.
+           - Trả về status 200 và nội dung mã nguồn JavaScript hợp lệ.
+    Minh chứng:
+        - sw_ready active và precached is True.
+        - offline_fetch status == 200 và chứa 'localIconRenderer'.
+    """
+    context = browser_instance.new_context()
+    page = context.new_page()
+    page.goto(f"{BASE_URL}/?guest=1", wait_until="networkidle")
+
+    sw_status = page.evaluate("""async () => {
+        if (!('serviceWorker' in navigator)) return { supported: false };
+        await navigator.serviceWorker.ready;
+        const cacheName = 'vnpt-soc-pwa-v1.0.4-local-icons';
+        const cache = await caches.open(cacheName);
+        for (let i = 0; i < 20; i++) {
+            const keys = await cache.keys();
+            if (keys.some(k => k.url.includes('/static/js/icons.js'))) {
+                return { active: true, precached: true, keyCount: keys.length };
+            }
+            await new Promise(r => setTimeout(r, 200));
+        }
+        return { active: true, precached: false };
+    }""")
+    assert sw_status.get("active") is True, f"Service Worker did not become active: {sw_status}"
+    assert sw_status.get("precached") is True, f"Icons.js was not precached in {sw_status}"
+
+    # Cắt toàn bộ kết nối mạng để mô phỏng trạng thái ngoại tuyến thực tế
+    context.set_offline(True)
+
+    offline_fetch = page.evaluate("""async () => {
+        try {
+            const res = await fetch('/static/js/icons.js?v=1.0.0');
+            const text = await res.text();
+            return {
+                status: res.status,
+                ok: res.ok,
+                hasContent: text.includes('localIconRenderer')
+            };
+        } catch (err) {
+            return {
+                status: 0,
+                error: err.toString()
+            };
+        }
+    }""")
+
+    assert offline_fetch.get("status") == 200, f"Expected 200 from offline cache, got {offline_fetch}"
+    assert offline_fetch.get("hasContent") is True, "Offline fetch did not return cached icon renderer"
     context.close()

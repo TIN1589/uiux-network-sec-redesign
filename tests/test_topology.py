@@ -1,11 +1,8 @@
 """Kiểm thử mô hình dữ liệu đồ thị và gói tin Topology mạng VNPT SOC."""
 
-import pytest
 from app.ui.topology import (
-    DESKTOP_NODES,
     DESKTOP_EDGES,
     DESKTOP_PACKETS,
-    MOBILE_NODES,
     MOBILE_EDGES,
     MOBILE_PACKETS,
     edge_path,
