@@ -55,7 +55,14 @@
           </td>
           <td>
             <div style="font-weight: 600; color: var(--color-text-primary); line-height: 1.35;">{{ a.title }}</div>
-            <div class="font-mono" style="font-size: 11px; color: var(--color-text-muted); margin-top: 2px; white-space: nowrap;">{{ a.ruleId }}</div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap;">
+              <span class="font-mono" style="font-size: 11px; color: var(--color-text-muted); white-space: nowrap;">{{ a.ruleId }}</span>
+              {% if a.hits and a.hits > 1 %}
+              <span class="soc-badge font-mono badge-aggregated" title="Aggregated incident: {{ a.hits }} raw events in 15m window">
+                Aggregated · {{ a.hits }} hits
+              </span>
+              {% endif %}
+            </div>
           </td>
           <td class="font-mono" style="font-size: 13px; color: var(--color-text-primary); white-space: nowrap;">
             <div>{{ a.srcIp }}</div>
@@ -70,7 +77,15 @@
             <div style="color: var(--color-text-muted); margin-top: 2px;">{{ a.observedTime }}</div>
           </td>
           <td>
-            <span class="soc-badge badge-{{ a.state | lower }}">{{ a.state }}</span>
+            <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+              <span class="soc-badge badge-{{ a.state | lower }}">{{ a.state }}</span>
+              {% if a.state == 'Resolved' and a.disposition %}
+              <span class="soc-badge badge-disposition {% if 'True Positive' in a.disposition %}badge-disposition-tp{% elif 'False Positive' in a.disposition %}badge-disposition-fp{% else %}badge-disposition-bp{% endif %}"
+                    style="font-size: 10px; padding: 2px 6px;" title="{{ a.disposition }}">
+                {{ a.disposition }}
+              </span>
+              {% endif %}
+            </div>
           </td>
           <td style="text-align: right; white-space: nowrap;" onclick="event.stopPropagation();">
             <button type="button" onclick="openAlertDrawer('{{ a.eventId }}')" class="soc-btn soc-btn-outline soc-btn-sm">
@@ -96,11 +111,19 @@
     {% else %}
     {% for a in alerts %}
     <div class="mobile-alert-card" onclick="openAlertDrawer('{{ a.eventId }}')">
-      <!-- Dòng 1: [Badge: Critical] + Mã #100999 (bên trái) — Thời gian: 12m ago (bên phải) -->
+      <!-- Dòng 1: [Badge: Critical] + Mã #100999 + [Aggregated/Disposition] — Thời gian -->
       <div class="m-alert-row1">
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
           <span class="soc-badge badge-{{ a.severity | lower }}">{{ a.severity }}</span>
           <span class="font-mono m-rule-tag">#{{ a.ruleId }}</span>
+          {% if a.hits and a.hits > 1 %}
+          <span class="soc-badge font-mono badge-aggregated" style="font-size: 10px; padding: 2px 6px;">x{{ a.hits }}</span>
+          {% endif %}
+          {% if a.state == 'Resolved' and a.disposition %}
+          <span class="soc-badge badge-disposition {% if 'True Positive' in a.disposition %}badge-disposition-tp{% elif 'False Positive' in a.disposition %}badge-disposition-fp{% else %}badge-disposition-bp{% endif %}" style="font-size: 10px; padding: 2px 6px;">
+            {{ a.disposition }}
+          </span>
+          {% endif %}
         </div>
         <span class="m-time-text font-mono">{{ a.observedRel }}</span>
       </div>

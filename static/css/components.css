@@ -6,11 +6,11 @@
 
 .soc-card {
 
-  background-color: #FFFFFF;
+  background-color: var(--color-surface-card, #FFFFFF);
 
   border-radius: 16px;
 
-  border: 1px solid #E7E4DC;
+  border: 1px solid var(--color-border-card, #E7E4DC);
 
   padding: 24px;
 
@@ -482,11 +482,11 @@ input, select, textarea {
 
 .kpi-strip {
 
-  background-color: #FFFFFF;
+  background-color: var(--color-surface-card, #FFFFFF);
 
   border-radius: 16px;
 
-  border: 1px solid #E7E4DC;
+  border: 1px solid var(--color-border-card, #E7E4DC);
 
   display: grid;
 
@@ -546,7 +546,7 @@ input, select, textarea {
 
   justify-content: flex-start;
 
-  border-left: 1px solid #E7E4DC;
+  border-left: 1px solid var(--color-border-card, #E7E4DC);
 
   transition: background-color var(--transition-fast);
 
@@ -3853,3 +3853,154 @@ td.row-action-cell.menu-open,
 
 }
 
+
+/* Dark theme component overrides and status badges */
+
+/* Aggregated Incident Badge (hits > 1) */
+.badge-aggregated {
+  background-color: #F4F7E6;
+  color: #4D6400;
+  border: 1px solid #D6E899;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+html[data-theme="dark"] .badge-aggregated {
+  background-color: rgba(198, 241, 53, 0.14) !important;
+  color: var(--color-accent-lime) !important;
+  border-color: rgba(198, 241, 53, 0.35) !important;
+}
+
+/* Disposition Badges */
+.badge-disposition {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.badge-disposition-tp {
+  background-color: #FEE4E2;
+  color: #B42318;
+  border: 1px solid #FECDCA;
+}
+html[data-theme="dark"] .badge-disposition-tp {
+  background-color: rgba(240, 68, 56, 0.16);
+  color: #FDA29B;
+  border-color: rgba(240, 68, 56, 0.35);
+}
+
+.badge-disposition-fp {
+  background-color: #EFF8FF;
+  color: #175CD3;
+  border: 1px solid #B2DDFF;
+}
+html[data-theme="dark"] .badge-disposition-fp {
+  background-color: rgba(59, 130, 246, 0.16);
+  color: #93C5FD;
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.badge-disposition-bp {
+  background-color: #ECFDF3;
+  color: #027A48;
+  border: 1px solid #A6F4C5;
+}
+html[data-theme="dark"] .badge-disposition-bp {
+  background-color: rgba(16, 185, 129, 0.16);
+  color: #6EE7B7;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+/* Dark mode inputs, selects & search fields */
+html[data-theme="dark"] .soc-input,
+html[data-theme="dark"] .soc-select {
+  background-color: var(--color-surface-card);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-input);
+}
+html[data-theme="dark"] .soc-input:focus,
+html[data-theme="dark"] .soc-select:focus {
+  border-color: var(--color-accent-lime);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(198, 241, 53, 0.2);
+}
+
+/* Dark mode Table styling */
+html[data-theme="dark"] .soc-table th {
+  background-color: var(--color-surface-card-subtle) !important;
+  color: var(--color-text-secondary) !important;
+  border-bottom-color: var(--color-border-card) !important;
+}
+html[data-theme="dark"] .soc-table td {
+  border-bottom-color: var(--color-border-subtle) !important;
+  color: var(--color-text-primary);
+}
+html[data-theme="dark"] .soc-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+html[data-theme="dark"] .soc-table tr.row-critical {
+  background-color: rgba(240, 68, 56, 0.08) !important;
+}
+html[data-theme="dark"] .soc-table tr.row-critical:hover td {
+  background-color: rgba(240, 68, 56, 0.13) !important;
+}
+
+/* Keyboard controller active row focus */
+tr.kb-active-row td {
+  background-color: rgba(198, 241, 53, 0.12) !important;
+  box-shadow: inset 0 0 0 1px var(--color-accent-lime);
+}
+
+/* Dark mode Drawers & Panels */
+html[data-theme="dark"] .soc-drawer-panel,
+html[data-theme="dark"] .drawer-content {
+  background-color: var(--color-surface-card) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border-card) !important;
+}
+html[data-theme="dark"] .drawer-section-subtle {
+  background-color: var(--color-surface-card-subtle) !important;
+  border-color: var(--color-border-card) !important;
+}
+
+/* Dark mode MITRE Matrix */
+html[data-theme="dark"] .mitre-tactic-col {
+  background-color: var(--color-surface-card) !important;
+  border-color: var(--color-border-card) !important;
+}
+html[data-theme="dark"] .mitre-tech-card {
+  background-color: var(--color-surface-card-subtle) !important;
+  border-color: var(--color-border-card) !important;
+  color: var(--color-text-primary) !important;
+}
+html[data-theme="dark"] .mitre-tech-card:hover {
+  border-color: var(--color-accent-lime) !important;
+  background-color: rgba(198, 241, 53, 0.08) !important;
+}
+
+/* Dark mode Topbar & Analyst Dropdown */
+html[data-theme="dark"] #live-status-pill {
+  background-color: var(--color-surface-card) !important;
+  border-color: var(--color-border-card) !important;
+  color: var(--color-text-secondary) !important;
+}
+html[data-theme="dark"] #analyst-dropdown {
+  background-color: var(--color-surface-card) !important;
+  border-color: var(--color-border-card) !important;
+}
+html[data-theme="dark"] .role-switcher-btn:hover {
+  background-color: var(--color-surface-card-subtle) !important;
+}
+
+/* Dark mode Devices Grid */
+html[data-theme="dark"] .device-card {
+  background-color: var(--color-surface-card) !important;
+  border-color: var(--color-border-card) !important;
+}
+html[data-theme="dark"] .device-telemetry-strip {
+  background-color: var(--color-surface-card-subtle) !important;
+}
+html[data-theme="dark"] .device-card.silent {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+html[data-theme="dark"] .device-telemetry-strip.silent {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
