@@ -351,7 +351,7 @@ def alert_observed_to_utc_iso(alert: dict) -> str:
         dt_utc = dt_gmt7 - timedelta(hours=7)
         return dt_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
     except Exception:
-        return "2026-10-25T18:12:04Z"
+        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def get_incident_timeline(event_id: str) -> list[dict]:
     """Truy xuất dòng thời gian xử lý sự cố (Incident Activity Trail) theo thứ tự thời gian.
@@ -1204,7 +1204,7 @@ def _create_session(username: str, role: str = "admin") -> str:
     _sessions[session_id] = {
         "username": username,
         "role": role,
-        "created_at": datetime.utcnow().isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
     return session_id
 
