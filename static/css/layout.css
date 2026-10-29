@@ -97,14 +97,19 @@
 }
 
 .nav-btn:hover {
-  color: var(--color-text-inverse);
+  color: #FFFFFF !important;
   background-color: var(--color-obsidian-850);
 }
 
 .nav-btn.active,
 .nav-btn[aria-current="page"] {
   background-color: var(--color-obsidian-800);
-  color: var(--color-text-inverse);
+  color: #FFFFFF !important;
+}
+
+.nav-btn.active i,
+.nav-btn[aria-current="page"] i {
+  color: var(--color-accent-lime) !important;
 }
 
 .nav-btn-inner {
@@ -682,3 +687,37 @@
     opacity: 1;
   }
 }
+
+/* Dark mode Investigation Queue Overrides (WCAG AA Compliant) */
+html[data-theme="dark"] .queue-row.normal {
+  background-color: var(--color-surface-card, #16181A);
+  border-color: var(--color-border-card, #272A2E);
+}
+
+html[data-theme="dark"] .queue-row.normal:hover {
+  background-color: var(--color-surface-card-subtle, #1C1E22);
+  border-color: var(--color-border-divider, #32363C);
+}
+
+html[data-theme="dark"] .queue-row.critical-first {
+  background-color: rgba(240, 68, 56, 0.12);
+  border-color: rgba(240, 68, 56, 0.35);
+}
+
+html[data-theme="dark"] .queue-row.critical-first:hover {
+  background-color: rgba(240, 68, 56, 0.18);
+  border-color: rgba(240, 68, 56, 0.45);
+}
+
+html[data-theme="dark"] .q-title {
+  color: var(--color-text-primary, #F1F0EB);
+}
+
+html[data-theme="dark"] .q-meta {
+  color: var(--color-text-secondary, #9E9B93);
+}
+
+html[data-theme="dark"] .q-status-time {
+  color: var(--color-text-secondary, #9E9B93);
+}
+

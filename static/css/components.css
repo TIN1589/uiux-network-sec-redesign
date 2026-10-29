@@ -2186,7 +2186,7 @@ td.row-action-cell.menu-open,
 
   max-height: 85vh;
 
-  background-color: #FFFFFF;
+  background-color: var(--color-surface-card, #FFFFFF); color: var(--color-text-primary, #141413);
 
   border-radius: 18px 18px 0 0;
 
@@ -3950,16 +3950,105 @@ tr.kb-active-row td {
 }
 
 /* Dark mode Drawers & Panels */
-html[data-theme="dark"] .soc-drawer-panel,
-html[data-theme="dark"] .drawer-content {
-  background-color: var(--color-surface-card) !important;
-  color: var(--color-text-primary) !important;
-  border-color: var(--color-border-card) !important;
+
+/* Dark mode Drawers, Bottom Sheets & Modals */
+html[data-theme="dark"] .soc-drawer,
+html[data-theme="dark"] #alert-drawer-container,
+html[data-theme="dark"] .drawer-scroll-body {
+  background-color: var(--color-surface-card, #16181A) !important;
+  color: var(--color-text-primary, #F1F0EB) !important;
+  border-color: var(--color-border-card, #272A2E) !important;
 }
-html[data-theme="dark"] .drawer-section-subtle {
-  background-color: var(--color-surface-card-subtle) !important;
-  border-color: var(--color-border-card) !important;
+
+html[data-theme="dark"] .drawer-action-group {
+  background-color: var(--color-surface-card, #16181A) !important;
+  border-top-color: var(--color-border-card, #272A2E) !important;
 }
+
+html[data-theme="dark"] .drawer-resolved-banner {
+  background-color: var(--color-surface-card-subtle, #1C1E22) !important;
+  border-color: var(--color-border-card, #272A2E) !important;
+}
+
+html[data-theme="dark"] .drawer-resolved-meta {
+  color: var(--color-text-secondary, #9E9B93) !important;
+}
+
+html[data-theme="dark"] .soc-custom-select-trigger,
+html[data-theme="dark"] .dw-select-disposition {
+  background-color: var(--color-surface-card-subtle, #1C1E22) !important;
+  border-color: var(--color-border-input, #32363C) !important;
+  color: var(--color-text-primary, #F1F0EB) !important;
+}
+
+html[data-theme="dark"] .soc-custom-select-trigger:hover,
+html[data-theme="dark"] .dw-select-disposition:hover {
+  background-color: #272A2E !important;
+  border-color: var(--color-accent-lime, #C6F135) !important;
+}
+
+html[data-theme="dark"] .soc-custom-select-menu {
+  background-color: var(--color-surface-card, #16181A) !important;
+  border-color: var(--color-border-card, #272A2E) !important;
+}
+
+html[data-theme="dark"] .soc-custom-select-item {
+  color: var(--color-text-primary, #F1F0EB) !important;
+}
+
+html[data-theme="dark"] .soc-custom-select-item:hover {
+  background-color: var(--color-surface-card-subtle, #1C1E22) !important;
+}
+
+html[data-theme="dark"] .soc-custom-select-item.selected {
+  background-color: rgba(198, 241, 53, 0.15) !important;
+  color: var(--color-accent-lime, #C6F135) !important;
+}
+
+html[data-theme="dark"] .soc-custom-select-item.selected .soc-item-check {
+  color: var(--color-accent-lime, #C6F135) !important;
+}
+
+/* Dark mode Playbook Well */
+html[data-theme="dark"] .playbook-well {
+  background-color: var(--color-surface-highlight, #23271A) !important;
+  border-color: rgba(198, 241, 53, 0.25) !important;
+}
+
+html[data-theme="dark"] .playbook-well-title {
+  color: var(--color-accent-lime, #C6F135) !important;
+}
+
+html[data-theme="dark"] .playbook-well-body,
+html[data-theme="dark"] #dw-playbook {
+  color: var(--color-text-primary, #F1F0EB) !important;
+}
+
+/* Dark mode KPI & Distribution Bars (WCAG AA Compliant) */
+html[data-theme="dark"] .kpi-header {
+  color: var(--color-text-muted, #8E8B83) !important;
+}
+
+html[data-theme="dark"] .kpi-footer {
+  color: var(--color-text-secondary, #9E9B93) !important;
+}
+
+html[data-theme="dark"] .dist-bar-track {
+  background-color: var(--color-border-card, #272A2E) !important;
+}
+
+html[data-theme="dark"] .dist-bar-fill {
+  background-color: var(--color-accent-lime, #C6F135) !important;
+}
+
+html[data-theme="dark"] .dist-val {
+  color: var(--color-text-secondary, #9E9B93) !important;
+}
+
+html[data-theme="dark"] .dist-label {
+  color: var(--color-text-primary, #F1F0EB) !important;
+}
+
 
 /* Dark mode MITRE Matrix */
 html[data-theme="dark"] .mitre-tactic-col {
