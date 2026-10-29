@@ -259,7 +259,7 @@ def run_evidence_pipeline():
         context_mob = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2.0, is_mobile=True, has_touch=True)
         page_mob = context_mob.new_page()
 
-        for name in ["overview", "alerts"]:
+        for name in ["overview", "alerts", "scenarios"]:
             page_mob.goto(f"{LOCAL_URL}/{name if name != 'overview' else ''}?guest=1", wait_until="networkidle")
             page_mob.wait_for_timeout(300)
             page_mob.evaluate("() => { const m = document.getElementById('signin-modal'); if (m) m.classList.remove('active'); }")
