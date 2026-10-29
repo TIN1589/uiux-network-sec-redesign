@@ -768,6 +768,68 @@ export function toggleScenarioFormAccordion() {
   }
 }
 
+
+// Theme Controller (Light / Dark Mode for 24/7 SOC Video Wall)
+export function getCurrentTheme() {
+  return document.documentElement.getAttribute('data-theme') || 'light';
+}
+
+export function updateThemeToggleIcon(theme) {
+  const icon = document.getElementById('theme-toggle-icon');
+  const btn = document.getElementById('btn-theme-toggle');
+  if (!icon) return;
+
+  if (theme === 'dark') {
+    icon.className = 'fa-solid fa-sun';
+    if (btn) {
+      btn.setAttribute('aria-label', 'Switch to Light Mode');
+      btn.title = 'Switch to Light Mode';
+    }
+  } else {
+    icon.className = 'fa-solid fa-moon';
+    if (btn) {
+      btn.setAttribute('aria-label', 'Switch to Dark Mode');
+      btn.title = 'Switch to Dark Mode';
+    }
+  }
+}
+
+export function setTheme(theme) {
+  const targetTheme = (theme === 'dark') ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', targetTheme);
+  if (document.documentElement.style) {
+    document.documentElement.style.colorScheme = targetTheme;
+  }
+  try {
+    localStorage.setItem('soc-theme', targetTheme);
+  } catch (e) {
+    // Sandbox or private browsing storage error ignored
+  }
+
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    meta.setAttribute('content', targetTheme === 'dark' ? '#0E0F0C' : '#F3F1EC');
+  }
+
+  updateThemeToggleIcon(targetTheme);
+
+  // Phat su kien dong bo toi bieu do va cac thanh phan khac
+  window.dispatchEvent(new CustomEvent('theme-changed', {
+    detail: { theme: targetTheme }
+  }));
+}
+
+export function toggleTheme() {
+  const current = getCurrentTheme();
+  const nextTheme = current === 'dark' ? 'light' : 'dark';
+  setTheme(nextTheme);
+}
+
+window.toggleTheme = toggleTheme;
+window.setTheme = setTheme;
+window.getCurrentTheme = getCurrentTheme;
+window.updateThemeToggleIcon = updateThemeToggleIcon;
+
 // Seconds counter ticker & Quản lý trạng thái Visibility (Tối ưu RAM/Pin iOS Jetsam)
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
@@ -806,13 +868,115 @@ document.addEventListener('click', (e) => {
 });
 
 // Global event listeners and HTMX lifecycle hooks
-document.addEventListener('keydown', (e) => {
+// Centralized SOC Keyboard Controller (Guarded Navigation & Top-layer Escape Priority)
+let selectedAlertRowIndex = -1;
+
+export function handleCentralKeyDown(e) {
+  const target = e.target;
+  const isEditing = target && (
+    target.tagName === 'INPUT' ||
+    target.tagName === 'TEXTAREA' ||
+    target.tagName === 'SELECT' ||
+    target.isContentEditable
+  );
+
+  // Phim Escape: Dong theo thu tu uu tien top-layer
   if (e.key === 'Escape') {
-    closeSignInModal();
-    closeAlertDrawer();
-    closeMobileSidebar();
+    if (isEditing) {
+      target.blur();
+      return;
+    }
+
+    // 1. Sign-in modal
+    const signInModal = document.getElementById('signin-modal');
+    if (signInModal && !signInModal.classList.contains('hidden') && signInModal.style.display !== 'none') {
+      closeSignInModal();
+      return;
+    }
+
+    // 2. Disposition dropup
+    const dispMenu = document.getElementById('dw-disposition-menu');
+    if (dispMenu && !dispMenu.classList.contains('hidden')) {
+      closeDispositionMenu();
+      return;
+    }
+
+    // 3. Alert detail drawer
+    const drawer = document.getElementById('alert-drawer');
+    if (drawer && !drawer.classList.contains('hidden')) {
+      closeAlertDrawer();
+      return;
+    }
+
+    // 4. Analyst dropdown menu & Row action menus
+    const analystDropdown = document.getElementById('analyst-dropdown');
+    if (analystDropdown && analystDropdown.style.display !== 'none') {
+      closeAnalystMenu();
+      return;
+    }
+    closeAllRowMenus();
+
+    // 5. Mobile sidebar
+    const sidebar = document.getElementById('app-sidebar');
+    if (sidebar && sidebar.classList.contains('show')) {
+      closeMobileSidebar();
+      return;
+    }
+    return;
   }
-});
+
+  // Khong kich hoat cac phim tat con lai khi dang trong input / textarea / select
+  if (isEditing) return;
+
+  // Phim tat '/': Nhay nhanh con tro vao o tim kiem Alert Search
+  if (e.key === '/') {
+    const searchInput = document.getElementById('al-search') ||
+                        document.querySelector('.soc-search-input');
+    if (searchInput) {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+    return;
+  }
+
+  // Phim tat 'j' va 'k': Di chuyen qua lai giua cac hang canh bao trong bang
+  const rows = Array.from(document.querySelectorAll('#al-table-body tr.clickable'));
+  if (rows.length > 0) {
+    if (e.key === 'j') {
+      e.preventDefault();
+      selectedAlertRowIndex = Math.min(selectedAlertRowIndex + 1, rows.length - 1);
+      highlightActiveAlertRow(rows, selectedAlertRowIndex);
+      return;
+    }
+    if (e.key === 'k') {
+      e.preventDefault();
+      selectedAlertRowIndex = Math.max(selectedAlertRowIndex - 1, 0);
+      highlightActiveAlertRow(rows, selectedAlertRowIndex);
+      return;
+    }
+    // Phim tat 'Enter': Mo drawer cho hang dang duoc chon
+    if (e.key === 'Enter' && selectedAlertRowIndex >= 0 && selectedAlertRowIndex < rows.length) {
+      e.preventDefault();
+      rows[selectedAlertRowIndex].click();
+      return;
+    }
+  }
+}
+
+function highlightActiveAlertRow(rows, index) {
+  rows.forEach((row, i) => {
+    if (i === index) {
+      row.classList.add('kb-active-row');
+      row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else {
+      row.classList.remove('kb-active-row');
+    }
+  });
+}
+
+document.addEventListener('keydown', handleCentralKeyDown);
+
 
 // Vòng đời HTMX & Khử rò rỉ bộ nhớ (Rule 3.1):
 // HTMX hoán đổi phần tử #main-content mà không tải lại toàn trang.
@@ -821,6 +985,7 @@ document.addEventListener('keydown', (e) => {
 // và gây rò rỉ bộ nhớ (memory leak) trên trình duyệt của analyst trực ca dài.
 document.addEventListener('htmx:afterSwap', (evt) => {
   syncActiveNav(window.location.pathname);
+  updateThemeToggleIcon(getCurrentTheme());
   closeMobileSidebar();
   applyRolePermissions(state.currentRole);
 
@@ -1006,6 +1171,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   syncActiveNav(window.location.pathname);
+  updateThemeToggleIcon(getCurrentTheme());
   if (document.getElementById('severityDonutChart')) {
     initOverviewCharts();
   }
@@ -1149,17 +1315,4 @@ document.addEventListener('click', (e) => {
   }
 }, true);
 
-// Đóng Dropup khi nhấn phím Escape
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const menu = document.getElementById('dw-disposition-menu');
-    if (menu && !menu.classList.contains('hidden')) {
-      menu.classList.add('hidden');
-      const trigger = document.getElementById('dw-disposition-trigger');
-      if (trigger) {
-        trigger.setAttribute('aria-expanded', 'false');
-        trigger.focus();
-      }
-    }
-  }
-});
+// Dropup Escape handled by centralized KeyboardController
