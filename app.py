@@ -13,10 +13,16 @@ import re
 import secrets
 import time
 import urllib.parse
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import Cookie, FastAPI, Form, Request, Response
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -86,17 +92,17 @@ async def security_headers_middleware(request: Request, call_next):
     else:
         # Tương thích ngược cho các trang dashboard SOC hiện hữu (không chèn nonce để trình duyệt không vô hiệu hóa unsafe-inline)
         csp = (
-            f"default-src 'self'; "
-            f"script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
-            f"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
-            f"font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
-            f"img-src 'self' data:; "
-            f"connect-src 'self'; "
-            f"worker-src 'self'; "
-            f"manifest-src 'self'; "
-            f"frame-ancestors 'none'; "
-            f"base-uri 'self'; "
-            f"form-action 'self';"
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+            "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
+            "img-src 'self' data:; "
+            "connect-src 'self'; "
+            "worker-src 'self'; "
+            "manifest-src 'self'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self';"
         )
     response.headers["Content-Security-Policy"] = csp
     return response
@@ -331,7 +337,7 @@ def log_audit(
     elif act_type == "RESOLVE_ALERT":
         act_type = "ALERT_RESOLVED"
 
-    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     sum_text = summary or f"{act_type.replace('_', ' ').capitalize()}"
     AUDIT_LOGS.append({
         "timestamp": now_utc,
@@ -361,8 +367,8 @@ def alert_observed_to_utc_iso(alert: dict) -> str:
         dt_gmt7 = datetime.strptime(f"{obs_date} {obs_time}", "%d %b %Y %H:%M:%S")
         dt_utc = dt_gmt7 - timedelta(hours=7)
         return dt_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-    except Exception:
-        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except (ValueError, KeyError, TypeError):
+        return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def get_incident_timeline(event_id: str) -> list[dict]:
     """Truy xuất dòng thời gian xử lý sự cố (Incident Activity Trail) theo thứ tự thời gian.
@@ -401,8 +407,9 @@ def get_incident_timeline(event_id: str) -> list[dict]:
             dt_gmt7 = dt_utc + timedelta(hours=7)
             time_display = dt_gmt7.strftime("%H:%M:%S GMT+7")
             date_display = dt_gmt7.strftime("%d %b %Y")
-        except Exception:
-            pass
+        except (ValueError, KeyError, TypeError):
+            time_display = ts_utc
+            date_display = ""
 
         formatted.append({
             **item,
@@ -1215,7 +1222,7 @@ def _create_session(username: str, role: str = "admin") -> str:
     _sessions[session_id] = {
         "username": username,
         "role": role,
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": datetime.now(UTC).isoformat()
     }
     return session_id
 
@@ -1864,7 +1871,7 @@ async def acknowledge_alert(
         acker = source or (session["username"] if session else "admin")
         role = session["role"] if session else "tier1"
         alert["ackedBy"] = acker                           # e.g. "admin" or "telegram:84912345678"
-        alert["ackedAt"] = datetime.now(timezone.utc).isoformat()
+        alert["ackedAt"] = datetime.now(UTC).isoformat()
         log_audit(
             action="ACKNOWLEDGE_ALERT",
             username=acker,
@@ -2014,7 +2021,7 @@ async def resolve_alert_with_disposition(
     alert["state"] = "Resolved"
     alert["disposition"] = disposition
     alert["resolvedBy"] = username
-    now_gmt7 = datetime.now(timezone.utc) + timedelta(hours=7)
+    now_gmt7 = datetime.now(UTC) + timedelta(hours=7)
     alert["resolvedAt"] = now_gmt7.strftime("%d %b %Y, %H:%M GMT+7")
     if notes:
         alert["notes"] = notes
@@ -2046,7 +2053,7 @@ async def get_mitre_matrix_api(window: str = "24h"):
     return {"window": window, "matrix": compute_mitre_matrix_stats(window)}
 
 @app.post("/api/alerts/bulk-state", response_class=JSONResponse)
-async def bulk_update_alerts(state: str = Form(...), event_ids: list[str] = Form(...)):
+async def bulk_update_alerts(state: str = Form(...), event_ids: list[str] = Form(...)):  # noqa: B008
     """Cập nhật trạng thái hàng loạt cho nhiều sự cố cảnh báo được chọn.
 
     Args:

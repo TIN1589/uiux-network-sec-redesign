@@ -1,4 +1,6 @@
-import os, sys, importlib.util
+import importlib.util
+import os
+import sys
 
 _root_app_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app.py')
 if os.path.exists(_root_app_path):
