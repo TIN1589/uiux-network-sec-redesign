@@ -42,6 +42,7 @@
 
 
 
+  <meta name="theme-color" content="#F3F1EC" id="meta-theme-color" />
   <!-- Synchronous Early Theme Initializer to prevent FOUC -->
   <script src="./static/js/theme-init.js"></script>
 
@@ -1622,6 +1623,22 @@
 
 
 
+  <!-- MITRE Active Filter Chip Banner (Standalone & Dynamic preview) -->
+  <div id="mitre-active-filter-banner" class="soc-card hidden" style="display: none; padding: 12px 18px; margin-bottom: 14px; align-items: center; justify-content: space-between; gap: 12px; background: var(--color-surface-card-subtle); border-left: 4px solid var(--color-accent-lime);">
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">
+        ACTIVE MITRE FILTER:
+      </span>
+      <span id="mitre-active-chip" class="soc-badge font-mono" style="background: var(--color-obsidian-900); color: var(--color-accent-lime); font-size: 12px; font-weight: 700; padding: 4px 10px;">
+        T1498 · Network Denial of Service
+      </span>
+    </div>
+    <button type="button" onclick="clearMitreFilterStandalone()"
+            class="soc-btn soc-btn-outline soc-btn-sm" style="height: 30px; padding: 4px 10px; cursor: pointer;">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i> Clear filter
+    </button>
+  </div>
+
   <!-- Search & Collapsible Advanced Filters Card -->
 
   <div class="soc-card soc-card-pad" style="display: flex; flex-direction: column; gap: 14px;">
@@ -2232,9 +2249,13 @@
           </td>
 
           <td>
-
-            <span class="soc-badge badge-resolved">Resolved</span>
-
+            <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+              <span class="soc-badge badge-resolved">Resolved</span>
+              <span class="soc-badge badge-disposition badge-disposition-tp"
+                    style="font-size: 10px; padding: 2px 6px;" title="True Positive - Malicious">
+                True Positive - Malicious
+              </span>
+            </div>
           </td>
 
           <td style="text-align: right;" onclick="event.stopPropagation();">
@@ -2506,6 +2527,7 @@
           <span class="soc-badge badge-high">High</span>
 
           <span class="font-mono m-rule-tag">#100280</span>
+          <span class="soc-badge badge-disposition badge-disposition-tp" style="font-size: 10px; padding: 1px 6px;">True Positive</span>
 
         </div>
 
@@ -3128,6 +3150,133 @@
   </div>
 
 
+
+  <!-- Chốt chặn 2: MITRE ATT&CK Network Coverage Matrix Card (CSS Grid 6 cột thuần) -->
+  <div class="soc-card soc-card-pad" style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+      <div>
+        <h2 class="soc-card-title">MITRE ATT&CK Network Coverage Matrix</h2>
+        <p style="font-size: 13px; color: var(--color-text-secondary); margin-top: 2px;">
+          Active rule detection coverage across 6 network infrastructure tactics &amp; 10 techniques.
+        </p>
+      </div>
+      <span class="soc-badge" style="background: #e2e8f0; color: #334155; font-family: var(--font-mono); font-size: 11px;">
+        VNPT SOC N4.2 Network Profile
+      </span>
+    </div>
+
+    <!-- CSS Grid 6 Columns for 6 Network Tactics -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;">
+      <!-- TA0001: Initial Access -->
+      <div style="background: var(--color-bg-inset, #f3f1ec); border: 1px solid var(--color-border-default, #e7e4dc); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="border-bottom: 1px solid var(--color-border-divider, #e2e8f0); padding-bottom: 6px;">
+          <div class="font-mono" style="font-size: 10px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">TA0001</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">Initial Access</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+          <div class="mitre-tech-card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--color-surface-card, #ffffff); border: 1px solid var(--color-border-card, #e7e4dc); opacity: 0.65;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+              <span class="font-mono" style="font-size: 11px; font-weight: 700; color: var(--color-text-muted);">T1190 →</span>
+              <span class="font-mono" style="font-size: 10px; color: var(--color-text-muted);">0 hits</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.3;">Exploit Public-Facing App</span>
+          </div>
+          <div class="mitre-tech-card" onclick="filterAlertsByTechnique('T1078', 'Valid Accounts')" style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--color-surface-card, #ffffff); border: 1px solid #bbf7d0; cursor: pointer;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+              <a href="javascript:void(0)" class="font-mono" style="font-size: 11px; font-weight: 700; color: #166534; text-decoration: none;">T1078 →</a>
+              <span class="soc-badge badge-resolved font-mono" style="font-size: 10px; padding: 1px 6px;">1 hit</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.3;">Valid Accounts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TA0002: Execution -->
+      <div style="background: var(--color-bg-inset, #f3f1ec); border: 1px solid var(--color-border-default, #e7e4dc); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="border-bottom: 1px solid var(--color-border-divider, #e2e8f0); padding-bottom: 6px;">
+          <div class="font-mono" style="font-size: 10px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">TA0002</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">Execution</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+          <div class="mitre-tech-card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--color-surface-card, #ffffff); border: 1px solid var(--color-border-card, #e7e4dc); opacity: 0.65;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+              <span class="font-mono" style="font-size: 11px; font-weight: 700; color: var(--color-text-muted);">T1059.008 →</span>
+              <span class="font-mono" style="font-size: 10px; color: var(--color-text-muted);">0 hits</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.3;">Network Device CLI</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TA0003: Persistence -->
+      <div style="background: var(--color-bg-inset, #f3f1ec); border: 1px solid var(--color-border-default, #e7e4dc); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="border-bottom: 1px solid var(--color-border-divider, #e2e8f0); padding-bottom: 6px;">
+          <div class="font-mono" style="font-size: 10px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">TA0003</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">Persistence</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+          <div class="mitre-tech-card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--color-surface-card, #ffffff); border: 1px solid var(--color-border-card, #e7e4dc); opacity: 0.65;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+              <span class="font-mono" style="font-size: 11px; font-weight: 700; color: var(--color-text-muted);">T1542.004 →</span>
+              <span class="font-mono" style="font-size: 10px; color: var(--color-text-muted);">0 hits</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.3;">ROMMON / Firmware</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TA0005: Defense Evasion -->
+      <div style="background: var(--color-bg-inset, #f3f1ec); border: 1px solid var(--color-border-default, #e7e4dc); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="border-bottom: 1px solid var(--color-border-divider, #e2e8f0); padding-bottom: 6px;">
+          <div class="font-mono" style="font-size: 10px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">TA0005</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">Defense Evasion</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+          <div class="mitre-tech-card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--color-surface-card, #ffffff); border: 1px solid var(--color-border-card, #e7e4dc); opacity: 0.65;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+              <span class="font-mono" style="font-size: 11px; font-weight: 700; color: var(--color-text-muted);">T1562.004 →</span>
+              <span class="font-mono" style="font-size: 10px; color: var(--color-text-muted);">0 hits</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.3;">Disable Firewall ACL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TA0007: Discovery -->
+      <div style="background: var(--color-bg-inset, #f3f1ec); border: 1px solid var(--color-border-default, #e7e4dc); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="border-bottom: 1px solid var(--color-border-divider, #e2e8f0); padding-bottom: 6px;">
+          <div class="font-mono" style="font-size: 10px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">TA0007</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">Discovery</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+          <div class="mitre-tech-card" onclick="filterAlertsByTechnique('T1046', 'Network Service Scanning')" style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--color-surface-card, #ffffff); border: 1px solid #bbf7d0; cursor: pointer;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+              <a href="javascript:void(0)" class="font-mono" style="font-size: 11px; font-weight: 700; color: #166534; text-decoration: none;">T1046 →</a>
+              <span class="soc-badge badge-resolved font-mono" style="font-size: 10px; padding: 1px 6px;">1 hit</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.3;">Network Service Scan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TA0040: Impact -->
+      <div style="background: var(--color-bg-inset, #f3f1ec); border: 1px solid var(--color-border-default, #e7e4dc); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="border-bottom: 1px solid var(--color-border-divider, #e2e8f0); padding-bottom: 6px;">
+          <div class="font-mono" style="font-size: 10px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">TA0040</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">Impact</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+          <div class="mitre-tech-card" onclick="filterAlertsByTechnique('T1498', 'Network Denial of Service')" style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--color-surface-card, #ffffff); border: 1px solid #bbf7d0; cursor: pointer;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+              <a href="javascript:void(0)" class="font-mono" style="font-size: 11px; font-weight: 700; color: #166534; text-decoration: none;">T1498 →</a>
+              <span class="soc-badge badge-resolved font-mono" style="font-size: 10px; padding: 1px 6px;">1 hit</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.3;">Network Denial of Service</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- New / Edit Test Card (Admin only — ASSUMPTION-03) -->
 
@@ -5015,16 +5164,58 @@
         });
 
         document.addEventListener('keydown', (e) => {
-
           if (e.key === 'Escape') {
-
-            window.closeAllRowMenus();
-
+            const modal = document.getElementById('signin-modal');
+            if (modal && modal.classList.contains('active')) {
+              window.closeSignInModal && window.closeSignInModal();
+              return;
+            }
+            const drawer = document.getElementById('alert-drawer-backdrop');
+            if (drawer && drawer.classList.contains('active')) {
+              window.closeAlertDrawer && window.closeAlertDrawer();
+              return;
+            }
+            const disp = document.getElementById('dw-disposition-menu');
+            if (disp && !disp.classList.contains('hidden')) {
+              disp.classList.add('hidden');
+              return;
+            }
+            window.closeAllRowMenus && window.closeAllRowMenus();
           }
-
         });
 
 
+
+        // Standalone MITRE Filter simulation
+        window.filterAlertsByTechnique = function(techniqueId, techniqueName) {
+          if (window.switchTab) window.switchTab('alerts');
+          const banner = document.getElementById('mitre-active-filter-banner');
+          const chip = document.getElementById('mitre-active-chip');
+          if (banner && chip) {
+            chip.textContent = techniqueName ? (techniqueId + ' · ' + techniqueName) : techniqueId;
+            banner.classList.remove('hidden');
+            banner.style.display = 'flex';
+          }
+          const rows = document.querySelectorAll('#al-table-body tr.clickable');
+          rows.forEach((row) => {
+            const txt = row.textContent || '';
+            const match = txt.includes(techniqueId) ||
+                          (techniqueId === 'T1498' && txt.includes('100999')) ||
+                          (techniqueId === 'T1078' && txt.includes('100280')) ||
+                          (techniqueId === 'T1046' && txt.includes('100200'));
+            row.style.display = match ? '' : 'none';
+          });
+        };
+
+        window.clearMitreFilterStandalone = function() {
+          const banner = document.getElementById('mitre-active-filter-banner');
+          if (banner) {
+            banner.classList.add('hidden');
+            banner.style.display = 'none';
+          }
+          const rows = document.querySelectorAll('#al-table-body tr.clickable');
+          rows.forEach((row) => { row.style.display = ''; });
+        };
 
         // Dual-Mode Sign-in Modal & Quick Demo Fill Fallback
 
