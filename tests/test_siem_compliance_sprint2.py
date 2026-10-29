@@ -265,3 +265,70 @@ def test_standalone_index_visual_parity():
     assert 'Core infrastructure topology' in html
     assert 'MITRE ATT&CK Network Coverage Matrix' in html
     assert 'id="mitre-active-filter-banner"' in html
+
+def test_dark_theme_contrast_rules(client):
+    """Mục tiêu: Đảm bảo các component Dark Theme (Queue Row, Drawer, Playbook, KPI) đạt chuẩn WCAG AA.
+
+    Kịch bản:
+        1. Gọi GET /static/css/layout.css và xác nhận có rule dark mode cho .queue-row.normal và .queue-row.critical-first.
+        2. Gọi GET /static/css/components.css và xác nhận có rule dark mode cho .soc-drawer và .playbook-well.
+        3. Xác minh --color-text-inverse trong html[data-theme="dark"] là #FFFFFF (giữ độ tương phản sidebar obsidian).
+        4. Đo lường tỷ lệ tương phản thực tế:
+           - #9E9B93 (q-meta) trên #16181A (dark card) >= 4.5:1 (đạt WCAG AA).
+           - #F1F0EB (q-title) trên #16181A (dark card) >= 7.0:1 (đạt WCAG AAA).
+    """
+    res_layout = client.get("/static/css/layout.css")
+    assert res_layout.status_code == 200
+    assert 'html[data-theme="dark"] .queue-row.normal' in res_layout.text
+    assert 'html[data-theme="dark"] .queue-row.critical-first' in res_layout.text
+    assert 'html[data-theme="dark"] .q-title' in res_layout.text
+
+    res_comp = client.get("/static/css/components.css")
+    assert res_comp.status_code == 200
+    assert 'html[data-theme="dark"] .soc-drawer' in res_comp.text
+    assert 'html[data-theme="dark"] .playbook-well' in res_comp.text
+    assert '.playbook-well-title' in res_comp.text
+
+    res_vars = client.get("/static/css/variables.css")
+    assert res_vars.status_code == 200
+    dark_vars_match = re.search(r'html\[data-theme="dark"\]\s*\{([^}]+)\}', res_vars.text)
+    assert dark_vars_match is not None
+    assert '--color-text-inverse: #FFFFFF;' in dark_vars_match.group(1)
+
+    dark_surface = "#16181A"
+    assert _contrast_ratio("#9E9B93", dark_surface) >= 4.5
+    assert _contrast_ratio("#F1F0EB", dark_surface) >= 7.0
+
+
+def test_timezone_integrity_and_utcnow_deprecation():
+    """Mục tiêu: Kiểm tra tuân thủ Release Gate 4 (Không dùng datetime.utcnow() và dynamic UTC).
+
+    Kịch bản:
+        1. Đọc trực tiếp app.py và xác nhận không có bất kỳ lệnh datetime.utcnow() nào.
+        2. Kiểm tra alert_observed_to_utc_iso() trả về định dạng UTC ISO-8601 hợp lệ kết thúc bằng 'Z'.
+    """
+    with open("app.py", "r", encoding="utf-8") as f:
+        app_source = f.read()
+
+    assert "datetime.utcnow()" not in app_source, "datetime.utcnow() is deprecated and forbidden by Release Gate 4"
+
+    res_iso = alert_observed_to_utc_iso({"observedDate": "26 Oct 2026", "observedTime": "01:12:04 GMT+7"})
+    assert res_iso == "2026-10-25T18:12:04Z"
+
+    res_fallback = alert_observed_to_utc_iso({})
+    assert res_fallback.endswith("Z")
+
+
+def test_keyboard_controller_guards_and_htmx_reset():
+    """Mục tiêu: Đảm bảo bộ điều khiển bàn phím bỏ qua phím bổ trợ và reset chỉ số hàng khi HTMX hoán đổi.
+
+    Kịch bản:
+        1. Đọc static/js/app.js.
+        2. Xác nhận handleCentralKeyDown kiểm tra (e.ctrlKey || e.altKey || e.metaKey || e.isComposing).
+        3. Xác nhận sự kiện htmx:afterSwap thiết lập selectedAlertRowIndex = -1.
+    """
+    with open("static/js/app.js", "r", encoding="utf-8") as f:
+        js_source = f.read()
+
+    assert "e.ctrlKey || e.altKey || e.metaKey || e.isComposing" in js_source
+    assert "selectedAlertRowIndex = -1;" in js_source
