@@ -26,7 +26,7 @@
 
 
 
-const CACHE_NAME = 'vnpt-soc-pwa-v1.0.2-v1.0.3-theme';
+const CACHE_NAME = 'vnpt-soc-pwa-v1.0.4-local-icons';
 
 
 
@@ -86,6 +86,8 @@ const PRECACHE_ASSETS = [
 
   '/static/css/style.css',
   '/static/js/theme-init.js',
+
+  '/static/js/icons.js',
 
   '/static/js/app.js',
 
@@ -251,7 +253,7 @@ self.addEventListener('fetch', (event) => {
 
       }).catch(async () => {
 
-        const cached = await caches.match(req);
+        const cached = await caches.match(req, { ignoreSearch: true });
 
         return cached || Response.error();
 
@@ -271,7 +273,7 @@ self.addEventListener('fetch', (event) => {
 
     event.respondWith(
 
-      caches.match(req).then((cachedResponse) => {
+      caches.match(req, { ignoreSearch: true }).then((cachedResponse) => {
 
         if (cachedResponse) {
 
