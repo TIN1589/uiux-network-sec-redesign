@@ -872,6 +872,11 @@ document.addEventListener('click', (e) => {
 let selectedAlertRowIndex = -1;
 
 export function handleCentralKeyDown(e) {
+  // Bo qua neu co phim bo tro (Ctrl, Alt, Meta) hoac bo go IME dang kich hoat de tranh xung dot phim tat he dieu hanh
+  if (e.ctrlKey || e.altKey || e.metaKey || e.isComposing) {
+    return;
+  }
+
   const target = e.target;
   const isEditing = target && (
     target.tagName === 'INPUT' ||
@@ -999,6 +1004,7 @@ document.addEventListener('keydown', handleCentralKeyDown);
 // nếu không Chart.js sẽ bắn lỗi "Canvas is already in use by chart with id X"
 // và gây rò rỉ bộ nhớ (memory leak) trên trình duyệt của analyst trực ca dài.
 document.addEventListener('htmx:afterSwap', (evt) => {
+  selectedAlertRowIndex = -1;
   syncActiveNav(window.location.pathname);
   updateThemeToggleIcon(getCurrentTheme());
   closeMobileSidebar();
