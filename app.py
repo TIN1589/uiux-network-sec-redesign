@@ -233,24 +233,24 @@ NETWORK_MITRE_TECHNIQUES = [
 # Activity Schema: { timestamp: "UTC ISO-8601", targetEventId: str, activityType: str, actor: str, role: str, summary: str, details: str }
 AUDIT_LOGS: list[dict] = [
     {
-        "timestamp": "2026-10-25T17:40:00Z",
+        "timestamp": "2026-10-25T17:37:12Z",
         "targetEventId": "EVT-2610-084",
         "activityType": "ALERT_TRIGGERED",
         "actor": "Suricata Engine",
         "role": "system",
-        "summary": "Rule 100804 triggered on vnpt-edge-fw-01",
-        "details": "Threshold exceeded: Multiple failed IKE phase-1 negotiations detected from peer.",
+        "summary": "Rule 100280 VPN login anomaly triggered on vnpt-edge-fw-01",
+        "details": "Threshold exceeded: TLS Auth from unrecognized ASN 192.0.2.88.",
         "username": "Suricata Engine",
         "action": "ALERT_TRIGGERED"
     },
     {
-        "timestamp": "2026-10-25T17:42:15Z",
+        "timestamp": "2026-10-25T17:39:15Z",
         "targetEventId": "EVT-2610-084",
         "activityType": "ALERT_ACKNOWLEDGED",
         "actor": "tier1",
         "role": "tier1",
         "summary": "Alert acknowledged by Tier-1 responder",
-        "details": "Triage verified non-spoofed peer IP 198.51.100.24.",
+        "details": "Triage verified anomalous login attempt against soc_duty_02 account.",
         "username": "tier1",
         "action": "ACKNOWLEDGE_ALERT"
     },
@@ -260,13 +260,13 @@ AUDIT_LOGS: list[dict] = [
         "activityType": "ALERT_RESOLVED",
         "actor": "admin",
         "role": "admin",
-        "summary": "Incident closed with disposition: Benign Positive - Expected",
-        "details": "Scheduled tunnel reconfiguration maintenance window verified.",
+        "summary": "Incident closed with disposition: True Positive - Malicious",
+        "details": "Unauthorized VPN session revoked and analyst credentials rotated.",
         "username": "admin",
         "action": "RESOLVE_ALERT"
     },
     {
-        "timestamp": "2026-10-26T01:12:04Z",
+        "timestamp": "2026-10-25T18:12:04Z",
         "targetEventId": "EVT-2610-099",
         "activityType": "ALERT_TRIGGERED",
         "actor": "Suricata Engine",
@@ -277,7 +277,7 @@ AUDIT_LOGS: list[dict] = [
         "action": "ALERT_TRIGGERED"
     },
     {
-        "timestamp": "2026-10-26T01:13:30Z",
+        "timestamp": "2026-10-25T18:13:30Z",
         "targetEventId": "EVT-2610-099",
         "activityType": "ALERT_ACKNOWLEDGED",
         "actor": "tier1",
@@ -288,7 +288,7 @@ AUDIT_LOGS: list[dict] = [
         "action": "ACKNOWLEDGE_ALERT"
     },
     {
-        "timestamp": "2026-10-26T01:15:10Z",
+        "timestamp": "2026-10-25T18:15:10Z",
         "targetEventId": "EVT-2610-099",
         "activityType": "INVESTIGATION_STARTED",
         "actor": "tier2",
@@ -335,6 +335,24 @@ def log_audit(
         "username": username
     })
 
+def alert_observed_to_utc_iso(alert: dict) -> str:
+    """Chuyển đổi thời gian quan sát của alert (GMT+7) sang chuỗi ISO-8601 UTC chuẩn.
+
+    Args:
+        alert: Bản ghi sự cố an ninh.
+
+    Returns:
+        str: Chuỗi thời gian chuẩn ISO-8601 UTC (ví dụ: '2026-10-25T18:12:04Z').
+    """
+    obs_date = alert.get("observedDate", "26 Oct 2026")
+    obs_time = alert.get("observedTime", "00:00:00 GMT+7").replace(" GMT+7", "").strip()
+    try:
+        dt_gmt7 = datetime.strptime(f"{obs_date} {obs_time}", "%d %b %Y %H:%M:%S")
+        dt_utc = dt_gmt7 - timedelta(hours=7)
+        return dt_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    except Exception:
+        return "2026-10-25T18:12:04Z"
+
 def get_incident_timeline(event_id: str) -> list[dict]:
     """Truy xuất dòng thời gian xử lý sự cố (Incident Activity Trail) theo thứ tự thời gian.
 
@@ -350,7 +368,7 @@ def get_incident_timeline(event_id: str) -> list[dict]:
     has_trigger = any(a.get("activityType") == "ALERT_TRIGGERED" for a in activities)
     if not has_trigger and alert:
         activities.insert(0, {
-            "timestamp": "2026-10-26T01:00:00Z",
+            "timestamp": alert_observed_to_utc_iso(alert),
             "targetEventId": event_id,
             "activityType": "ALERT_TRIGGERED",
             "actor": "Detection Engine",
@@ -1835,7 +1853,7 @@ async def acknowledge_alert(
         acker = source or (session["username"] if session else "admin")
         role = session["role"] if session else "tier1"
         alert["ackedBy"] = acker                           # e.g. "admin" or "telegram:84912345678"
-        alert["ackedAt"] = datetime.utcnow().isoformat()  # UTC ISO timestamp
+        alert["ackedAt"] = datetime.now(timezone.utc).isoformat()
         log_audit(
             action="ACKNOWLEDGE_ALERT",
             username=acker,
@@ -1985,7 +2003,8 @@ async def resolve_alert_with_disposition(
     alert["state"] = "Resolved"
     alert["disposition"] = disposition
     alert["resolvedBy"] = username
-    alert["resolvedAt"] = datetime.utcnow().strftime("%d %b %Y, %H:%M GMT+7")
+    now_gmt7 = datetime.now(timezone.utc) + timedelta(hours=7)
+    alert["resolvedAt"] = now_gmt7.strftime("%d %b %Y, %H:%M GMT+7")
     if notes:
         alert["notes"] = notes
 

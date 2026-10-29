@@ -14,3 +14,4 @@ if os.path.exists(_root_app_path):
     get_incident_timeline = getattr(_mod, 'get_incident_timeline', None)
     NETWORK_MITRE_TECHNIQUES = getattr(_mod, 'NETWORK_MITRE_TECHNIQUES', [])
     filter_alerts = getattr(_mod, 'filter_alerts', None)
+    alert_observed_to_utc_iso = getattr(_mod, 'alert_observed_to_utc_iso', None)
