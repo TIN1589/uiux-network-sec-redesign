@@ -34,8 +34,26 @@
   }
 
   // Dong bo the meta theme-color cho PWA va trinh duyet di dong
-  var metaThemeColor = document.querySelector('meta[name="theme-color"]');
-  if (metaThemeColor) {
-    metaThemeColor.setAttribute('content', theme === 'dark' ? '#0E0F0C' : '#F3F1EC');
+  function syncThemeColor(activeTheme) {
+    var color = activeTheme === 'dark' ? '#0E0F0C' : '#F3F1EC';
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute('content', color);
+    } else if (document.head) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'theme-color');
+      meta.setAttribute('content', color);
+      document.head.appendChild(meta);
+    }
+  }
+
+  syncThemeColor(theme);
+
+  // Dam bao dong bo sau khi parser hoan tat the head
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      var currentTheme = document.documentElement.getAttribute('data-theme') || theme;
+      syncThemeColor(currentTheme);
+    });
   }
 })();
