@@ -10,3 +10,7 @@ if os.path.exists(_root_app_path):
     AUDIT_LOGS = getattr(_mod, 'AUDIT_LOGS', [])
     alerts_store = getattr(_mod, 'alerts_store', [])
     deduplicate_composite_alerts = getattr(_mod, 'deduplicate_composite_alerts', None)
+    compute_overview_stats = getattr(_mod, 'compute_overview_stats', None)
+    get_incident_timeline = getattr(_mod, 'get_incident_timeline', None)
+    NETWORK_MITRE_TECHNIQUES = getattr(_mod, 'NETWORK_MITRE_TECHNIQUES', [])
+    filter_alerts = getattr(_mod, 'filter_alerts', None)

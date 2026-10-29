@@ -13,7 +13,7 @@ import re
 import secrets
 import time
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from fastapi import Cookie, FastAPI, Form, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
@@ -179,9 +179,7 @@ templates.env.globals["demo_mode"] = DEMO_MODE
 templates.env.globals["demo_password"] = _ADMIN_PWD_PLAIN if DEMO_MODE else ""
 templates.env.globals["show_build_version"] = SHOW_BUILD_VERSION
 
-# -----------------------------------------------------------------------------
-# Chốt chặn 2: Danh mục kỹ thuật mạng MITRE ATT&CK tiêu chuẩn (6 Tactics x 10 Techniques)
-# -----------------------------------------------------------------------------
+# Danh mục kỹ thuật mạng MITRE ATT&CK tiêu chuẩn (6 Tactics x 10 Techniques)
 NETWORK_MITRE_TECHNIQUES = [
     {
         "tactic_id": "TA0001",
@@ -231,30 +229,158 @@ NETWORK_MITRE_TECHNIQUES = [
     }
 ]
 
-# -----------------------------------------------------------------------------
-# Chốt chặn 4: Nhật ký kiểm toán thao tác vận hành SOC (Audit Logs in-memory)
-# -----------------------------------------------------------------------------
+# Nhật ký kiểm toán thao tác vận hành SOC (Audit Logs in-memory)
+# Activity Schema: { timestamp: "UTC ISO-8601", targetEventId: str, activityType: str, actor: str, role: str, summary: str, details: str }
 AUDIT_LOGS: list[dict] = [
     {
+        "timestamp": "2026-10-25T17:40:00Z",
+        "targetEventId": "EVT-2610-084",
+        "activityType": "ALERT_TRIGGERED",
+        "actor": "Suricata Engine",
+        "role": "system",
+        "summary": "Rule 100804 triggered on vnpt-edge-fw-01",
+        "details": "Threshold exceeded: Multiple failed IKE phase-1 negotiations detected from peer.",
+        "username": "Suricata Engine",
+        "action": "ALERT_TRIGGERED"
+    },
+    {
+        "timestamp": "2026-10-25T17:42:15Z",
+        "targetEventId": "EVT-2610-084",
+        "activityType": "ALERT_ACKNOWLEDGED",
+        "actor": "tier1",
+        "role": "tier1",
+        "summary": "Alert acknowledged by Tier-1 responder",
+        "details": "Triage verified non-spoofed peer IP 198.51.100.24.",
+        "username": "tier1",
+        "action": "ACKNOWLEDGE_ALERT"
+    },
+    {
         "timestamp": "2026-10-25T17:45:00Z",
-        "username": "admin",
+        "targetEventId": "EVT-2610-084",
+        "activityType": "ALERT_RESOLVED",
+        "actor": "admin",
         "role": "admin",
-        "action": "RESOLVE_ALERT",
-        "targetEventId": "EVT-2610-051",
-        "details": "Resolved with disposition: Benign Positive - Expected (Scheduled Maintenance)"
+        "summary": "Incident closed with disposition: Benign Positive - Expected",
+        "details": "Scheduled tunnel reconfiguration maintenance window verified.",
+        "username": "admin",
+        "action": "RESOLVE_ALERT"
+    },
+    {
+        "timestamp": "2026-10-26T01:12:04Z",
+        "targetEventId": "EVT-2610-099",
+        "activityType": "ALERT_TRIGGERED",
+        "actor": "Suricata Engine",
+        "role": "system",
+        "summary": "Rule 100999 BPDU Root Guard Violation triggered",
+        "details": "Anomalous BPDU received on port Gi0/24 with superior bridge ID.",
+        "username": "Suricata Engine",
+        "action": "ALERT_TRIGGERED"
+    },
+    {
+        "timestamp": "2026-10-26T01:13:30Z",
+        "targetEventId": "EVT-2610-099",
+        "activityType": "ALERT_ACKNOWLEDGED",
+        "actor": "tier1",
+        "role": "tier1",
+        "summary": "Alert acknowledged by Tier-1 responder",
+        "details": "Port Gi0/24 flagged for STP topology flapping risk.",
+        "username": "tier1",
+        "action": "ACKNOWLEDGE_ALERT"
+    },
+    {
+        "timestamp": "2026-10-26T01:15:10Z",
+        "targetEventId": "EVT-2610-099",
+        "activityType": "INVESTIGATION_STARTED",
+        "actor": "tier2",
+        "role": "tier2",
+        "summary": "Investigation escalated to Tier-2 SOC Analyst",
+        "details": "Correlating CDP/LLDP telemetry and upstream MAC tables.",
+        "username": "tier2",
+        "action": "CHANGE_ALERT_STATE"
     }
 ]
 
-def log_audit(action: str, username: str, role: str, target_event_id: str, details: str) -> None:
-    """Ghi nhận nhật ký kiểm toán thao tác vận hành an ninh SOC."""
+def log_audit(
+    action: str = "",
+    username: str = "analyst",
+    role: str = "tier1",
+    target_event_id: str = "",
+    details: str = "",
+    activity_type: str | None = None,
+    summary: str | None = None
+) -> None:
+    """Ghi nhận nhật ký kiểm toán và dòng thời gian xử lý sự cố an ninh SOC."""
+    act_type = activity_type or action
+    if act_type == "ACKNOWLEDGE_ALERT":
+        act_type = "ALERT_ACKNOWLEDGED"
+    elif act_type == "CHANGE_ALERT_STATE":
+        act_type = "INVESTIGATION_STARTED"
+    elif act_type.startswith("CONTAINMENT_"):
+        act_type = "CONTAINMENT_EXECUTED"
+    elif act_type == "RESOLVE_ALERT":
+        act_type = "ALERT_RESOLVED"
+
+    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    sum_text = summary or f"{act_type.replace('_', ' ').capitalize()}"
     AUDIT_LOGS.append({
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "username": username,
-        "role": role,
-        "action": action,
+        "timestamp": now_utc,
         "targetEventId": target_event_id,
-        "details": details
+        "activityType": act_type,
+        "actor": username,
+        "role": role,
+        "summary": sum_text,
+        "details": details,
+        # backward compatibility keys
+        "action": action or act_type,
+        "username": username
     })
+
+def get_incident_timeline(event_id: str) -> list[dict]:
+    """Truy xuất dòng thời gian xử lý sự cố (Incident Activity Trail) theo thứ tự thời gian.
+
+    Args:
+        event_id: Mã định danh sự cố.
+
+    Returns:
+        list[dict]: Danh sách sự kiện hoạt động với timestamp định dạng GMT+7.
+    """
+    alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
+    activities = [dict(log) for log in AUDIT_LOGS if log.get("targetEventId") == event_id]
+
+    has_trigger = any(a.get("activityType") == "ALERT_TRIGGERED" for a in activities)
+    if not has_trigger and alert:
+        activities.insert(0, {
+            "timestamp": "2026-10-26T01:00:00Z",
+            "targetEventId": event_id,
+            "activityType": "ALERT_TRIGGERED",
+            "actor": "Detection Engine",
+            "role": "system",
+            "summary": f"Alert triggered by Rule #{alert.get('ruleId', 'N/A')}",
+            "details": f"Detection rule matched telemetry from asset {alert.get('asset', 'network-device')}."
+        })
+
+    activities_sorted = sorted(activities, key=lambda x: x.get("timestamp", ""))
+
+    formatted = []
+    for item in activities_sorted:
+        ts_utc = item.get("timestamp", "")
+        time_display = ts_utc
+        date_display = ""
+        try:
+            clean_ts = ts_utc.replace("Z", "+00:00")
+            dt_utc = datetime.fromisoformat(clean_ts)
+            dt_gmt7 = dt_utc + timedelta(hours=7)
+            time_display = dt_gmt7.strftime("%H:%M:%S GMT+7")
+            date_display = dt_gmt7.strftime("%d %b %Y")
+        except Exception:
+            pass
+
+        formatted.append({
+            **item,
+            "timeDisplay": time_display,
+            "dateDisplay": date_display
+        })
+    return formatted
 
 # In-memory SOC data repository
 
@@ -1122,6 +1248,13 @@ def get_window_max_minutes(win: str) -> int:
 def compute_overview_stats(time_window: str = "24h") -> tuple:
     """Tính toán bộ dữ liệu thống kê và danh sách hiển thị cho trang Overview.
 
+    Contract thống nhất:
+        alerts_store item = Composite Incident
+        hits = Số raw events thuộc incident
+        len(alerts) = Incident count
+        sum(alert.hits) = Raw event count (Total Events)
+        Donut sum: crit + high + med + low = Total Events
+
     Args:
         time_window: Khung thời gian cần tổng hợp ('1h', '24h', '7d').
 
@@ -1131,14 +1264,19 @@ def compute_overview_stats(time_window: str = "24h") -> tuple:
     max_mins = get_window_max_minutes(time_window)
     active_alerts = [a for a in alerts_store if a.get("ageMinutes", 0) <= max_mins]
 
-    total = len(active_alerts)
-    crit = sum(1 for a in active_alerts if a["severity"] == "Critical")
-    high = sum(1 for a in active_alerts if a["severity"] == "High")
-    med = sum(1 for a in active_alerts if a["severity"] == "Medium")
-    low = sum(1 for a in active_alerts if a["severity"] == "Low")
+    total_events = sum(a.get("hits", 1) for a in active_alerts)
+    crit = sum(a.get("hits", 1) for a in active_alerts if a["severity"] == "Critical")
+    high = sum(a.get("hits", 1) for a in active_alerts if a["severity"] == "High")
+    med = sum(a.get("hits", 1) for a in active_alerts if a["severity"] == "Medium")
+    low = sum(a.get("hits", 1) for a in active_alerts if a["severity"] == "Low")
+    open_incidents = sum(1 for a in active_alerts if a.get("state") != "Resolved")
+    incident_count = len(active_alerts)
 
     stats = {
-        "total": total,
+        "total": total_events,
+        "total_events": total_events,
+        "incident_count": incident_count,
+        "open_incidents": open_incidents,
         "crit": crit,
         "high": high,
         "med": med,
@@ -1149,10 +1287,10 @@ def compute_overview_stats(time_window: str = "24h") -> tuple:
     for a in active_alerts:
         src = a.get("srcIp")
         if src:
-            ip_counts[src] = ip_counts.get(src, 0) + 1
+            ip_counts[src] = ip_counts.get(src, 0) + a.get("hits", 1)
     sorted_ips = sorted(ip_counts.items(), key=lambda item: item[1], reverse=True)[:5]
     top_ips = [
-        {"ip": ip, "count": cnt, "pct": round((cnt / total) * 100) if total else 0}
+        {"ip": ip, "count": cnt, "pct": round((cnt / total_events) * 100) if total_events else 0}
         for ip, cnt in sorted_ips
     ]
     if not top_ips:
@@ -1161,10 +1299,10 @@ def compute_overview_stats(time_window: str = "24h") -> tuple:
     type_counts: dict = {}
     for a in active_alerts:
         t = a.get("assetType", "Other").lower()
-        type_counts[t] = type_counts.get(t, 0) + 1
+        type_counts[t] = type_counts.get(t, 0) + a.get("hits", 1)
     sorted_types = sorted(type_counts.items(), key=lambda item: item[1], reverse=True)
     dev_types = [
-        {"type": t, "count": cnt, "pct": round((cnt / total) * 100) if total else 0}
+        {"type": t, "count": cnt, "pct": round((cnt / total_events) * 100) if total_events else 0}
         for t, cnt in sorted_types
     ]
     if not dev_types:
@@ -1279,7 +1417,8 @@ def filter_alerts(
     rule: str = "",
     ip: str = "",
     asset: str = "ALL",
-    state: str = "ALL"
+    state: str = "ALL",
+    technique: str | None = None
 ) -> list:
     """Lọc danh sách cảnh báo SOC theo từ khóa, thời gian, mức độ, luật và thiết bị.
 
@@ -1322,6 +1461,14 @@ def filter_alerts(
             continue
         if asset != "ALL" and a["asset"] != asset:
             continue
+        if technique:
+            # MITRE technique filter (Contract regex: ^T\d{4}(?:\.\d{3})?$)
+            threat = a.get("threat")
+            if not (threat and isinstance(threat, dict)):
+                continue
+            tech = threat.get("technique")
+            if not (tech and isinstance(tech, dict) and tech.get("id") == technique):
+                continue
         filtered.append(a)
     return filtered
 
@@ -1353,7 +1500,12 @@ async def get_overview_page(request: Request, window: str = "24h"):
     )
 
 @app.get("/alerts", response_class=HTMLResponse)
-async def get_alerts_page(request: Request, severity: str | None = "ALL", asset: str | None = "ALL"):
+async def get_alerts_page(
+    request: Request,
+    severity: str | None = "ALL",
+    asset: str | None = "ALL",
+    technique: str | None = None
+):
     """Hiển thị toàn bộ trang Hàng đợi cảnh báo (Alert Queue) kèm Layout Master.
 
     Args:
@@ -1364,7 +1516,15 @@ async def get_alerts_page(request: Request, severity: str | None = "ALL", asset:
     Returns:
         HTMLResponse: Giao diện hoàn chỉnh render từ template `pages/alerts.html`.
     """
-    filtered = filter_alerts(severity=severity or "ALL", asset=asset or "ALL")
+    valid_tech = technique if (technique and re.match(r"^T\d{4}(?:\.\d{3})?$", technique)) else None
+    filtered = filter_alerts(severity=severity or "ALL", asset=asset or "ALL", technique=valid_tech)
+    tech_name = None
+    if valid_tech:
+        for tac in NETWORK_MITRE_TECHNIQUES:
+            for t in tac["techniques"]:
+                if t["id"] == valid_tech:
+                    tech_name = t["name"]
+                    break
     alerts_stats = {
         "total": len(filtered),
         "new": sum(1 for a in filtered if a["state"] == "New"),
@@ -1382,7 +1542,9 @@ async def get_alerts_page(request: Request, severity: str | None = "ALL", asset:
             "total_count": len(alerts_store),
             "current_severity": severity,
             "current_asset": asset,
-            "current_state": "ALL"
+            "current_state": "ALL",
+            "selected_technique": valid_tech,
+            "technique_name": tech_name
         }
     )
 
@@ -1462,7 +1624,12 @@ async def get_overview_view(request: Request, window: str = "24h"):
     )
 
 @app.get("/views/alerts", response_class=HTMLResponse)
-async def get_alerts_view(request: Request, severity: str | None = "ALL", asset: str | None = "ALL"):
+async def get_alerts_view(
+    request: Request,
+    severity: str | None = "ALL",
+    asset: str | None = "ALL",
+    technique: str | None = None
+):
     """Trả về partial nội dung Alert Queue để HTMX hoán đổi mượt mà vào #main-content.
 
     Args:
@@ -1473,7 +1640,15 @@ async def get_alerts_view(request: Request, severity: str | None = "ALL", asset:
     Returns:
         HTMLResponse: Đoạn mã HTML render từ `partials/alerts_content.html`.
     """
-    filtered = filter_alerts(severity=severity or "ALL", asset=asset or "ALL")
+    valid_tech = technique if (technique and re.match(r"^T\d{4}(?:\.\d{3})?$", technique)) else None
+    filtered = filter_alerts(severity=severity or "ALL", asset=asset or "ALL", technique=valid_tech)
+    tech_name = None
+    if valid_tech:
+        for tac in NETWORK_MITRE_TECHNIQUES:
+            for t in tac["techniques"]:
+                if t["id"] == valid_tech:
+                    tech_name = t["name"]
+                    break
     alerts_stats = {
         "total": len(filtered),
         "new": sum(1 for a in filtered if a["state"] == "New"),
@@ -1491,7 +1666,9 @@ async def get_alerts_view(request: Request, severity: str | None = "ALL", asset:
             "total_count": len(alerts_store),
             "current_severity": severity,
             "current_asset": asset,
-            "current_state": "ALL"
+            "current_state": "ALL",
+            "selected_technique": valid_tech,
+            "technique_name": tech_name
         }
     )
 
@@ -1579,7 +1756,8 @@ async def filter_alerts_endpoint(
     rule: str | None = "",
     ip: str | None = "",
     asset: str | None = "ALL",
-    state: str | None = "ALL"
+    state: str | None = "ALL",
+    technique: str | None = None
 ):
     """Lọc danh sách cảnh báo SOC theo tiêu chí tìm kiếm và trả về bảng HTML cho HTMX.
 
@@ -1596,6 +1774,7 @@ async def filter_alerts_endpoint(
     Returns:
         HTMLResponse: Bảng cảnh báo render từ template `partials/alerts_table.html`.
     """
+    valid_tech = technique if (technique and re.match(r"^T\d{4}(?:\.\d{3})?$", technique)) else None
     filtered = filter_alerts(
         q=q or "",
         time_range=time or "Last 24 hours",
@@ -1603,7 +1782,8 @@ async def filter_alerts_endpoint(
         rule=rule or "",
         ip=ip or "",
         asset=asset or "ALL",
-        state=state or "ALL"
+        state=state or "ALL",
+        technique=valid_tech
     )
     return templates.TemplateResponse(
         request=request,
@@ -1631,7 +1811,8 @@ async def get_alert_drawer(request: Request, event_id: str):
         request=request,
         name="partials/drawer_content.html",
         context={
-            "alert": alert
+            "alert": alert,
+            "timeline": get_incident_timeline(event_id)
         }
     )
 
@@ -1713,7 +1894,8 @@ async def update_alert_state(
         request=request,
         name="partials/drawer_content.html",
         context={
-            "alert": alert
+            "alert": alert,
+            "timeline": get_incident_timeline(event_id)
         },
         headers={"HX-Trigger": f'{{"showToast": {{"style": "light", "message": "Updated {event_id} to {state}"}}}}'}
     )
@@ -1768,7 +1950,7 @@ async def execute_containment_action(
     return templates.TemplateResponse(
         request=request,
         name="partials/drawer_content.html",
-        context={"alert": alert},
+        context={"alert": alert, "timeline": get_incident_timeline(event_id)},
         headers={"HX-Trigger": json.dumps({"showToast": {"style": "dark", "message": msg}})}
     )
 
@@ -1819,7 +2001,7 @@ async def resolve_alert_with_disposition(
     return templates.TemplateResponse(
         request=request,
         name="partials/drawer_content.html",
-        context={"alert": alert},
+        context={"alert": alert, "timeline": get_incident_timeline(event_id)},
         headers={"HX-Trigger": json.dumps({"showToast": {"style": "light", "message": msg}})}
     )
 
