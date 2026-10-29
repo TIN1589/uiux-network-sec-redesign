@@ -4137,3 +4137,102 @@ html[data-theme="dark"] .soc-table tr.clickable:hover td {
   background-color: var(--color-surface-card-subtle, #1C1E22) !important;
 }
 
+
+/* COMPREHENSIVE DARK MODE OVERRIDES (REMEDIATION BATCH 3) */
+html[data-theme="dark"] .soc-input-wrap,
+html[data-theme="dark"] .soc-input-icon-wrap {
+  background-color: var(--color-surface-card, #16181A) !important;
+  border-color: var(--color-border-input, #32363C) !important;
+}
+
+html[data-theme="dark"] .soc-input-wrap:focus-within,
+html[data-theme="dark"] .soc-input-icon-wrap:focus-within {
+  border-color: var(--color-accent-lime, #C6F135) !important;
+  box-shadow: 0 0 0 1px var(--color-accent-lime, #C6F135) !important;
+}
+
+html[data-theme="dark"] .soc-input-wrap input,
+html[data-theme="dark"] .soc-input-icon-wrap input {
+  color: var(--color-text-primary, #F1F0EB) !important;
+}
+
+html[data-theme="dark"] .soc-input-wrap input::placeholder,
+html[data-theme="dark"] .soc-input-icon-wrap input::placeholder,
+html[data-theme="dark"] .soc-input::placeholder,
+html[data-theme="dark"] .soc-textarea::placeholder {
+  color: var(--color-text-muted, #8E8B83) !important;
+}
+
+html[data-theme="dark"] .soc-input-icon-wrap i {
+  color: var(--color-text-muted, #8E8B83) !important;
+}
+
+/* Dark mode MITRE Matrix Tactic Column & Cards */
+html[data-theme="dark"] .mitre-tactic-col {
+  background-color: var(--color-bg-inset, #1C1E22) !important;
+  border-color: var(--color-border-subtle, #272A2E) !important;
+}
+
+html[data-theme="dark"] .mitre-tech-card {
+  background-color: var(--color-surface-card, #16181A) !important;
+  border-color: var(--color-border-card, #272A2E) !important;
+}
+
+html[data-theme="dark"] .mitre-tech-card a {
+  color: var(--color-accent-lime, #C6F135) !important;
+}
+
+html[data-theme="dark"] .mitre-tech-card .mitre-tech-desc {
+  color: var(--color-text-secondary, #9E9B93) !important;
+}
+
+html[data-theme="dark"] .mitre-tech-card.active {
+  border-color: rgba(198, 241, 53, 0.4) !important;
+}
+
+/* Dark mode Mobile Scenario Cards */
+html[data-theme="dark"] .mobile-scenario-card {
+  background-color: var(--color-surface-card, #16181A) !important;
+  border-color: var(--color-border-card, #272A2E) !important;
+}
+
+html[data-theme="dark"] .mobile-scenario-card.highlighted {
+  background-color: var(--color-surface-highlight, #23271A) !important;
+  border-color: rgba(198, 241, 53, 0.35) !important;
+}
+
+html[data-theme="dark"] .m-sc-row3 {
+  background-color: var(--color-surface-card-subtle, #1C1E22) !important;
+  color: var(--color-text-secondary, #D6D3D1) !important;
+}
+
+/* Dark mode Segmented Controls */
+html[data-theme="dark"] .segmented-pill-group {
+  background-color: var(--color-surface-card-subtle, #1C1E22) !important;
+  border-color: var(--color-border-subtle, #272A2E) !important;
+}
+
+html[data-theme="dark"] .segmented-pill-btn {
+  color: var(--color-text-secondary, #9E9B93);
+}
+
+html[data-theme="dark"] .segmented-pill-btn:hover {
+  color: var(--color-text-primary, #F1F0EB);
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .segmented-pill-btn.active {
+  background-color: var(--color-accent-lime, #C6F135) !important;
+  color: #0E0F0C !important;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark mode Devices Security Alerts Progress Bar */
+html[data-theme="dark"] .bar-track {
+  background-color: var(--color-surface-card-subtle, #272A2E) !important;
+}
+
+html[data-theme="dark"] .bar-fill {
+  background-color: var(--color-accent-lime, #C6F135) !important;
+}

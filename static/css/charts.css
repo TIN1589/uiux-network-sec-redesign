@@ -55,7 +55,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #5F5B53;
+  color: var(--color-text-secondary, #5F5B53);
   margin-top: 3px;
 }
 
@@ -100,7 +100,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #5F5B53;
+  color: var(--color-text-secondary, #5F5B53);
 }
 
 .chart-legend-val {
@@ -122,5 +122,19 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #5F5B53;
+  color: var(--color-text-secondary, #5F5B53);
+}
+
+/* DARK MODE OVERRIDES FOR CHARTS & LEGENDS */
+html[data-theme="dark"] .chart-legend-label,
+html[data-theme="dark"] .chart-legend-item {
+  color: var(--color-text-secondary, #9E9B93) !important;
+}
+
+html[data-theme="dark"] .donut-center-metric .metric-label {
+  color: var(--color-text-secondary, #9E9B93) !important;
+}
+
+html[data-theme="dark"] .donut-center-metric .metric-val {
+  color: var(--color-text-primary, #F1F0EB) !important;
 }

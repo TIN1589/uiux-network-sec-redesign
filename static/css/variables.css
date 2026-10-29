@@ -5,6 +5,7 @@
   --color-bg-workspace: #F3F1EC;         /* bg/page: Warm Stone canvas (#f3f1ec) */
   --color-surface-card: #FFFFFF;         /* bg/surface: Crisp white card surface */
   --color-surface-card-subtle: #F3F1EC;  /* bg/inset: Inset panel (#f3f1ec) */
+  --color-bg-inset: #F3F1EC;            /* Semantic alias for inset panels and MITRE grid columns */
   --color-surface-highlight: #F4F7E6;    /* Soft lime highlight */
   
   --color-obsidian-950: #0C0D0E;         /* Deepest black */
@@ -122,6 +123,7 @@ html[data-theme="dark"] {
   --color-bg-workspace: #0E0F0C;         /* Obsidian Matte canvas (#0e0f0c) */
   --color-surface-card: #16181A;         /* Deep charcoal surface */
   --color-surface-card-subtle: #1C1E22;  /* Inset panel on dark */
+  --color-bg-inset: #1C1E22;            /* Semantic alias for dark inset panels and MITRE grid columns */
   --color-surface-highlight: #23271A;    /* Soft lime highlight on dark */
   
   --color-obsidian-950: #08090A;
