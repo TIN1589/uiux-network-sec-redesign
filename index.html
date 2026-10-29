@@ -12,19 +12,7 @@
 
 
 
-  <!-- Typography: Inter & JetBrains Mono -->
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-
-
-
-  <!-- Icons: FontAwesome 6 -->
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Local typography and SVG icons: no runtime CDN dependency -->
 
 
 
@@ -48,15 +36,17 @@
 
   <!-- Modern Vanilla CSS3 Design System (No Tailwind!) -->
 
-  <link rel="stylesheet" href="./static/css/style.css?v=2.4.2" />
+  <link rel="stylesheet" href="./static/css/style.css?v=2.5.1" />
 
 
 
-  <!-- Chart.js 4.x & HTMX 2.x -->
+  <!-- Vendored engines and local icon renderer -->
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="./static/vendor/chart.umd.min.js"></script>
 
-  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="./static/vendor/htmx.min.js"></script>
+
+  <script defer src="./static/js/icons.js?v=1.0.0"></script>
 
 </head>
 
@@ -323,8 +313,8 @@
       aria-label="Toggle theme (Light / Dark Mode)"
       title="Toggle Light / Dark Mode"
       class="soc-btn soc-btn-outline soc-btn-sm soc-btn-icon"
-      style="min-height: 32px; min-width: 32px; padding: 4px 8px;">
-      <i id="theme-toggle-icon" class="fa-solid fa-moon" aria-hidden="true"></i>
+      style="width: 36px; height: 36px; min-height: 36px; min-width: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+      <i id="theme-toggle-icon" class="fa-solid fa-moon" style="font-size: 15px; width: 16px; height: 16px;" aria-hidden="true"></i>
     </button>
 
     <button type="button" onclick="toggleAutoRefresh()" id="btn-autorefresh" aria-pressed="true"
@@ -2355,249 +2345,219 @@
   <!-- Mobile Stacked Card View (< 768px): Tối ưu thao tác vuốt chạm di động -->
 
   <div class="mobile-alerts-list">
-
     <!-- Card 1 -->
-
     <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-099')">
-
       <div class="m-alert-row1">
-
-        <div style="display: flex; align-items: center; gap: 8px;">
-
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <input type="checkbox" data-event-id="EVT-2610-099"
+                 onchange="toggleSelectOneAlert('EVT-2610-099', this.checked)"
+                 onclick="event.stopPropagation();"
+                 aria-label="Select alert EVT-2610-099" class="soc-checkbox alert-row-checkbox" />
           <span class="soc-badge badge-critical">Critical</span>
-
           <span class="font-mono m-rule-tag">#100999</span>
-
+          <span class="soc-badge badge-new">New</span>
         </div>
-
-        <span class="m-time-text font-mono">12m ago</span>
-
+        <span class="m-time-text font-mono" title="just now">26 Oct 2026 01:12:04</span>
       </div>
-
       <div class="m-alert-row2">Unauthorized Spanning-Tree Root Bridge BPDU inject</div>
-
-      <div class="m-alert-row3">
-
-        <div class="font-mono m-meta-entity" title="vnpt-agg-switch-05 · 10.254.0.99">
-
-          <span>vnpt-agg-switch-05</span> · <span>10.254.0.99</span>
-
+      <div class="m-alert-details">
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Asset</span>
+          <span class="m-alert-detail-value" title="vnpt-agg-switch-05 · Switch">vnpt-agg-switch-05 · Switch</span>
         </div>
-
-        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-099')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
-
-          Investigate →
-
-        </button>
-
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Source → destination</span>
+          <span class="m-alert-detail-value font-mono" title="10.254.0.99 → 10.0.0.1">10.254.0.99 → 10.0.0.1</span>
+        </div>
       </div>
-
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="EVT-2610-099 · just now">
+          <span>EVT-2610-099</span> · <span>just now</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-099')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          Investigate →
+        </button>
+      </div>
     </div>
-
-
 
     <!-- Card 2 -->
-
     <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-095')">
-
       <div class="m-alert-row1">
-
-        <div style="display: flex; align-items: center; gap: 8px;">
-
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <input type="checkbox" data-event-id="EVT-2610-095"
+                 onchange="toggleSelectOneAlert('EVT-2610-095', this.checked)"
+                 onclick="event.stopPropagation();"
+                 aria-label="Select alert EVT-2610-095" class="soc-checkbox alert-row-checkbox" />
           <span class="soc-badge badge-critical">Critical</span>
-
           <span class="font-mono m-rule-tag">#100201</span>
-
+          <span class="soc-badge badge-investigating">Investigating</span>
         </div>
-
-        <span class="m-time-text font-mono">18m ago</span>
-
+        <span class="m-time-text font-mono" title="2 min ago">26 Oct 2026 01:10:15</span>
       </div>
-
       <div class="m-alert-row2">BGP Neighbor Flapping detected on Core Uplink</div>
-
-      <div class="m-alert-row3">
-
-        <div class="font-mono m-meta-entity" title="vnpt-core-router-01 · 203.0.113.195">
-
-          <span>vnpt-core-router-01</span> · <span>203.0.113.195</span>
-
+      <div class="m-alert-details">
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Asset</span>
+          <span class="m-alert-detail-value" title="vnpt-core-router-01 · Router">vnpt-core-router-01 · Router</span>
         </div>
-
-        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-095')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
-
-          Investigate →
-
-        </button>
-
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Source → destination</span>
+          <span class="m-alert-detail-value font-mono" title="203.0.113.195 → 10.0.0.1">203.0.113.195 → 10.0.0.1</span>
+        </div>
       </div>
-
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="EVT-2610-095 · 2 min ago">
+          <span>EVT-2610-095</span> · <span>2 min ago</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-095')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          Investigate →
+        </button>
+      </div>
     </div>
-
-
 
     <!-- Card 3 -->
-
     <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-092')">
-
       <div class="m-alert-row1">
-
-        <div style="display: flex; align-items: center; gap: 8px;">
-
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <input type="checkbox" data-event-id="EVT-2610-092"
+                 onchange="toggleSelectOneAlert('EVT-2610-092', this.checked)"
+                 onclick="event.stopPropagation();"
+                 aria-label="Select alert EVT-2610-092" class="soc-checkbox alert-row-checkbox" />
           <span class="soc-badge badge-high">High</span>
-
           <span class="font-mono m-rule-tag">#100210</span>
-
+          <span class="soc-badge badge-new">New</span>
         </div>
-
-        <span class="m-time-text font-mono">25m ago</span>
-
+        <span class="m-time-text font-mono" title="5 min ago">26 Oct 2026 01:07:11</span>
       </div>
-
-      <div class="m-alert-row2">SSH brute force login attempt from untrusted subnet</div>
-
+      <div class="m-alert-row2">SSH Brute-force attempt against edge gateway</div>
+      <div class="m-alert-details">
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Asset</span>
+          <span class="m-alert-detail-value" title="vnpt-edge-fw-01 · Firewall">vnpt-edge-fw-01 · Firewall</span>
+        </div>
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Source → destination</span>
+          <span class="m-alert-detail-value font-mono" title="198.51.100.44 → 10.0.10.1">198.51.100.44 → 10.0.10.1</span>
+        </div>
+      </div>
       <div class="m-alert-row3">
-
-        <div class="font-mono m-meta-entity" title="vnpt-access-sw-02 · 198.51.100.23">
-
-          <span>vnpt-access-sw-02</span> · <span>198.51.100.23</span>
-
+        <div class="font-mono m-meta-entity" title="EVT-2610-092 · 5 min ago">
+          <span>EVT-2610-092</span> · <span>5 min ago</span>
         </div>
-
         <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-092')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
-
           Investigate →
-
         </button>
-
       </div>
-
     </div>
-
-
 
     <!-- Card 4 -->
-
     <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-089')">
-
       <div class="m-alert-row1">
-
-        <div style="display: flex; align-items: center; gap: 8px;">
-
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <input type="checkbox" data-event-id="EVT-2610-089"
+                 onchange="toggleSelectOneAlert('EVT-2610-089', this.checked)"
+                 onclick="event.stopPropagation();"
+                 aria-label="Select alert EVT-2610-089" class="soc-checkbox alert-row-checkbox" />
           <span class="soc-badge badge-high">High</span>
-
           <span class="font-mono m-rule-tag">#100200</span>
-
+          <span class="soc-badge badge-new">New</span>
         </div>
-
-        <span class="m-time-text font-mono">32m ago</span>
-
+        <span class="m-time-text font-mono" title="8 min ago">26 Oct 2026 01:10:47</span>
       </div>
-
-      <div class="m-alert-row2">Port scan detected against management gateway</div>
-
+      <div class="m-alert-row2">Port scan detected</div>
+      <div class="m-alert-details">
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Asset</span>
+          <span class="m-alert-detail-value" title="vnpt-edge-fw-01 · Firewall">vnpt-edge-fw-01 · Firewall</span>
+        </div>
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Source → destination</span>
+          <span class="m-alert-detail-value font-mono" title="203.0.113.45 → 10.0.10.20">203.0.113.45 → 10.0.10.20</span>
+        </div>
+      </div>
       <div class="m-alert-row3">
-
-        <div class="font-mono m-meta-entity" title="vnpt-edge-fw-01 · 198.51.100.14">
-
-          <span>vnpt-edge-fw-01</span> · <span>198.51.100.14</span>
-
+        <div class="font-mono m-meta-entity" title="EVT-2610-089 · 8 min ago">
+          <span>EVT-2610-089</span> · <span>8 min ago</span>
         </div>
-
         <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-089')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
-
           Investigate →
-
         </button>
-
       </div>
-
     </div>
-
-
 
     <!-- Card 5 -->
-
     <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-084')">
-
       <div class="m-alert-row1">
-
-        <div style="display: flex; align-items: center; gap: 8px;">
-
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <input type="checkbox" data-event-id="EVT-2610-084"
+                 onchange="toggleSelectOneAlert('EVT-2610-084', this.checked)"
+                 onclick="event.stopPropagation();"
+                 aria-label="Select alert EVT-2610-084" class="soc-checkbox alert-row-checkbox" />
           <span class="soc-badge badge-high">High</span>
-
           <span class="font-mono m-rule-tag">#100280</span>
-          <span class="soc-badge badge-disposition badge-disposition-tp" style="font-size: 10px; padding: 1px 6px;">True Positive</span>
-
+          <span class="soc-badge badge-resolved">Resolved</span>
+          <span class="soc-badge badge-disposition badge-disposition-tp" style="font-size: 10px; padding: 2px 6px;">
+            True Positive - Malicious
+          </span>
         </div>
-
-        <span class="m-time-text font-mono">48m ago</span>
-
+        <span class="m-time-text font-mono" title="48 min ago">26 Oct 2026 00:54:12</span>
       </div>
-
       <div class="m-alert-row2">VPN login from unusual source</div>
-
-      <div class="m-alert-row3">
-
-        <div class="font-mono m-meta-entity" title="vnpt-edge-fw-01 · 192.0.2.88">
-
-          <span>vnpt-edge-fw-01</span> · <span>192.0.2.88</span>
-
+      <div class="m-alert-details">
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Asset</span>
+          <span class="m-alert-detail-value" title="vnpt-edge-fw-01 · Firewall">vnpt-edge-fw-01 · Firewall</span>
         </div>
-
-        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-084')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
-
-          Open →
-
-        </button>
-
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Source → destination</span>
+          <span class="m-alert-detail-value font-mono" title="192.0.2.88 → 10.0.10.1">192.0.2.88 → 10.0.10.1</span>
+        </div>
       </div>
-
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="EVT-2610-084 · 48 min ago">
+          <span>EVT-2610-084</span> · <span>48 min ago</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-084')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          Open →
+        </button>
+      </div>
     </div>
-
-
 
     <!-- Card 6 -->
-
     <div class="mobile-alert-card" onclick="openAlertDrawer('EVT-2610-079')">
-
       <div class="m-alert-row1">
-
-        <div style="display: flex; align-items: center; gap: 8px;">
-
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <input type="checkbox" data-event-id="EVT-2610-079"
+                 onchange="toggleSelectOneAlert('EVT-2610-079', this.checked)"
+                 onclick="event.stopPropagation();"
+                 aria-label="Select alert EVT-2610-079" class="soc-checkbox alert-row-checkbox" />
           <span class="soc-badge badge-medium">Medium</span>
-
           <span class="font-mono m-rule-tag">#100305</span>
-
+          <span class="soc-badge badge-new">New</span>
         </div>
-
-        <span class="m-time-text font-mono">1h ago</span>
-
+        <span class="m-time-text font-mono" title="1h ago">26 Oct 2026 01:08:42</span>
       </div>
-
       <div class="m-alert-row2">SYN flood threshold exceeded</div>
-
-      <div class="m-alert-row3">
-
-        <div class="font-mono m-meta-entity" title="vnpt-edge-fw-01 · 203.0.113.99">
-
-          <span>vnpt-edge-fw-01</span> · <span>203.0.113.99</span>
-
+      <div class="m-alert-details">
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Asset</span>
+          <span class="m-alert-detail-value" title="vnpt-edge-fw-01 · Firewall">vnpt-edge-fw-01 · Firewall</span>
         </div>
-
-        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-079')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
-
-          Investigate →
-
-        </button>
-
+        <div class="m-alert-detail">
+          <span class="m-alert-detail-label">Source → destination</span>
+          <span class="m-alert-detail-value font-mono" title="203.0.113.99 → 10.0.10.15">203.0.113.99 → 10.0.10.15</span>
+        </div>
       </div>
-
+      <div class="m-alert-row3">
+        <div class="font-mono m-meta-entity" title="EVT-2610-079 · 1h ago">
+          <span>EVT-2610-079</span> · <span>1h ago</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation(); openAlertDrawer('EVT-2610-079')" class="soc-btn soc-btn-outline soc-btn-sm m-act-btn">
+          Investigate →
+        </button>
+      </div>
     </div>
-
   </div>
-
-
 
   <!-- Pagination Footer -->
 
@@ -3994,6 +3954,8 @@
 
       <div class="m-sc-row2 font-mono">
 
+        <span>Tested: <strong>26 Oct, 01:10 GMT+7</strong></span> ·
+
         <span>Tool: <strong>nmap 7.94</strong></span> ·
 
         <span>Rule: <strong>100200</strong></span> ·
@@ -4076,6 +4038,8 @@
 
       <div class="m-sc-row2 font-mono">
 
+        <span>Tested: <strong>26 Oct, 01:07 GMT+7</strong></span> ·
+
         <span>Tool: <strong>hydra 9.5</strong></span> ·
 
         <span>Rule: <strong>100210</strong></span> ·
@@ -4157,6 +4121,8 @@
       </div>
 
       <div class="m-sc-row2 font-mono">
+
+        <span>Tested: <strong>26 Oct, 01:12 GMT+7</strong></span> ·
 
         <span>Tool: <strong>yersinia 0.8.2</strong></span> ·
 
@@ -4908,7 +4874,16 @@
 
   <!-- VANILLA ES6+ APPLICATION ENGINE -->
 
-  <script type="module" src="./static/js/app.js?v=2.5.0"></script>
+  <script>
+    // ES modules cannot be loaded by Chromium from a file:// origin. The
+    // standalone fallback below owns file mode; HTTP previews keep app.js.
+    if (window.location.protocol !== 'file:') {
+      var appModule = document.createElement('script');
+      appModule.type = 'module';
+      appModule.src = './static/js/app.js?v=2.5.1';
+      document.head.appendChild(appModule);
+    }
+  </script>
 
 
 
@@ -4929,6 +4904,61 @@
       // mượt mà mà không làm vỡ trải nghiệm xem trước giao diện.
 
       if (window.location.protocol === 'file:' || (window.location.port !== '8000' && window.location.port !== '')) {
+
+        // Standalone Theme Controller
+        window.getCurrentTheme = function() {
+          return document.documentElement.getAttribute('data-theme') || 'light';
+        };
+
+        window.updateThemeToggleIcon = function(theme) {
+          const icon = document.getElementById('theme-toggle-icon');
+          const btn = document.getElementById('btn-theme-toggle');
+          if (!icon) return;
+          if (theme === 'dark') {
+            icon.className = 'fa-solid fa-sun';
+            if (btn) {
+              btn.setAttribute('aria-label', 'Switch to Light Mode');
+              btn.title = 'Switch to Light Mode';
+            }
+          } else {
+            icon.className = 'fa-solid fa-moon';
+            if (btn) {
+              btn.setAttribute('aria-label', 'Switch to Dark Mode');
+              btn.title = 'Switch to Dark Mode';
+            }
+          }
+          if (typeof window.refreshLocalIcons === 'function') {
+            window.refreshLocalIcons();
+          }
+        };
+
+        window.setTheme = function(theme) {
+          const targetTheme = (theme === 'dark') ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', targetTheme);
+          if (document.documentElement.style) {
+            document.documentElement.style.colorScheme = targetTheme;
+          }
+          try {
+            localStorage.setItem('soc-theme', targetTheme);
+          } catch(e) {}
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) {
+            meta.setAttribute('content', targetTheme === 'dark' ? '#0E0F0C' : '#F3F1EC');
+          }
+          window.updateThemeToggleIcon(targetTheme);
+          window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: targetTheme } }));
+          if (typeof window.initOverviewCharts === 'function') {
+            window.initOverviewCharts();
+          }
+        };
+
+        window.toggleTheme = function() {
+          const current = window.getCurrentTheme();
+          window.setTheme(current === 'dark' ? 'light' : 'dark');
+        };
+
+        // Initialize theme toggle icon on standalone load
+        window.updateThemeToggleIcon(window.getCurrentTheme());
 
         /**
 
