@@ -71,6 +71,19 @@
         {% endif %}
       </div>
     </div>
+    {% if alert.hits and alert.hits > 1 %}
+    <div style="grid-column: span 2; padding: 10px 12px; background: var(--color-surface-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--color-border-card); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+      <div>
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--color-text-muted);">AGGREGATED INCIDENT</div>
+        <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">
+          First: <span class="font-mono">{{ alert.aggregation.firstSeen if alert.aggregation else alert.observedTime }}</span> · Last: <span class="font-mono">{{ alert.aggregation.lastSeen if alert.aggregation else alert.observedTime }}</span>
+        </div>
+      </div>
+      <span class="soc-badge font-mono badge-aggregated" style="font-size: 11px; padding: 3px 8px;">
+        {{ alert.hits }} raw events
+      </span>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Raw Payload Box -->
@@ -127,6 +140,42 @@
               title="Push ACL deny rule to edge firewall/router via Netmiko/SSH">
         <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> [Simulated] Push ACL Drop
       </button>
+    </div>
+  </div>
+
+  <!-- Incident Activity Trail (Audit & Response Timeline) -->
+  <div style="padding-top: 16px; border-top: 1px solid var(--color-border-divider);">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">
+        INCIDENT ACTIVITY TRAIL
+      </span>
+      <span class="font-mono" style="font-size: 11px; color: var(--color-text-muted);">
+        {{ timeline | length }} activities
+      </span>
+    </div>
+
+    <div class="soc-activity-trail" style="display: flex; flex-direction: column; gap: 12px; position: relative; padding-left: 12px; border-left: 2px solid var(--color-border-subtle); margin-left: 6px;">
+      {% for act in timeline %}
+      <div class="activity-node" style="position: relative; display: flex; flex-direction: column; gap: 2px;">
+        <span class="activity-dot" style="position: absolute; left: -17px; top: 4px; width: 8px; height: 8px; border-radius: 50%;
+              background-color: {% if act.activityType == 'ALERT_TRIGGERED' %}var(--color-sev-critical, #D92D20){% elif act.activityType == 'ALERT_RESOLVED' %}var(--color-status-live, #16A34A){% elif act.activityType == 'CONTAINMENT_EXECUTED' %}#8B5CF6{% elif act.activityType == 'INVESTIGATION_STARTED' %}#EC4899{% else %}#3B82F6{% endif %};">
+        </span>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 12px; font-weight: 700; color: var(--color-text-primary);">
+            {{ act.summary }}
+          </span>
+          <span class="font-mono" style="font-size: 11px; color: var(--color-text-muted); white-space: nowrap;">
+            {{ act.timeDisplay }}
+          </span>
+        </div>
+        <div style="font-size: 12px; color: var(--color-text-secondary); line-height: 1.4;">
+          {{ act.details }}
+        </div>
+        <div style="font-size: 11px; color: var(--color-text-muted); margin-top: 1px;">
+          By <strong style="color: var(--color-text-primary);">{{ act.actor }}</strong> <span class="font-mono" style="font-size: 10px;">({{ act.role }})</span>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
 </div>
