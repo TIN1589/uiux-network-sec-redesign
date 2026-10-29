@@ -792,6 +792,9 @@ export function updateThemeToggleIcon(theme) {
       btn.title = 'Switch to Dark Mode';
     }
   }
+  if (typeof window.refreshLocalIcons === 'function') {
+    window.refreshLocalIcons();
+  }
 }
 
 export function setTheme(theme) {

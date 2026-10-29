@@ -85,14 +85,8 @@
     }
   </style>
 
-  <!-- Typography Preload & Google Fonts -->
+  <!-- Local typography: deterministic in Dynamic, PWA and offline modes -->
   <link rel="preload" as="font" type="font/woff2" href="/static/fonts/Inter-Variable.woff2" crossorigin />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-
-  <!-- Icons: FontAwesome 6 -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
   <!-- Favicon & Touch Icons -->
   <link rel="icon" type="image/svg+xml" href="/static/img/favicon/nsm-favicon.svg" />
@@ -124,11 +118,12 @@
   <link rel="apple-touch-startup-image" href="/static/img/splash/apple-splash-750-1334.png" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
 
   <!-- Modern Vanilla CSS3 Design System (No Tailwind!) -->
-  <link rel="stylesheet" href="/static/css/style.css?v=2.5.0" />
+  <link rel="stylesheet" href="/static/css/style.css?v=2.5.1" />
 
   <!-- Core Engines: Vendored cục bộ & Deferred để giải phóng Main Thread khi mở app -->
   <script defer src="/static/vendor/htmx.min.js"></script>
   <script defer src="/static/vendor/chart.umd.min.js"></script>
+  <script defer src="/static/js/icons.js?v=1.0.0"></script>
 </head>
 <body>
 
@@ -228,7 +223,7 @@
   {% include 'components/pwa_prompt.html' %}
 
   <!-- VANILLA ES6+ APPLICATION ENGINE -->
-  <script type="module" src="/static/js/app.js?v=2.5.0"></script>
+  <script type="module" src="/static/js/app.js?v=2.5.1"></script>
   {% block scripts %}{% endblock %}
 
   <!-- Tự động giải phóng Splash Screen mượt mà khi ứng dụng sẵn sàng -->
