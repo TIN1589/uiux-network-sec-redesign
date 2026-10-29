@@ -297,6 +297,17 @@ AUDIT_LOGS: list[dict] = [
         "details": "Correlating CDP/LLDP telemetry and upstream MAC tables.",
         "username": "tier2",
         "action": "CHANGE_ALERT_STATE"
+    },
+    {
+        "timestamp": "2026-10-25T18:18:45Z",
+        "targetEventId": "EVT-2610-099",
+        "activityType": "CONTAINMENT_EXECUTED",
+        "actor": "tier2",
+        "role": "tier2",
+        "summary": "Containment action executed: Quarantine Port (VLAN 999)",
+        "details": "Isolated port Gi0/24 on vnpt-agg-switch-05 via Netmiko/SSH.",
+        "username": "tier2",
+        "action": "CONTAINMENT_QUARANTINE_PORT"
     }
 ]
 
