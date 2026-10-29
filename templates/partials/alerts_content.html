@@ -108,6 +108,27 @@
     </div>
   </div>
 
+  <!-- MITRE Active Filter Chip Banner -->
+  {% if selected_technique %}
+  <div id="mitre-active-filter-banner" class="soc-card" style="padding: 12px 18px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--color-surface-card-subtle); border-left: 4px solid var(--color-accent-lime);">
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">
+        ACTIVE MITRE FILTER:
+      </span>
+      <span class="soc-badge font-mono" style="background: var(--color-obsidian-900); color: var(--color-accent-lime); font-size: 12px; font-weight: 700; padding: 4px 10px;">
+        {{ selected_technique }}{% if technique_name %} · {{ technique_name }}{% endif %}
+      </span>
+    </div>
+    <a href="/alerts"
+       hx-get="/views/alerts"
+       hx-target="#main-content"
+       hx-push-url="/alerts"
+       class="soc-btn soc-btn-outline soc-btn-sm" style="height: 30px; padding: 4px 10px;">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i> Clear filter
+    </a>
+  </div>
+  {% endif %}
+
   <!-- Search & Collapsible Advanced Filters Card -->
   <div class="soc-card soc-card-pad" style="display: flex; flex-direction: column; gap: 14px;">
     <form id="alerts-filter-form"
@@ -115,6 +136,7 @@
           hx-target="#alerts-table-container"
           hx-trigger="input from:#al-search delay:200ms, change from:#al-time, change from:#al-severity, input from:#al-rule-id delay:200ms, input from:#al-src-ip delay:200ms, change from:#al-asset">
       <input type="hidden" id="al-state-hidden" name="state" value="{{ current_state or 'ALL' }}" />
+      <input type="hidden" id="al-technique-hidden" name="technique" value="{{ selected_technique or '' }}" />
       
       <!-- Primary Search Row with Mobile Filters Toggle Button -->
       <div class="alerts-search-row">

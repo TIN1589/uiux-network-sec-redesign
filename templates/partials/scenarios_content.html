@@ -64,26 +64,48 @@
 
         <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
           {% for tech in tac.techniques %}
-          <a href="https://attack.mitre.org/techniques/{{ tech.id }}" target="_blank" rel="noopener noreferrer"
-             style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: #ffffff; border: 1px solid {% if tech.active %}#bbf7d0{% else %}var(--color-border-default, #e7e4dc){% endif %}; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; {% if not tech.active %}opacity: 0.65;{% endif %}">
+          <div class="mitre-tech-card"
+               style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--color-surface-card, #ffffff); border: 1px solid {% if tech.active %}#bbf7d0{% else %}var(--color-border-card, #e7e4dc){% endif %}; transition: border-color 0.15s, transform 0.15s; {% if not tech.active %}opacity: 0.65;{% endif %}">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-              <span class="font-mono" style="font-size: 11px; font-weight: 700; color: {% if tech.active %}#166534{% else %}var(--color-text-muted){% endif %};">
-                {{ tech.id }}
-              </span>
-              {% if tech.active %}
-              <span class="soc-badge badge-resolved font-mono" style="font-size: 10px; padding: 1px 6px;">
-                {{ tech.hits }} hit{% if tech.hits > 1 %}s{% endif %}
-              </span>
-              {% else %}
-              <span class="font-mono" style="font-size: 10px; color: var(--color-text-muted);">
-                0 hits
-              </span>
-              {% endif %}
+              <a href="/alerts?technique={{ tech.id }}"
+                 hx-get="/views/alerts?technique={{ tech.id }}"
+                 hx-target="#main-content"
+                 hx-push-url="/alerts?technique={{ tech.id }}"
+                 title="Filter alerts by {{ tech.id }}"
+                 class="font-mono" style="font-size: 11px; font-weight: 700; color: {% if tech.active %}#166534{% else %}var(--color-text-muted){% endif %}; text-decoration: none;">
+                {{ tech.id }} →
+              </a>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                {% if tech.active %}
+                <a href="/alerts?technique={{ tech.id }}"
+                   hx-get="/views/alerts?technique={{ tech.id }}"
+                   hx-target="#main-content"
+                   hx-push-url="/alerts?technique={{ tech.id }}"
+                   class="soc-badge badge-resolved font-mono" style="font-size: 10px; padding: 1px 6px; cursor: pointer; text-decoration: none;"
+                   title="Filter {{ tech.hits }} alerts">
+                  {{ tech.hits }} hit{% if tech.hits > 1 %}s{% endif %}
+                </a>
+                {% else %}
+                <span class="font-mono" style="font-size: 10px; color: var(--color-text-muted);">
+                  0 hits
+                </span>
+                {% endif %}
+                <a href="https://attack.mitre.org/techniques/{{ tech.id }}" target="_blank" rel="noopener noreferrer"
+                   title="Open MITRE Knowledge Base for {{ tech.id }}"
+                   style="color: var(--color-text-muted); font-size: 10px; padding: 2px;">
+                  <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                </a>
+              </div>
             </div>
-            <div style="font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.3;">
+            <a href="/alerts?technique={{ tech.id }}"
+               hx-get="/views/alerts?technique={{ tech.id }}"
+               hx-target="#main-content"
+               hx-push-url="/alerts?technique={{ tech.id }}"
+               title="Filter alerts by {{ tech.id }}"
+               style="font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.3; text-decoration: none;">
               {{ tech.name }}
-            </div>
-          </a>
+            </a>
+          </div>
           {% endfor %}
         </div>
       </div>
