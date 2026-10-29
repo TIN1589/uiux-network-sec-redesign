@@ -62,7 +62,8 @@ AGENTS.md
 # Testing and evidence artifacts ignored from git
 .pytest_cache/
 .pytest_temp_cache/
-scripts/
+scripts/*
+!scripts/generate_sprint2_evidence.py
 evidence/
 .evidence/
 test-results/
