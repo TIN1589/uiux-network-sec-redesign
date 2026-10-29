@@ -880,41 +880,41 @@ export function handleCentralKeyDown(e) {
     target.isContentEditable
   );
 
-  // Phim Escape: Dong theo thu tu uu tien top-layer
+  // Phim Escape: Dong theo thu tu uu tien (Modal -> Dropup -> Drawer -> Dropdown -> Sidebar -> Blur Input -> Row Focus)
   if (e.key === 'Escape') {
-    if (isEditing) {
-      target.blur();
-      return;
-    }
-
-    // 1. Sign-in modal
+    // 1. Sign-in modal (kiem tra class 'active')
     const signInModal = document.getElementById('signin-modal');
-    if (signInModal && !signInModal.classList.contains('hidden') && signInModal.style.display !== 'none') {
+    if (signInModal && signInModal.classList.contains('active')) {
       closeSignInModal();
       return;
     }
 
     // 2. Disposition dropup
     const dispMenu = document.getElementById('dw-disposition-menu');
-    if (dispMenu && !dispMenu.classList.contains('hidden')) {
+    if (dispMenu && !dispMenu.classList.contains('hidden') && dispMenu.style.display !== 'none') {
       closeDispositionMenu();
       return;
     }
 
-    // 3. Alert detail drawer
-    const drawer = document.getElementById('alert-drawer');
-    if (drawer && !drawer.classList.contains('hidden')) {
+    // 3. Alert detail drawer (kiem tra backdrop co class 'active')
+    const drawerBackdrop = document.getElementById('alert-drawer-backdrop');
+    if (drawerBackdrop && drawerBackdrop.classList.contains('active')) {
       closeAlertDrawer();
       return;
     }
 
     // 4. Analyst dropdown menu & Row action menus
     const analystDropdown = document.getElementById('analyst-dropdown');
-    if (analystDropdown && analystDropdown.style.display !== 'none') {
+    if (analystDropdown && analystDropdown.style.display === 'block') {
       closeAnalystMenu();
       return;
     }
-    closeAllRowMenus();
+    const hasOpenRowMenu = document.querySelector('.row-action-cell.menu-open') ||
+                           document.querySelector('.row-action-menu:not(.hidden)');
+    if (hasOpenRowMenu) {
+      closeAllRowMenus();
+      return;
+    }
 
     // 5. Mobile sidebar
     const sidebar = document.getElementById('app-sidebar');
@@ -922,6 +922,21 @@ export function handleCentralKeyDown(e) {
       closeMobileSidebar();
       return;
     }
+
+    // 6. Blur active input / select / textarea khi khong co overlay
+    if (isEditing) {
+      target.blur();
+      return;
+    }
+
+    // 7. Huy focus ban phim tren bang canh bao
+    if (selectedAlertRowIndex >= 0) {
+      const rows = Array.from(document.querySelectorAll('#al-table-body tr.clickable'));
+      rows.forEach(r => r.classList.remove('kb-active-row'));
+      selectedAlertRowIndex = -1;
+      return;
+    }
+
     return;
   }
 
