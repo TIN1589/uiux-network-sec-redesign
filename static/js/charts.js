@@ -1,4 +1,23 @@
 /**
+ * Lay mau sac bieu do dong bo voi Design Tokens cua Theme hien tai (Light / Dark).
+ *
+ * @returns {Object} Bang mau sac bieu do tuong thich WCAG AA.
+ */
+function getThemeChartConfig() {
+  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
+  return {
+    isDark: isDark,
+    donutBorder: isDark ? '#16181A' : '#FFFFFF',
+    axisTicks: isDark ? '#9E9B93' : '#5F5B53',
+    axisBorder: isDark ? '#272A2E' : '#E7E4DC',
+    gridLines: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EFECE5',
+    tooltipBg: isDark ? '#1C1E20' : '#121212',
+    tooltipTitle: isDark ? '#F1F0EB' : '#FFFFFF',
+    tooltipBody: isDark ? '#E2E0D8' : '#FFFFFF'
+  };
+}
+
+/**
  * CHART.JS INTEGRATION MODULE
  * Pure Vanilla ES6+ wrapper managing responsive SOC visual analytics
  */
@@ -44,12 +63,12 @@ export function initOverviewCharts(data = null) {
     return;
   }
 
-  // Tối ưu RAM đồ họa trên iPhone / Super Retina XDR (3x pixel ratio):
-  // Giới hạn devicePixelRatio tối đa 2 để tránh tiêu tốn gấp 9 lần bộ đệm bitmap,
-  // giảm hơn 50% RAM canvas mà vẫn giữ độ sắc nét hoàn hảo trên màn hình Retina.
-  Chart.defaults.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  // Đồng bộ devicePixelRatio tự nhiên của thiết bị để ngăn ngừa lệch tọa độ canvas trên màn hình Retina/High-DPI
+  Chart.defaults.devicePixelRatio = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
 
   destroyOverviewCharts();
+
+  const themeCfg = getThemeChartConfig();
 
   // 1. Severity Mix Donut Chart
   const donutCanvas = document.getElementById('severityDonutChart');
@@ -75,14 +94,15 @@ export function initOverviewCharts(data = null) {
           data: [crit, high, med, low],
           backgroundColor: ['#D92D20', '#DC6803', '#EAB308', '#2F6FE4'],
           borderWidth: 2,
-          borderColor: '#FFFFFF',
-          hoverBorderColor: '#FFFFFF',
+          borderColor: themeCfg.donutBorder,
+          hoverBorderColor: themeCfg.donutBorder,
           hoverOffset: 4
         }]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: true,
+        aspectRatio: 1,
         cutout: '76%',
         onHover: (event, activeElements) => {
           if (centerMetricEl) {
@@ -239,12 +259,12 @@ export function initOverviewCharts(data = null) {
             stacked: true,
             grid: { display: false },
             ticks: {
-              color: '#5F5B53',
+              color: themeCfg.axisTicks,
               font: { family: 'Inter', size: 11 },
               maxRotation: 0,
               autoSkip: false
             },
-            border: { color: '#E7E4DC' }
+            border: { color: themeCfg.axisBorder }
           },
           y: {
             stacked: true,
@@ -323,3 +343,13 @@ export function initOverviewCharts(data = null) {
 
 window.initOverviewCharts = initOverviewCharts;
 window.destroyOverviewCharts = destroyOverviewCharts;
+
+// Lang nghe su kien chuyen doi Theme de cap nhat lai bieu do Overview
+if (typeof window !== 'undefined') {
+  window.addEventListener('theme-changed', () => {
+    const ovTab = document.getElementById('tab-overview');
+    if (ovTab && (!ovTab.classList.contains('hidden') || ovTab.offsetParent !== null)) {
+      initOverviewCharts();
+    }
+  });
+}

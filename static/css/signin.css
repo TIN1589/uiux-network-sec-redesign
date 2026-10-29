@@ -933,3 +933,122 @@
     }
   }
 }
+
+/* DARK MODE OVERRIDES FOR SIGNIN PANEL */
+html[data-theme="dark"] .auth-panel--light {
+  background-color: var(--color-surface-card, #16181A);
+  color: var(--color-text-primary, #F1F0EB);
+}
+
+html[data-theme="dark"] .status-pill {
+  background-color: #202327;
+  color: #F1F0EB;
+  border: 1px solid #2C3036;
+}
+
+html[data-theme="dark"] .auth-header__title {
+  color: #F1F0EB;
+}
+
+html[data-theme="dark"] .auth-header__desc {
+  color: #9E9B93;
+}
+
+html[data-theme="dark"] .auth-field__label {
+  color: #F1F0EB;
+}
+
+html[data-theme="dark"] .auth-field__control {
+  background-color: #101113;
+  border-color: #32363C;
+}
+
+html[data-theme="dark"] .auth-field__control:hover {
+  border-color: #525862;
+}
+
+html[data-theme="dark"] .auth-field__control:focus-within {
+  border-color: var(--color-accent-lime, #C6F135);
+  box-shadow: 0 0 0 3px rgba(198, 241, 53, 0.2);
+}
+
+html[data-theme="dark"] .auth-field__icon {
+  color: #8E8B83;
+}
+
+html[data-theme="dark"] .auth-field__input {
+  color: #F1F0EB;
+}
+
+html[data-theme="dark"] .auth-field__input::placeholder {
+  color: #6B7280;
+}
+
+html[data-theme="dark"] .auth-field__action {
+  color: #9E9B93;
+}
+
+html[data-theme="dark"] .auth-field__action:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #F1F0EB;
+}
+
+html[data-theme="dark"] .auth-checkbox-label {
+  color: #9E9B93;
+}
+
+html[data-theme="dark"] .auth-link {
+  color: #9E9B93;
+}
+
+html[data-theme="dark"] .auth-link:hover {
+  color: #F1F0EB;
+}
+
+html[data-theme="dark"] .btn--primary {
+  background-color: var(--color-accent-lime, #C6F135);
+  color: #0E0F0C;
+  font-weight: 700;
+}
+
+html[data-theme="dark"] .btn--primary:hover {
+  background-color: #D6FB57;
+}
+
+html[data-theme="dark"] .btn--ghost {
+  color: #D6D3D1;
+}
+
+html[data-theme="dark"] .btn--ghost:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+html[data-theme="dark"] .demo {
+  background-color: #1C1E22;
+  border-color: #272A2E;
+}
+
+html[data-theme="dark"] .demo__summary {
+  color: #F1F0EB;
+}
+
+html[data-theme="dark"] .demo__summary-right {
+  color: #8E8B83;
+}
+
+html[data-theme="dark"] .demo__chip {
+  background-color: #16181A;
+  border-color: #2C3036;
+  color: #F1F0EB;
+}
+
+html[data-theme="dark"] .demo__chip:hover {
+  border-color: var(--color-accent-lime, #C6F135);
+  background-color: #202327;
+  color: var(--color-accent-lime, #C6F135);
+}
+
+html[data-theme="dark"] .auth-panel__footer {
+  color: #8E8B83;
+}

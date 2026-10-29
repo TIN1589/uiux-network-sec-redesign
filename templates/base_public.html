@@ -5,13 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>{% block title %}Sign in · Network Security Monitor – VNPT SOC{% endblock %}</title>
 
-  <!-- Critical Inline CSS: Đồng bộ canvas Warm Stone (#F3F1EC) chuẩn VNPT SOC -->
+  <meta name="theme-color" content="#F3F1EC" id="meta-theme-color">
+  <!-- Synchronous Early Theme Initializer to prevent FOUC -->
+  <script src="/static/js/theme-init.js"></script>
+
+  <!-- Critical Inline CSS: Hỗ trợ Dual-Theme chuẩn VNPT SOC -->
   <style nonce="{{ csp_nonce }}">
     html, body {
-      background-color: #F3F1EC !important;
-      color: #141413;
+      background-color: var(--color-bg-workspace, #F3F1EC);
+      color: var(--color-text-primary, #141413);
       margin: 0;
       padding: 0;
+    }
+    html[data-theme="dark"], html[data-theme="dark"] body {
+      background-color: #0E0F0C !important;
+      color: #F1F0EB !important;
     }
   </style>
 
@@ -29,7 +37,6 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="VNPT SOC">
-  <meta name="theme-color" content="#F3F1EC">
   <meta name="format-detection" content="telephone=no">
 
   <!-- Apple Touch Startup Splash Screens (Khử giật khung hình Springboard khi mở app từ màn hình chính iOS) -->

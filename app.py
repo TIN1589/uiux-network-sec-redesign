@@ -7,15 +7,22 @@ import csv
 import hashlib
 import hmac
 import io
+import json
 import os
 import re
 import secrets
 import time
 import urllib.parse
-from datetime import datetime
+from datetime import UTC, datetime, timedelta, timezone
 
 from fastapi import Cookie, FastAPI, Form, Request, Response
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -85,17 +92,17 @@ async def security_headers_middleware(request: Request, call_next):
     else:
         # Tương thích ngược cho các trang dashboard SOC hiện hữu (không chèn nonce để trình duyệt không vô hiệu hóa unsafe-inline)
         csp = (
-            f"default-src 'self'; "
-            f"script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
-            f"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
-            f"font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
-            f"img-src 'self' data:; "
-            f"connect-src 'self'; "
-            f"worker-src 'self'; "
-            f"manifest-src 'self'; "
-            f"frame-ancestors 'none'; "
-            f"base-uri 'self'; "
-            f"form-action 'self';"
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+            "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
+            "img-src 'self' data:; "
+            "connect-src 'self'; "
+            "worker-src 'self'; "
+            "manifest-src 'self'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self';"
         )
     response.headers["Content-Security-Policy"] = csp
     return response
@@ -178,6 +185,239 @@ templates.env.globals["demo_mode"] = DEMO_MODE
 templates.env.globals["demo_password"] = _ADMIN_PWD_PLAIN if DEMO_MODE else ""
 templates.env.globals["show_build_version"] = SHOW_BUILD_VERSION
 
+# Danh mục kỹ thuật mạng MITRE ATT&CK tiêu chuẩn (6 Tactics x 10 Techniques)
+NETWORK_MITRE_TECHNIQUES = [
+    {
+        "tactic_id": "TA0001",
+        "tactic_name": "Initial Access",
+        "techniques": [
+            {"id": "T1190", "name": "Exploit Public-Facing App"},
+            {"id": "T1078", "name": "Valid Accounts"}
+        ]
+    },
+    {
+        "tactic_id": "TA0002",
+        "tactic_name": "Execution",
+        "techniques": [
+            {"id": "T1059.008", "name": "Network Device CLI / IOS"}
+        ]
+    },
+    {
+        "tactic_id": "TA0003",
+        "tactic_name": "Persistence",
+        "techniques": [
+            {"id": "T1542.004", "name": "ROMMON / Firmware Corruption"},
+            {"id": "T1542.005", "name": "TFTP Boot Config"}
+        ]
+    },
+    {
+        "tactic_id": "TA0005",
+        "tactic_name": "Defense Evasion",
+        "techniques": [
+            {"id": "T1562.004", "name": "Disable / Modify Firewall ACL"}
+        ]
+    },
+    {
+        "tactic_id": "TA0007",
+        "tactic_name": "Discovery",
+        "techniques": [
+            {"id": "T1046", "name": "Network Service Scanning"},
+            {"id": "T1018", "name": "CDP / LLDP Discovery"}
+        ]
+    },
+    {
+        "tactic_id": "TA0040",
+        "tactic_name": "Impact",
+        "techniques": [
+            {"id": "T1498", "name": "Network DoS / Flapping"},
+            {"id": "T1499", "name": "Endpoint DoS (BNG Flood)"}
+        ]
+    }
+]
+
+# Nhật ký kiểm toán thao tác vận hành SOC (Audit Logs in-memory)
+# Activity Schema: { timestamp: "UTC ISO-8601", targetEventId: str, activityType: str, actor: str, role: str, summary: str, details: str }
+AUDIT_LOGS: list[dict] = [
+    {
+        "timestamp": "2026-10-25T17:37:12Z",
+        "targetEventId": "EVT-2610-084",
+        "activityType": "ALERT_TRIGGERED",
+        "actor": "Suricata Engine",
+        "role": "system",
+        "summary": "Rule 100280 VPN login anomaly triggered on vnpt-edge-fw-01",
+        "details": "Threshold exceeded: TLS Auth from unrecognized ASN 192.0.2.88.",
+        "username": "Suricata Engine",
+        "action": "ALERT_TRIGGERED"
+    },
+    {
+        "timestamp": "2026-10-25T17:39:15Z",
+        "targetEventId": "EVT-2610-084",
+        "activityType": "ALERT_ACKNOWLEDGED",
+        "actor": "tier1",
+        "role": "tier1",
+        "summary": "Alert acknowledged by Tier-1 responder",
+        "details": "Triage verified anomalous login attempt against soc_duty_02 account.",
+        "username": "tier1",
+        "action": "ACKNOWLEDGE_ALERT"
+    },
+    {
+        "timestamp": "2026-10-25T17:45:00Z",
+        "targetEventId": "EVT-2610-084",
+        "activityType": "ALERT_RESOLVED",
+        "actor": "admin",
+        "role": "admin",
+        "summary": "Incident closed with disposition: True Positive - Malicious",
+        "details": "Unauthorized VPN session revoked and analyst credentials rotated.",
+        "username": "admin",
+        "action": "RESOLVE_ALERT"
+    },
+    {
+        "timestamp": "2026-10-25T18:12:04Z",
+        "targetEventId": "EVT-2610-099",
+        "activityType": "ALERT_TRIGGERED",
+        "actor": "Suricata Engine",
+        "role": "system",
+        "summary": "Rule 100999 BPDU Root Guard Violation triggered",
+        "details": "Anomalous BPDU received on port Gi0/24 with superior bridge ID.",
+        "username": "Suricata Engine",
+        "action": "ALERT_TRIGGERED"
+    },
+    {
+        "timestamp": "2026-10-25T18:13:30Z",
+        "targetEventId": "EVT-2610-099",
+        "activityType": "ALERT_ACKNOWLEDGED",
+        "actor": "tier1",
+        "role": "tier1",
+        "summary": "Alert acknowledged by Tier-1 responder",
+        "details": "Port Gi0/24 flagged for STP topology flapping risk.",
+        "username": "tier1",
+        "action": "ACKNOWLEDGE_ALERT"
+    },
+    {
+        "timestamp": "2026-10-25T18:15:10Z",
+        "targetEventId": "EVT-2610-099",
+        "activityType": "INVESTIGATION_STARTED",
+        "actor": "tier2",
+        "role": "tier2",
+        "summary": "Investigation escalated to Tier-2 SOC Analyst",
+        "details": "Correlating CDP/LLDP telemetry and upstream MAC tables.",
+        "username": "tier2",
+        "action": "CHANGE_ALERT_STATE"
+    },
+    {
+        "timestamp": "2026-10-25T18:18:45Z",
+        "targetEventId": "EVT-2610-099",
+        "activityType": "CONTAINMENT_EXECUTED",
+        "actor": "tier2",
+        "role": "tier2",
+        "summary": "Containment action executed: Quarantine Port (VLAN 999)",
+        "details": "Isolated port Gi0/24 on vnpt-agg-switch-05 via Netmiko/SSH.",
+        "username": "tier2",
+        "action": "CONTAINMENT_QUARANTINE_PORT"
+    }
+]
+
+def log_audit(
+    action: str = "",
+    username: str = "analyst",
+    role: str = "tier1",
+    target_event_id: str = "",
+    details: str = "",
+    activity_type: str | None = None,
+    summary: str | None = None
+) -> None:
+    """Ghi nhận nhật ký kiểm toán và dòng thời gian xử lý sự cố an ninh SOC."""
+    act_type = activity_type or action
+    if act_type == "ACKNOWLEDGE_ALERT":
+        act_type = "ALERT_ACKNOWLEDGED"
+    elif act_type == "CHANGE_ALERT_STATE":
+        act_type = "INVESTIGATION_STARTED"
+    elif act_type.startswith("CONTAINMENT_"):
+        act_type = "CONTAINMENT_EXECUTED"
+    elif act_type == "RESOLVE_ALERT":
+        act_type = "ALERT_RESOLVED"
+
+    now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    sum_text = summary or f"{act_type.replace('_', ' ').capitalize()}"
+    AUDIT_LOGS.append({
+        "timestamp": now_utc,
+        "targetEventId": target_event_id,
+        "activityType": act_type,
+        "actor": username,
+        "role": role,
+        "summary": sum_text,
+        "details": details,
+        # backward compatibility keys
+        "action": action or act_type,
+        "username": username
+    })
+
+def alert_observed_to_utc_iso(alert: dict) -> str:
+    """Chuyển đổi thời gian quan sát của alert (GMT+7) sang chuỗi ISO-8601 UTC chuẩn.
+
+    Args:
+        alert: Bản ghi sự cố an ninh.
+
+    Returns:
+        str: Chuỗi thời gian chuẩn ISO-8601 UTC (ví dụ: '2026-10-25T18:12:04Z').
+    """
+    obs_date = alert.get("observedDate", "26 Oct 2026")
+    obs_time = alert.get("observedTime", "00:00:00 GMT+7").replace(" GMT+7", "").strip()
+    try:
+        dt_gmt7 = datetime.strptime(f"{obs_date} {obs_time}", "%d %b %Y %H:%M:%S")
+        dt_utc = dt_gmt7 - timedelta(hours=7)
+        return dt_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    except (ValueError, KeyError, TypeError):
+        return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def get_incident_timeline(event_id: str) -> list[dict]:
+    """Truy xuất dòng thời gian xử lý sự cố (Incident Activity Trail) theo thứ tự thời gian.
+
+    Args:
+        event_id: Mã định danh sự cố.
+
+    Returns:
+        list[dict]: Danh sách sự kiện hoạt động với timestamp định dạng GMT+7.
+    """
+    alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
+    activities = [dict(log) for log in AUDIT_LOGS if log.get("targetEventId") == event_id]
+
+    has_trigger = any(a.get("activityType") == "ALERT_TRIGGERED" for a in activities)
+    if not has_trigger and alert:
+        activities.insert(0, {
+            "timestamp": alert_observed_to_utc_iso(alert),
+            "targetEventId": event_id,
+            "activityType": "ALERT_TRIGGERED",
+            "actor": "Detection Engine",
+            "role": "system",
+            "summary": f"Alert triggered by Rule #{alert.get('ruleId', 'N/A')}",
+            "details": f"Detection rule matched telemetry from asset {alert.get('asset', 'network-device')}."
+        })
+
+    activities_sorted = sorted(activities, key=lambda x: x.get("timestamp", ""))
+
+    formatted = []
+    for item in activities_sorted:
+        ts_utc = item.get("timestamp", "")
+        time_display = ts_utc
+        date_display = ""
+        try:
+            clean_ts = ts_utc.replace("Z", "+00:00")
+            dt_utc = datetime.fromisoformat(clean_ts)
+            dt_gmt7 = dt_utc + timedelta(hours=7)
+            time_display = dt_gmt7.strftime("%H:%M:%S GMT+7")
+            date_display = dt_gmt7.strftime("%d %b %Y")
+        except (ValueError, KeyError, TypeError):
+            time_display = ts_utc
+            date_display = ""
+
+        formatted.append({
+            **item,
+            "timeDisplay": time_display,
+            "dateDisplay": date_display
+        })
+    return formatted
+
 # In-memory SOC data repository
 
 INITIAL_ALERTS = [
@@ -191,12 +431,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.20.5",
         "asset": "vnpt-agg-switch-05",
         "assetType": "Switch",
+        "interface": "Gi0/24",
         "observedRel": "just now",
         "ageMinutes": 0,
         "observedDate": "26 Oct 2026",
         "observedTime": "01:12:04 GMT+7",
-        "mitre": "T1557 · Adversary-in-the-Middle",
+        "mitre": "T1498 · Network Denial of Service",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0040", "name": "Impact"},
+            "technique": {"id": "T1498", "name": "Network Denial of Service"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "01:12:03 GMT+7", "lastSeen": "01:12:04 GMT+7"},
         "testStartTs": "01:12:03.2",
         "testObsTs": "01:12:04.6",
         "testDeltaSec": 1.4,
@@ -213,12 +463,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.0.1",
         "asset": "vnpt-core-router-01",
         "assetType": "Router",
+        "interface": "TenGigE0/0/0",
         "observedRel": "2 min ago",
         "ageMinutes": 2,
         "observedDate": "26 Oct 2026",
         "observedTime": "01:10:15 GMT+7",
         "mitre": "T1498 · Network Denial of Service",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0040", "name": "Impact"},
+            "technique": {"id": "T1498", "name": "Network Denial of Service"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "01:10:13 GMT+7", "lastSeen": "01:10:15 GMT+7"},
         "testStartTs": "01:10:13.4",
         "testObsTs": "01:10:15.0",
         "testDeltaSec": 1.6,
@@ -235,12 +495,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.10.1",
         "asset": "vnpt-edge-fw-01",
         "assetType": "Firewall",
+        "interface": "eth0",
         "observedRel": "5 min ago",
         "ageMinutes": 5,
         "observedDate": "26 Oct 2026",
         "observedTime": "01:07:11 GMT+7",
-        "mitre": "T1110 · Brute Force",
+        "mitre": "T1078 · Valid Accounts",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0001", "name": "Initial Access"},
+            "technique": {"id": "T1078", "name": "Valid Accounts"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "01:07:09 GMT+7", "lastSeen": "01:07:11 GMT+7"},
         "testStartTs": "01:07:09.9",
         "testObsTs": "01:07:11.4",
         "testDeltaSec": 1.5,
@@ -257,12 +527,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.0.1",
         "asset": "vnpt-core-router-01",
         "assetType": "Router",
+        "interface": "TenGigE0/0/1",
         "observedRel": "8 min ago",
         "ageMinutes": 8,
         "observedDate": "26 Oct 2026",
         "observedTime": "01:04:19 GMT+7",
-        "mitre": "T1584.004 · Compromise Infrastructure: DNS / Route Hijacking",
+        "mitre": "T1498 · Network Denial of Service",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0040", "name": "Impact"},
+            "technique": {"id": "T1498", "name": "Network Denial of Service"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "01:04:17 GMT+7", "lastSeen": "01:04:19 GMT+7"},
         "testStartTs": "01:04:17.5",
         "testObsTs": "01:04:19.2",
         "testDeltaSec": 1.7,
@@ -279,12 +559,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.10.20",
         "asset": "vnpt-edge-fw-01",
         "assetType": "Firewall",
+        "interface": "eth1",
         "observedRel": "12 min ago",
         "ageMinutes": 12,
         "observedDate": "26 Oct 2026",
         "observedTime": "01:00:47 GMT+7",
         "mitre": "T1046 · Network Service Scanning",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0007", "name": "Discovery"},
+            "technique": {"id": "T1046", "name": "Network Service Scanning"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 3,
+        "aggregation": {"count": 3, "firstSeen": "01:00:40 GMT+7", "lastSeen": "01:00:47 GMT+7"},
         "testStartTs": "01:00:46.0",
         "testObsTs": "01:00:47.8",
         "testDeltaSec": 1.8,
@@ -301,12 +591,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.99.1",
         "asset": "vnpt-agg-switch-05",
         "assetType": "Switch",
+        "interface": "Gi0/12",
         "observedRel": "20 min ago",
         "ageMinutes": 20,
         "observedDate": "26 Oct 2026",
         "observedTime": "00:52:10 GMT+7",
-        "mitre": "T1095 · Non-Application Layer Protocol",
+        "mitre": "T1562.004 · Disable or Modify System Firewall / ACLs",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0005", "name": "Defense Evasion"},
+            "technique": {"id": "T1562.004", "name": "Disable or Modify System Firewall / ACLs"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "00:52:06 GMT+7", "lastSeen": "00:52:10 GMT+7"},
         "testStartTs": "00:52:06.8",
         "testObsTs": "00:52:10.0",
         "testDeltaSec": 3.2,
@@ -323,12 +623,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.10.1",
         "asset": "vnpt-edge-fw-01",
         "assetType": "Firewall",
+        "interface": "tun0",
         "observedRel": "35 min ago",
         "ageMinutes": 35,
         "observedDate": "26 Oct 2026",
         "observedTime": "00:37:12 GMT+7",
         "mitre": "T1078 · Valid Accounts",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0001", "name": "Initial Access"},
+            "technique": {"id": "T1078", "name": "Valid Accounts"}
+        },
+        "disposition": "True Positive - Malicious",
+        "resolvedBy": "admin",
+        "resolvedAt": "26 Oct 2026, 00:45 GMT+7",
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "00:37:10 GMT+7", "lastSeen": "00:37:12 GMT+7"},
         "testStartTs": "00:37:10.0",
         "testObsTs": "00:37:12.1",
         "testDeltaSec": 2.1,
@@ -345,12 +655,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.200.0.1",
         "asset": "vnpt-bng-01",
         "assetType": "Gateway",
+        "interface": "Bundle-Ether1",
         "observedRel": "45 min ago",
         "ageMinutes": 45,
         "observedDate": "26 Oct 2026",
         "observedTime": "00:27:08 GMT+7",
         "mitre": "T1499 · Endpoint Denial of Service",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0040", "name": "Impact"},
+            "technique": {"id": "T1499", "name": "Endpoint Denial of Service"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "00:27:06 GMT+7", "lastSeen": "00:27:08 GMT+7"},
         "testStartTs": "00:27:06.1",
         "testObsTs": "00:27:08.5",
         "testDeltaSec": 2.4,
@@ -367,12 +687,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.10.15",
         "asset": "vnpt-edge-fw-01",
         "assetType": "Firewall",
+        "interface": "eth0",
         "observedRel": "52 min ago",
         "ageMinutes": 52,
         "observedDate": "26 Oct 2026",
         "observedTime": "00:20:42 GMT+7",
-        "mitre": "T1498.001 · Direct Network Flood",
+        "mitre": "T1498 · Network Denial of Service",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0040", "name": "Impact"},
+            "technique": {"id": "T1498", "name": "Network Denial of Service"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 2,
+        "aggregation": {"count": 2, "firstSeen": "00:20:30 GMT+7", "lastSeen": "00:20:42 GMT+7"},
         "testStartTs": "00:20:40.0",
         "testObsTs": "00:20:42.1",
         "testDeltaSec": 2.1,
@@ -389,12 +719,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.10.1",
         "asset": "vnpt-access-sw-02",
         "assetType": "Switch",
+        "interface": "Gi0/7",
         "observedRel": "1.5 h ago",
         "ageMinutes": 90,
         "observedDate": "25 Oct 2026",
         "observedTime": "23:42:15 GMT+7",
-        "mitre": "T1557.002 · ARP Cache Poisoning",
+        "mitre": "T1498 · Network Denial of Service",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0040", "name": "Impact"},
+            "technique": {"id": "T1498", "name": "Network Denial of Service"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "23:42:12 GMT+7", "lastSeen": "23:42:15 GMT+7"},
         "testStartTs": "23:42:12.2",
         "testObsTs": "23:42:15.0",
         "testDeltaSec": 2.8,
@@ -411,12 +751,18 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.0.2",
         "asset": "vnpt-core-router-01",
         "assetType": "Router",
+        "interface": "TenGigE0/0/1",
         "observedRel": "3 h ago",
         "ageMinutes": 180,
         "observedDate": "25 Oct 2026",
         "observedTime": "22:12:08 GMT+7",
-        "mitre": "T1498 · Network Denial of Service",
+        "mitre": "Non-ATT&CK · Network Telemetry",
+        "threat": None,
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 4,
+        "aggregation": {"count": 4, "firstSeen": "22:10:00 GMT+7", "lastSeen": "22:12:08 GMT+7"},
         "testStartTs": "22:12:05.0",
         "testObsTs": "22:12:08.3",
         "testDeltaSec": 3.3,
@@ -433,12 +779,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.50.53",
         "asset": "vnpt-dns-resolver",
         "assetType": "Server",
+        "interface": "eth0",
         "observedRel": "5.3 h ago",
         "ageMinutes": 320,
         "observedDate": "25 Oct 2026",
         "observedTime": "19:52:14 GMT+7",
-        "mitre": "T1498.002 · Reflection Amplification",
+        "mitre": "T1498 · Network Denial of Service",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0040", "name": "Impact"},
+            "technique": {"id": "T1498", "name": "Network Denial of Service"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 2,
+        "aggregation": {"count": 2, "firstSeen": "19:50:00 GMT+7", "lastSeen": "19:52:14 GMT+7"},
         "testStartTs": "19:52:11.8",
         "testObsTs": "19:52:14.0",
         "testDeltaSec": 2.2,
@@ -455,12 +811,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.0.1",
         "asset": "vnpt-core-router-01",
         "assetType": "Router",
+        "interface": "mgmt0",
         "observedRel": "7.5 h ago",
         "ageMinutes": 450,
         "observedDate": "25 Oct 2026",
         "observedTime": "17:42:30 GMT+7",
         "mitre": "T1078 · Valid Accounts",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0001", "name": "Initial Access"},
+            "technique": {"id": "T1078", "name": "Valid Accounts"}
+        },
+        "disposition": "Benign Positive - Expected",
+        "resolvedBy": "admin",
+        "resolvedAt": "25 Oct 2026, 17:45 GMT+7",
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "17:42:29 GMT+7", "lastSeen": "17:42:30 GMT+7"},
         "testStartTs": "17:42:29.0",
         "testObsTs": "17:42:30.2",
         "testDeltaSec": 1.2,
@@ -477,12 +843,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.99.200",
         "asset": "vnpt-agg-switch-05",
         "assetType": "Switch",
+        "interface": "Gi0/1",
         "observedRel": "12 h ago",
         "ageMinutes": 720,
         "observedDate": "25 Oct 2026",
         "observedTime": "13:12:00 GMT+7",
-        "mitre": "T1005 · Data from Local System",
+        "mitre": "T1542.005 · TFTP Boot Config",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0003", "name": "Persistence"},
+            "technique": {"id": "T1542.005", "name": "TFTP Boot Config Modification"}
+        },
+        "disposition": "Benign Positive - Expected",
+        "resolvedBy": "cron_system",
+        "resolvedAt": "25 Oct 2026, 13:15 GMT+7",
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "13:11:58 GMT+7", "lastSeen": "13:12:00 GMT+7"},
         "testStartTs": "13:11:58.5",
         "testObsTs": "13:12:00.0",
         "testDeltaSec": 1.5,
@@ -499,12 +875,22 @@ INITIAL_ALERTS = [
         "dstIp": "10.0.0.1",
         "asset": "vnpt-core-router-01",
         "assetType": "Router",
+        "interface": "mgmt0",
         "observedRel": "1.1 d ago",
         "ageMinutes": 1600,
         "observedDate": "24 Oct 2026",
         "observedTime": "22:32:10 GMT+7",
-        "mitre": "T1565.001 · Stored Data Manipulation",
+        "mitre": "T1059.008 · Network Device CLI",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0002", "name": "Execution"},
+            "technique": {"id": "T1059.008", "name": "Network Device CLI / IOS Shell"}
+        },
+        "disposition": None,
+        "resolvedBy": None,
+        "resolvedAt": None,
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "22:32:08 GMT+7", "lastSeen": "22:32:10 GMT+7"},
         "testStartTs": "22:32:08.0",
         "testObsTs": "22:32:10.5",
         "testDeltaSec": 2.5,
@@ -521,12 +907,22 @@ INITIAL_ALERTS = [
         "dstIp": "255.255.255.255",
         "asset": "vnpt-access-sw-02",
         "assetType": "Switch",
+        "interface": "Gi0/14",
         "observedRel": "1.9 d ago",
         "ageMinutes": 2800,
         "observedDate": "24 Oct 2026",
         "observedTime": "02:30:15 GMT+7",
-        "mitre": "T1557 · Adversary-in-the-Middle",
+        "mitre": "T1018 · Remote System Discovery",
+        "threat": {
+            "framework": "MITRE ATT&CK for Network",
+            "tactic": {"id": "TA0007", "name": "Discovery"},
+            "technique": {"id": "T1018", "name": "Remote System Discovery (CDP/LLDP)"}
+        },
+        "disposition": "True Positive - Malicious",
+        "resolvedBy": "admin",
+        "resolvedAt": "24 Oct 2026, 03:00 GMT+7",
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "02:30:13 GMT+7", "lastSeen": "02:30:15 GMT+7"},
         "testStartTs": "02:30:13.2",
         "testObsTs": "02:30:15.0",
         "testDeltaSec": 1.8,
@@ -543,12 +939,18 @@ INITIAL_ALERTS = [
         "dstIp": "10.100.0.10",
         "asset": "vnpt-olt-01",
         "assetType": "Gateway",
+        "interface": "PON0/1/4",
         "observedRel": "3.1 d ago",
         "ageMinutes": 4500,
         "observedDate": "22 Oct 2026",
         "observedTime": "18:10:40 GMT+7",
-        "mitre": "T1489 · Service Stop",
+        "mitre": "Non-ATT&CK · Network Telemetry",
+        "threat": None,
+        "disposition": "Benign Positive - Expected",
+        "resolvedBy": "admin",
+        "resolvedAt": "22 Oct 2026, 19:00 GMT+7",
         "hits": 1,
+        "aggregation": {"count": 1, "firstSeen": "18:10:35 GMT+7", "lastSeen": "18:10:40 GMT+7"},
         "testStartTs": "18:10:35.4",
         "testObsTs": "18:10:40.0",
         "testDeltaSec": 4.6,
@@ -633,6 +1035,7 @@ DEVICES = [
 SCENARIO_RESULTS = [
     {
         "id": "SC-01",
+        "testedUtc": "2026-10-25T18:10:00Z",
         "testedTs": "26 Oct, 01:10",
         "code": "T1046",
         "name": "Network Service Scanning",
@@ -646,6 +1049,7 @@ SCENARIO_RESULTS = [
     },
     {
         "id": "SC-02",
+        "testedUtc": "2026-10-25T18:07:00Z",
         "testedTs": "26 Oct, 01:07",
         "code": "T1110",
         "name": "SSH Credential Brute Force",
@@ -659,6 +1063,7 @@ SCENARIO_RESULTS = [
     },
     {
         "id": "SC-03",
+        "testedUtc": "2026-10-25T18:12:00Z",
         "testedTs": "26 Oct, 01:12",
         "code": "T1557",
         "name": "Spanning-Tree BPDU Spoofing",
@@ -672,6 +1077,7 @@ SCENARIO_RESULTS = [
     },
     {
         "id": "SC-04",
+        "testedUtc": "2026-10-25T17:20:00Z",
         "testedTs": "26 Oct, 00:20",
         "code": "T1498",
         "name": "SYN Flood DoS Attack",
@@ -685,6 +1091,7 @@ SCENARIO_RESULTS = [
     },
     {
         "id": "SC-05",
+        "testedUtc": "2026-10-25T17:37:00Z",
         "testedTs": "26 Oct, 00:37",
         "code": "T1078",
         "name": "VPN Login Anomaly",
@@ -698,6 +1105,7 @@ SCENARIO_RESULTS = [
     },
     {
         "id": "SC-06",
+        "testedUtc": "2026-10-25T16:42:00Z",
         "testedTs": "25 Oct, 23:42",
         "code": "T1557.002",
         "name": "ARP Cache Poisoning",
@@ -820,7 +1228,7 @@ def _create_session(username: str, role: str = "admin") -> str:
     _sessions[session_id] = {
         "username": username,
         "role": role,
-        "created_at": datetime.utcnow().isoformat()
+        "created_at": datetime.now(UTC).isoformat()
     }
     return session_id
 
@@ -882,6 +1290,13 @@ def get_window_max_minutes(win: str) -> int:
 def compute_overview_stats(time_window: str = "24h") -> tuple:
     """Tính toán bộ dữ liệu thống kê và danh sách hiển thị cho trang Overview.
 
+    Contract thống nhất:
+        alerts_store item = Composite Incident
+        hits = Số raw events thuộc incident
+        len(alerts) = Incident count
+        sum(alert.hits) = Raw event count (Total Events)
+        Donut sum: crit + high + med + low = Total Events
+
     Args:
         time_window: Khung thời gian cần tổng hợp ('1h', '24h', '7d').
 
@@ -891,14 +1306,19 @@ def compute_overview_stats(time_window: str = "24h") -> tuple:
     max_mins = get_window_max_minutes(time_window)
     active_alerts = [a for a in alerts_store if a.get("ageMinutes", 0) <= max_mins]
 
-    total = len(active_alerts)
-    crit = sum(1 for a in active_alerts if a["severity"] == "Critical")
-    high = sum(1 for a in active_alerts if a["severity"] == "High")
-    med = sum(1 for a in active_alerts if a["severity"] == "Medium")
-    low = sum(1 for a in active_alerts if a["severity"] == "Low")
+    total_events = sum(a.get("hits", 1) for a in active_alerts)
+    crit = sum(a.get("hits", 1) for a in active_alerts if a["severity"] == "Critical")
+    high = sum(a.get("hits", 1) for a in active_alerts if a["severity"] == "High")
+    med = sum(a.get("hits", 1) for a in active_alerts if a["severity"] == "Medium")
+    low = sum(a.get("hits", 1) for a in active_alerts if a["severity"] == "Low")
+    open_incidents = sum(1 for a in active_alerts if a.get("state") != "Resolved")
+    incident_count = len(active_alerts)
 
     stats = {
-        "total": total,
+        "total": total_events,
+        "total_events": total_events,
+        "incident_count": incident_count,
+        "open_incidents": open_incidents,
         "crit": crit,
         "high": high,
         "med": med,
@@ -909,10 +1329,10 @@ def compute_overview_stats(time_window: str = "24h") -> tuple:
     for a in active_alerts:
         src = a.get("srcIp")
         if src:
-            ip_counts[src] = ip_counts.get(src, 0) + 1
+            ip_counts[src] = ip_counts.get(src, 0) + a.get("hits", 1)
     sorted_ips = sorted(ip_counts.items(), key=lambda item: item[1], reverse=True)[:5]
     top_ips = [
-        {"ip": ip, "count": cnt, "pct": round((cnt / total) * 100) if total else 0}
+        {"ip": ip, "count": cnt, "pct": round((cnt / total_events) * 100) if total_events else 0}
         for ip, cnt in sorted_ips
     ]
     if not top_ips:
@@ -921,10 +1341,10 @@ def compute_overview_stats(time_window: str = "24h") -> tuple:
     type_counts: dict = {}
     for a in active_alerts:
         t = a.get("assetType", "Other").lower()
-        type_counts[t] = type_counts.get(t, 0) + 1
+        type_counts[t] = type_counts.get(t, 0) + a.get("hits", 1)
     sorted_types = sorted(type_counts.items(), key=lambda item: item[1], reverse=True)
     dev_types = [
-        {"type": t, "count": cnt, "pct": round((cnt / total) * 100) if total else 0}
+        {"type": t, "count": cnt, "pct": round((cnt / total_events) * 100) if total_events else 0}
         for t, cnt in sorted_types
     ]
     if not dev_types:
@@ -934,6 +1354,81 @@ def compute_overview_stats(time_window: str = "24h") -> tuple:
     top_rules = active_alerts[:5]
 
     return stats, queue_alerts, top_rules, top_ips, dev_types
+
+def compute_mitre_matrix_stats(time_window: str = "24h") -> list[dict]:
+    """Tính toán ma trận phân bổ kỹ thuật mạng MITRE ATT&CK (6 Tactics x 10 Techniques).
+
+    Args:
+        time_window: Khung thời gian cần tổng hợp ('1h', '24h', '7d').
+
+    Returns:
+        list[dict]: Danh sách 6 chiến thuật kèm kỹ thuật và số lượt phát hiện (hit count).
+    """
+    max_mins = get_window_max_minutes(time_window)
+    active = [a for a in alerts_store if a.get("ageMinutes", 0) <= max_mins]
+
+    tech_counts: dict[str, int] = {}
+    for a in active:
+        threat = a.get("threat")
+        if threat and isinstance(threat, dict):
+            tech = threat.get("technique")
+            if tech and isinstance(tech, dict):
+                tid = tech.get("id")
+                if tid:
+                    tech_counts[tid] = tech_counts.get(tid, 0) + a.get("hits", 1)
+
+    matrix = []
+    for tac in NETWORK_MITRE_TECHNIQUES:
+        tac_entry = {
+            "tactic_id": tac["tactic_id"],
+            "tactic_name": tac["tactic_name"],
+            "techniques": []
+        }
+        for t in tac["techniques"]:
+            tid = t["id"]
+            cnt = tech_counts.get(tid, 0)
+            tac_entry["techniques"].append({
+                "id": tid,
+                "name": t["name"],
+                "hits": cnt,
+                "active": cnt > 0
+            })
+        matrix.append(tac_entry)
+    return matrix
+
+def deduplicate_composite_alerts(raw_alerts: list[dict], window_minutes: int = 15) -> list[dict]:
+    """Chốt chặn 3: Thuật toán gom nhóm cảnh báo mạng (Deduplication / Composite Alert).
+
+    Hợp nhất các cảnh báo đơn lẻ theo bộ 3 khóa: (srcIp, dstIp/device, ruleId) trong cửa sổ trượt 15 phút.
+    Tăng biến đếm aggregation.count và cập nhật lastSeen.
+    """
+    aggregated: dict[tuple, dict] = {}
+    composite_list: list[dict] = []
+
+    for alert in raw_alerts:
+        key = (
+            alert.get("srcIp"),
+            alert.get("dstIp") or alert.get("asset"),
+            alert.get("ruleId")
+        )
+        if key in aggregated:
+            existing = aggregated[key]
+            existing["hits"] = existing.get("hits", 1) + alert.get("hits", 1)
+            if "aggregation" in existing and isinstance(existing["aggregation"], dict):
+                existing["aggregation"]["count"] = existing["hits"]
+                existing["aggregation"]["lastSeen"] = alert.get("observedTime")
+        else:
+            item = dict(alert)
+            if "aggregation" not in item:
+                item["aggregation"] = {
+                    "count": item.get("hits", 1),
+                    "firstSeen": item.get("observedTime"),
+                    "lastSeen": item.get("observedTime")
+                }
+            aggregated[key] = item
+            composite_list.append(item)
+
+    return composite_list
 
 def compute_scenario_stats() -> dict:
     """Tính toán chỉ số SLA kiểm thử kịch bản tấn công MITRE ATT&CK theo chuẩn VNPT N4.2.
@@ -964,7 +1459,8 @@ def filter_alerts(
     rule: str = "",
     ip: str = "",
     asset: str = "ALL",
-    state: str = "ALL"
+    state: str = "ALL",
+    technique: str | None = None
 ) -> list:
     """Lọc danh sách cảnh báo SOC theo từ khóa, thời gian, mức độ, luật và thiết bị.
 
@@ -1007,6 +1503,14 @@ def filter_alerts(
             continue
         if asset != "ALL" and a["asset"] != asset:
             continue
+        if technique:
+            # MITRE technique filter (Contract regex: ^T\d{4}(?:\.\d{3})?$)
+            threat = a.get("threat")
+            if not (threat and isinstance(threat, dict)):
+                continue
+            tech = threat.get("technique")
+            if not (tech and isinstance(tech, dict) and tech.get("id") == technique):
+                continue
         filtered.append(a)
     return filtered
 
@@ -1038,7 +1542,12 @@ async def get_overview_page(request: Request, window: str = "24h"):
     )
 
 @app.get("/alerts", response_class=HTMLResponse)
-async def get_alerts_page(request: Request, severity: str | None = "ALL", asset: str | None = "ALL"):
+async def get_alerts_page(
+    request: Request,
+    severity: str | None = "ALL",
+    asset: str | None = "ALL",
+    technique: str | None = None
+):
     """Hiển thị toàn bộ trang Hàng đợi cảnh báo (Alert Queue) kèm Layout Master.
 
     Args:
@@ -1049,7 +1558,15 @@ async def get_alerts_page(request: Request, severity: str | None = "ALL", asset:
     Returns:
         HTMLResponse: Giao diện hoàn chỉnh render từ template `pages/alerts.html`.
     """
-    filtered = filter_alerts(severity=severity or "ALL", asset=asset or "ALL")
+    valid_tech = technique if (technique and re.match(r"^T\d{4}(?:\.\d{3})?$", technique)) else None
+    filtered = filter_alerts(severity=severity or "ALL", asset=asset or "ALL", technique=valid_tech)
+    tech_name = None
+    if valid_tech:
+        for tac in NETWORK_MITRE_TECHNIQUES:
+            for t in tac["techniques"]:
+                if t["id"] == valid_tech:
+                    tech_name = t["name"]
+                    break
     alerts_stats = {
         "total": len(filtered),
         "new": sum(1 for a in filtered if a["state"] == "New"),
@@ -1067,7 +1584,9 @@ async def get_alerts_page(request: Request, severity: str | None = "ALL", asset:
             "total_count": len(alerts_store),
             "current_severity": severity,
             "current_asset": asset,
-            "current_state": "ALL"
+            "current_state": "ALL",
+            "selected_technique": valid_tech,
+            "technique_name": tech_name
         }
     )
 
@@ -1108,12 +1627,14 @@ async def get_scenarios_page(request: Request):
         HTMLResponse: Giao diện hoàn chỉnh render từ template `pages/scenarios.html`.
     """
     scenario_stats = compute_scenario_stats()
+    mitre_matrix = compute_mitre_matrix_stats("24h")
     return templates.TemplateResponse(
         request=request,
         name="pages/scenarios.html",
         context={
             "scenarios": scenarios_store,
-            "scenario_stats": scenario_stats
+            "scenario_stats": scenario_stats,
+            "mitre_matrix": mitre_matrix
         }
     )
 
@@ -1145,7 +1666,12 @@ async def get_overview_view(request: Request, window: str = "24h"):
     )
 
 @app.get("/views/alerts", response_class=HTMLResponse)
-async def get_alerts_view(request: Request, severity: str | None = "ALL", asset: str | None = "ALL"):
+async def get_alerts_view(
+    request: Request,
+    severity: str | None = "ALL",
+    asset: str | None = "ALL",
+    technique: str | None = None
+):
     """Trả về partial nội dung Alert Queue để HTMX hoán đổi mượt mà vào #main-content.
 
     Args:
@@ -1156,7 +1682,15 @@ async def get_alerts_view(request: Request, severity: str | None = "ALL", asset:
     Returns:
         HTMLResponse: Đoạn mã HTML render từ `partials/alerts_content.html`.
     """
-    filtered = filter_alerts(severity=severity or "ALL", asset=asset or "ALL")
+    valid_tech = technique if (technique and re.match(r"^T\d{4}(?:\.\d{3})?$", technique)) else None
+    filtered = filter_alerts(severity=severity or "ALL", asset=asset or "ALL", technique=valid_tech)
+    tech_name = None
+    if valid_tech:
+        for tac in NETWORK_MITRE_TECHNIQUES:
+            for t in tac["techniques"]:
+                if t["id"] == valid_tech:
+                    tech_name = t["name"]
+                    break
     alerts_stats = {
         "total": len(filtered),
         "new": sum(1 for a in filtered if a["state"] == "New"),
@@ -1174,7 +1708,9 @@ async def get_alerts_view(request: Request, severity: str | None = "ALL", asset:
             "total_count": len(alerts_store),
             "current_severity": severity,
             "current_asset": asset,
-            "current_state": "ALL"
+            "current_state": "ALL",
+            "selected_technique": valid_tech,
+            "technique_name": tech_name
         }
     )
 
@@ -1215,12 +1751,14 @@ async def get_scenarios_view(request: Request):
         HTMLResponse: Đoạn mã HTML render từ `partials/scenarios_content.html`.
     """
     scenario_stats = compute_scenario_stats()
+    mitre_matrix = compute_mitre_matrix_stats("24h")
     return templates.TemplateResponse(
         request=request,
         name="partials/scenarios_content.html",
         context={
             "scenarios": scenarios_store,
-            "scenario_stats": scenario_stats
+            "scenario_stats": scenario_stats,
+            "mitre_matrix": mitre_matrix
         }
     )
 
@@ -1260,7 +1798,8 @@ async def filter_alerts_endpoint(
     rule: str | None = "",
     ip: str | None = "",
     asset: str | None = "ALL",
-    state: str | None = "ALL"
+    state: str | None = "ALL",
+    technique: str | None = None
 ):
     """Lọc danh sách cảnh báo SOC theo tiêu chí tìm kiếm và trả về bảng HTML cho HTMX.
 
@@ -1277,6 +1816,7 @@ async def filter_alerts_endpoint(
     Returns:
         HTMLResponse: Bảng cảnh báo render từ template `partials/alerts_table.html`.
     """
+    valid_tech = technique if (technique and re.match(r"^T\d{4}(?:\.\d{3})?$", technique)) else None
     filtered = filter_alerts(
         q=q or "",
         time_range=time or "Last 24 hours",
@@ -1284,7 +1824,8 @@ async def filter_alerts_endpoint(
         rule=rule or "",
         ip=ip or "",
         asset=asset or "ALL",
-        state=state or "ALL"
+        state=state or "ALL",
+        technique=valid_tech
     )
     return templates.TemplateResponse(
         request=request,
@@ -1312,7 +1853,8 @@ async def get_alert_drawer(request: Request, event_id: str):
         request=request,
         name="partials/drawer_content.html",
         context={
-            "alert": alert
+            "alert": alert,
+            "timeline": get_incident_timeline(event_id)
         }
     )
 
@@ -1333,8 +1875,16 @@ async def acknowledge_alert(
         # Determine acker: explicit source param (Telegram) or session username
         session = _get_session(session_id)
         acker = source or (session["username"] if session else "admin")
+        role = session["role"] if session else "tier1"
         alert["ackedBy"] = acker                           # e.g. "admin" or "telegram:84912345678"
-        alert["ackedAt"] = datetime.utcnow().isoformat()  # UTC ISO timestamp
+        alert["ackedAt"] = datetime.now(UTC).isoformat()
+        log_audit(
+            action="ACKNOWLEDGE_ALERT",
+            username=acker,
+            role=role,
+            target_event_id=event_id,
+            details=f"Alert {event_id} acknowledged via {source or 'Web UI'} by {acker}."
+        )
     stats, queue_alerts, top_rules, top_ips, dev_types = compute_overview_stats("24h")
     return templates.TemplateResponse(
         request=request,
@@ -1351,31 +1901,165 @@ async def acknowledge_alert(
     )
 
 @app.post("/api/alerts/{event_id}/state", response_class=HTMLResponse)
-async def update_alert_state(request: Request, event_id: str, state: str = Form(...)):
+async def update_alert_state(
+    request: Request,
+    event_id: str,
+    state: str = Form(...),
+    session_id: str | None = Cookie(None)
+):
     """Cập nhật trạng thái xử lý của cảnh báo trong kho lưu trữ in-memory.
 
     Args:
         request: FastAPI Request instance.
         event_id: Mã định danh sự kiện cảnh báo.
         state: Trạng thái mới ('New', 'Investigating', 'Acknowledged', 'Resolved').
+        session_id: Cookie phiên làm việc.
 
     Returns:
         HTMLResponse: Giao diện drawer cập nhật kèm header HX-Trigger hiển thị thông báo toast.
     """
     alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
+    session = _get_session(session_id)
+    username = session["username"] if session else "analyst"
+    role = session["role"] if session else "tier1"
+
     if alert:
         alert["state"] = state
+        log_audit(
+            action="CHANGE_ALERT_STATE",
+            username=username,
+            role=role,
+            target_event_id=event_id,
+            details=f"State updated to '{state}' by {username} ({role})."
+        )
     return templates.TemplateResponse(
         request=request,
         name="partials/drawer_content.html",
         context={
-            "alert": alert
+            "alert": alert,
+            "timeline": get_incident_timeline(event_id)
         },
         headers={"HX-Trigger": f'{{"showToast": {{"style": "light", "message": "Updated {event_id} to {state}"}}}}'}
     )
 
+@app.post("/api/alerts/{event_id}/action/{action_name}", response_class=HTMLResponse)
+async def execute_containment_action(
+    request: Request,
+    event_id: str,
+    action_name: str,
+    session_id: str | None = Cookie(None)
+):
+    """Thực thi hành động phản ứng an ninh mạng mô phỏng (Chốt chặn 4: Simulated Network Containment).
+
+    Args:
+        request: FastAPI Request instance.
+        event_id: Mã sự cố cảnh báo.
+        action_name: Tên hành động ('quarantine-port', 'bgp-rtbh', 'push-acl-drop').
+        session_id: Cookie phiên làm việc của analyst.
+
+    Returns:
+        HTMLResponse: Drawer cập nhật kèm thông báo Toast Notification qua HX-Trigger.
+    """
+    alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
+    if not alert:
+        return HTMLResponse("<div class='p-6 text-stone-500'>Alert not found</div>", status_code=404)
+
+    session = _get_session(session_id)
+    username = session["username"] if session else "analyst"
+    role = session["role"] if session else "tier2"
+
+    src_ip = alert.get("srcIp", "198.51.100.24")
+    hostname = alert.get("asset", "vnpt-device")
+    interface = alert.get("interface", "Gi0/1")
+
+    if action_name == "quarantine-port":
+        msg = f"[SIMULATED] Executed: Moved interface {interface} on {hostname} to Quarantine VLAN 999 via Netmiko/SSH."
+    elif action_name == "bgp-rtbh":
+        msg = f"[SIMULATED] Executed: BGP RTBH Null0 route announced for attacker host {src_ip} to Core Router via Netmiko/BGP."
+    elif action_name == "push-acl-drop":
+        msg = f"[SIMULATED] Executed: Pushed ACL deny ip host {src_ip} any to Router {hostname} via Netmiko/SSH."
+    else:
+        msg = f"[SIMULATED] Executed: Applied containment action {action_name} on {hostname}."
+
+    log_audit(
+        action=f"CONTAINMENT_{action_name.upper().replace('-', '_')}",
+        username=username,
+        role=role,
+        target_event_id=event_id,
+        details=msg
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/drawer_content.html",
+        context={"alert": alert, "timeline": get_incident_timeline(event_id)},
+        headers={"HX-Trigger": json.dumps({"showToast": {"style": "dark", "message": msg}})}
+    )
+
+@app.post("/api/alerts/{event_id}/resolve", response_class=HTMLResponse)
+async def resolve_alert_with_disposition(
+    request: Request,
+    event_id: str,
+    disposition: str = Form("True Positive - Malicious"),
+    notes: str = Form(""),
+    session_id: str | None = Cookie(None)
+):
+    """Đóng sự cố cảnh báo và bắt buộc phân loại kết quả đóng án (Chốt chặn 1 & 4: Disposition Selection).
+
+    Args:
+        request: FastAPI Request instance.
+        event_id: Mã sự cố cảnh báo.
+        disposition: Phân loại đóng án (True Positive, False Positive, Benign Positive, Duplicate).
+        notes: Ghi chú phân tích nguyên nhân gốc rễ (nếu có).
+        session_id: Cookie phiên làm việc.
+
+    Returns:
+        HTMLResponse: Drawer chi tiết cập nhật trạng thái Resolved và gắn nhãn Disposition.
+    """
+    alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
+    if not alert:
+        return HTMLResponse("<div class='p-6 text-stone-500'>Alert not found</div>", status_code=404)
+
+    session = _get_session(session_id)
+    username = session["username"] if session else "analyst"
+    role = session["role"] if session else "tier2"
+
+    alert["state"] = "Resolved"
+    alert["disposition"] = disposition
+    alert["resolvedBy"] = username
+    now_gmt7 = datetime.now(UTC) + timedelta(hours=7)
+    alert["resolvedAt"] = now_gmt7.strftime("%d %b %Y, %H:%M GMT+7")
+    if notes:
+        alert["notes"] = notes
+
+    msg = f"Resolved {event_id} ({disposition})"
+    log_audit(
+        action="RESOLVE_ALERT",
+        username=username,
+        role=role,
+        target_event_id=event_id,
+        details=f"Disposition: {disposition}. Resolved by {username}. Notes: {notes}"
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/drawer_content.html",
+        context={"alert": alert, "timeline": get_incident_timeline(event_id)},
+        headers={"HX-Trigger": json.dumps({"showToast": {"style": "light", "message": msg}})}
+    )
+
+@app.get("/api/audit-logs", response_class=JSONResponse)
+async def get_audit_logs():
+    """Truy xuất danh sách nhật ký kiểm toán thao tác an ninh mạng SOC (Chốt chặn 4)."""
+    return {"total": len(AUDIT_LOGS), "logs": AUDIT_LOGS}
+
+@app.get("/api/mitre/matrix", response_class=JSONResponse)
+async def get_mitre_matrix_api(window: str = "24h"):
+    """Truy xuất dữ liệu ma trận nhiệt MITRE ATT&CK cho thiết bị mạng (Chốt chặn 2)."""
+    return {"window": window, "matrix": compute_mitre_matrix_stats(window)}
+
 @app.post("/api/alerts/bulk-state", response_class=JSONResponse)
-async def bulk_update_alerts(state: str = Form(...), event_ids: list[str] = Form(...)):
+async def bulk_update_alerts(state: str = Form(...), event_ids: list[str] = Form(...)):  # noqa: B008
     """Cập nhật trạng thái hàng loạt cho nhiều sự cố cảnh báo được chọn.
 
     Args:
@@ -1452,9 +2136,13 @@ async def save_scenario(
     else:
         # Create new
         new_id = f"SC-{len(scenarios_store) + 1:02d}"
-        now_str = datetime.now().strftime("%d %b, %H:%M")
+        now_utc = datetime.now(UTC)
+        tested_utc_iso = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+        now_gmt7 = now_utc.astimezone(timezone(timedelta(hours=7)))
+        now_str = now_gmt7.strftime("%d %b, %H:%M")
         scenarios_store.insert(0, {
             "id": new_id,
+            "testedUtc": tested_utc_iso,
             "testedTs": now_str,
             "code": code,
             "name": name,

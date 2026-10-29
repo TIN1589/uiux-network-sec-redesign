@@ -118,6 +118,7 @@
 
       <!-- Hàng giữa: Tool: nmap 7.94 • Rule: 100200 • Alert: EVT-2610-089 -->
       <div class="m-sc-row2 font-mono">
+        <span>Tested: <strong>{{ r.testedTs }} GMT+7</strong></span> ·
         <span>Tool: <strong>{{ r.tool }}</strong></span> ·
         <span>Rule: <strong>{{ r.rule }}</strong></span> ·
         <span>Alert: <button type="button" onclick="openAlertDrawer('{{ r.linkedEventId }}')" class="soc-btn-link font-mono" style="font-size: 12px; display: inline; padding: 0;">{{ r.linkedEventId }}</button></span>

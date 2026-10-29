@@ -274,6 +274,113 @@
     </div>
   </div>
 
+  <!-- Simplified Topology Card (Core Infrastructure Nodes — P2) -->
+  <div class="soc-card soc-card-pad">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+      <div>
+        <h2 class="soc-card-title">Core infrastructure topology</h2>
+        <p style="font-size: 13px; color: var(--color-text-secondary); margin-top: 2px;">
+          Telemetry status of 5 key backbone nodes across VNPT Network architecture.
+        </p>
+      </div>
+      <a href="/devices"
+         hx-get="/views/devices"
+         hx-target="#main-content"
+         hx-push-url="/devices"
+         class="soc-btn-link" style="font-size: 13px;">
+        View all monitored devices →
+      </a>
+    </div>
+
+    <!-- 5 Key Nodes Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+      <!-- Node 1: Core Router -->
+      <a href="/alerts?asset=vnpt-core-router-01"
+         hx-get="/views/alerts?asset=vnpt-core-router-01"
+         hx-target="#main-content"
+         hx-push-url="/alerts?asset=vnpt-core-router-01"
+         class="soc-card" style="padding: 14px; text-decoration: none; color: inherit; background: var(--color-surface-card-subtle); border-left: 3px solid var(--color-sev-critical); transition: transform 0.15s, border-color 0.15s;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-dot dot-critical" aria-hidden="true"></span>
+            <span style="font-size: 11px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">Router</span>
+          </div>
+          <span class="soc-badge badge-critical font-mono" style="font-size: 10px; padding: 1px 6px;">1 alert</span>
+        </div>
+        <div class="font-mono" style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">vnpt-core-router-01</div>
+        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 4px;">TenGigE0/0/0 · Core PoP</div>
+      </a>
+
+      <!-- Node 2: Edge Firewall -->
+      <a href="/alerts?asset=vnpt-edge-fw-01"
+         hx-get="/views/alerts?asset=vnpt-edge-fw-01"
+         hx-target="#main-content"
+         hx-push-url="/alerts?asset=vnpt-edge-fw-01"
+         class="soc-card" style="padding: 14px; text-decoration: none; color: inherit; background: var(--color-surface-card-subtle); border-left: 3px solid var(--color-status-live); transition: transform 0.15s, border-color 0.15s;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-dot dot-live" aria-hidden="true"></span>
+            <span style="font-size: 11px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">Firewall</span>
+          </div>
+          <span class="soc-badge badge-reporting font-mono" style="font-size: 10px; padding: 1px 6px;">Reporting</span>
+        </div>
+        <div class="font-mono" style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">vnpt-edge-fw-01</div>
+        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 4px;">eth0/1 · Edge Perimeter</div>
+      </a>
+
+      <!-- Node 3: Aggregation Switch -->
+      <a href="/alerts?asset=vnpt-agg-switch-05"
+         hx-get="/views/alerts?asset=vnpt-agg-switch-05"
+         hx-target="#main-content"
+         hx-push-url="/alerts?asset=vnpt-agg-switch-05"
+         class="soc-card" style="padding: 14px; text-decoration: none; color: inherit; background: var(--color-surface-card-subtle); border-left: 3px solid var(--color-sev-critical); transition: transform 0.15s, border-color 0.15s;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-dot dot-critical" aria-hidden="true"></span>
+            <span style="font-size: 11px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">Switch</span>
+          </div>
+          <span class="soc-badge badge-critical font-mono" style="font-size: 10px; padding: 1px 6px;">1 alert</span>
+        </div>
+        <div class="font-mono" style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">vnpt-agg-switch-05</div>
+        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 4px;">Gi0/24 · Aggregation Tier</div>
+      </a>
+
+      <!-- Node 4: BNG Gateway -->
+      <a href="/devices"
+         hx-get="/views/devices"
+         hx-target="#main-content"
+         hx-push-url="/devices"
+         class="soc-card" style="padding: 14px; text-decoration: none; color: inherit; background: var(--color-surface-card-subtle); border-left: 3px solid var(--color-status-live); transition: transform 0.15s, border-color 0.15s;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-dot dot-live" aria-hidden="true"></span>
+            <span style="font-size: 11px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">BNG</span>
+          </div>
+          <span class="soc-badge badge-reporting font-mono" style="font-size: 10px; padding: 1px 6px;">Reporting</span>
+        </div>
+        <div class="font-mono" style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">vnpt-bng-01</div>
+        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 4px;">Subscriber Gateway</div>
+      </a>
+
+      <!-- Node 5: Distribution Switch -->
+      <a href="/devices"
+         hx-get="/views/devices"
+         hx-target="#main-content"
+         hx-push-url="/devices"
+         class="soc-card" style="padding: 14px; text-decoration: none; color: inherit; background: var(--color-surface-card-subtle); border-left: 3px solid var(--color-status-paused); transition: transform 0.15s, border-color 0.15s;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-dot dot-paused" aria-hidden="true"></span>
+            <span style="font-size: 11px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">Switch</span>
+          </div>
+          <span class="soc-badge badge-silent font-mono" style="font-size: 10px; padding: 1px 6px;">Silent</span>
+        </div>
+        <div class="font-mono" style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">vnpt-dist-switch-02</div>
+        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 4px;">Access Distribution</div>
+      </a>
+    </div>
+  </div>
+
   <!-- Bottom Card: Top Triggered Rules -->
   <div class="soc-card">
     <h2 class="soc-card-title" style="margin-bottom: 16px;">Top triggered rules</h2>

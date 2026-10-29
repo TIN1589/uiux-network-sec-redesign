@@ -21,8 +21,17 @@
     </div>
   </div>
 
-  <!-- Right: Auto-Refresh Pill + Analyst Avatar + Role Switcher -->
+  <!-- Right: Auto-Refresh Pill + Theme Toggle + Analyst Avatar + Role Switcher -->
   <div class="topbar-right">
+    <!-- Theme Toggle Button (Light / Dark Mode for 24/7 SOC Video Wall) -->
+    <button type="button" onclick="toggleTheme()" id="btn-theme-toggle"
+      aria-label="Toggle theme (Light / Dark Mode)"
+      title="Toggle Light / Dark Mode"
+      class="soc-btn soc-btn-outline soc-btn-sm soc-btn-icon"
+      style="width: 36px; height: 36px; min-height: 36px; min-width: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+      <i id="theme-toggle-icon" class="fa-solid fa-moon" style="font-size: 15px; width: 16px; height: 16px;" aria-hidden="true"></i>
+    </button>
+
     <button type="button" onclick="toggleAutoRefresh()" id="btn-autorefresh" aria-pressed="true"
       class="soc-btn soc-btn-outline soc-btn-sm" style="min-height: 32px; padding: 4px 10px;">
       <span id="autorefresh-label">Auto: ON</span>
