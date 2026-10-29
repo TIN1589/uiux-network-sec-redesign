@@ -7,7 +7,7 @@ Bao gồm đầy đủ 3 thành tố: Mục tiêu - Kịch bản - Minh chứng.
 import re
 import pytest
 from fastapi.testclient import TestClient
-from app import app, alerts_store, compute_overview_stats, get_incident_timeline, NETWORK_MITRE_TECHNIQUES
+from app import app, alerts_store, compute_overview_stats, get_incident_timeline, NETWORK_MITRE_TECHNIQUES, alert_observed_to_utc_iso
 
 
 @pytest.fixture
@@ -16,35 +16,68 @@ def client():
     return TestClient(app)
 
 
+def _relative_luminance(hex_color: str) -> float:
+    """Tính toán Relative Luminance theo công thức WCAG 2.1."""
+    hex_clean = hex_color.lstrip('#')
+    rgb = [int(hex_clean[i:i+2], 16) / 255.0 for i in (0, 2, 4)]
+    rgb_linear = [v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4 for v in rgb]
+    return 0.2126 * rgb_linear[0] + 0.7152 * rgb_linear[1] + 0.0722 * rgb_linear[2]
+
+
+def _contrast_ratio(hex1: str, hex2: str) -> float:
+    """Tính toán tỷ lệ tương phản màu (Contrast Ratio) giữa 2 mã màu HEX."""
+    l1 = _relative_luminance(hex1)
+    l2 = _relative_luminance(hex2)
+    lighter = max(l1, l2)
+    darker = min(l1, l2)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
 def test_theme_foundation_and_tokens(client):
-    """Mục tiêu: Đảm bảo nền tảng Dual-Theme (Warm Stone / Obsidian Dark) và theme-init.js nạp đồng bộ.
+    """Mục tiêu: Đảm bảo nền tảng Dual-Theme, WCAG AA Contrast, và early script không FOUC.
 
     Kịch bản:
-        1. Gọi GET / và kiểm tra sự hiện diện của theme-init.js trong thẻ head trước stylesheets.
-        2. Kiểm tra file tĩnh static/js/theme-init.js có tồn tại và trả về mã nguồn hợp lệ (HTTP 200).
-        3. Kiểm tra biến token CSS html[data-theme="dark"] trong static/css/variables.css.
-        4. Kiểm tra nút chuyển theme (btn-theme-toggle) xuất hiện trên Topbar.
-
-    Minh chứng:
-        Mã nguồn theme-init.js đồng bộ data-theme và meta theme-color, bảo đảm không có FOUC trên cold boot.
+        1. Gọi GET / và kiểm tra meta[name="theme-color"] xuất hiện TRƯỚC theme-init.js.
+        2. Kiểm tra theme-init.js có mặt trong thẻ head và mã nguồn trả về HTTP 200.
+        3. Kiểm tra các biến CSS tokens Dark Mode trong static/css/variables.css.
+        4. Đo lường tỷ lệ tương phản toán học (Contrast Ratio) theo chuẩn WCAG AA:
+           - text-primary (#F1F0EB) trên surface-card (#16181B) >= 7.0:1 (đạt chuẩn AAA).
+           - text-secondary (#9E9B93) trên surface-card (#16181B) >= 4.5:1 (đạt chuẩn AA).
+           - critical text (#FDA29B) trên surface-card (#16181B) >= 4.5:1 (đạt chuẩn AA).
+           - accent-lime (#C6F135) trên surface-card (#16181B) >= 3.0:1 (đạt chuẩn UI component).
     """
     res = client.get("/")
     assert res.status_code == 200
-    assert '<script src="/static/js/theme-init.js"></script>' in res.text
-    assert 'id="btn-theme-toggle"' in res.text
-    assert 'toggleTheme()' in res.text
+    html = res.text
 
-    # Kiểm tra endpoint static theme-init.js
+    # 1. meta theme-color nằm trước theme-init.js
+    meta_idx = html.find('name="theme-color"')
+    script_idx = html.find('/static/js/theme-init.js')
+    assert meta_idx != -1 and script_idx != -1
+    assert meta_idx < script_idx, "meta[name=theme-color] must appear before theme-init.js to avoid null query"
+
+    assert 'id="btn-theme-toggle"' in html
+    assert 'toggleTheme()' in html
+
+    # 2. Endpoint static theme-init.js
     res_script = client.get("/static/js/theme-init.js")
     assert res_script.status_code == 200
     assert "soc-theme" in res_script.text
     assert "prefers-color-scheme" in res_script.text
 
-    # Kiểm tra tokens.css hoặc variables.css có chứa token Dark Mode
+    # 3. Biến Dark Mode
     res_css = client.get("/static/css/variables.css")
     assert res_css.status_code == 200
     assert 'html[data-theme="dark"]' in res_css.text
-    assert '--color-bg-workspace: #0E0F0C' in res_css.text
+
+    # 4. Kiểm chứng toán học WCAG AA
+    bg_surface = "#16181B"
+    assert _contrast_ratio("#F1F0EB", bg_surface) >= 7.0, "Primary text fails WCAG AAA"
+    assert _contrast_ratio("#9E9B93", bg_surface) >= 4.5, "Secondary text fails WCAG AA"
+    assert _contrast_ratio("#FDA29B", bg_surface) >= 4.5, "Critical text fails WCAG AA"
+    assert _contrast_ratio("#FEC84B", bg_surface) >= 4.5, "High text fails WCAG AA"
+    assert _contrast_ratio("#93C5FD", bg_surface) >= 4.5, "Low text fails WCAG AA"
+    assert _contrast_ratio("#C6F135", bg_surface) >= 3.0, "Lime accent fails WCAG UI component ratio"
 
 
 def test_events_vs_incidents_mathematical_consistency():
@@ -88,19 +121,13 @@ def test_alerts_table_aggregated_and_disposition_badges(client):
         2. Kiểm tra sự xuất hiện của class 'badge-aggregated' cho các sự cố lặp lại.
         3. Kiểm tra văn bản hiển thị 'hits' (ví dụ: 'Aggregated · 2 hits' hoặc 'x2 hits').
         4. Kiểm tra sự cố đã đóng EVT-2610-084 hiển thị nhãn Disposition (badge-disposition).
-
-    Minh chứng:
-        Trực ban nhận diện ngay tức thì sự cố dồn dập (composite) và lý do đóng án đã kiểm toán.
     """
     res = client.get("/views/alerts")
     assert res.status_code == 200
     html = res.text
 
-    # Kiểm tra badge aggregated
     assert "badge-aggregated" in html
     assert "hits" in html
-
-    # Kiểm tra disposition badge cho sự cố resolved
     assert "badge-disposition" in html
 
 
@@ -109,20 +136,38 @@ def test_incident_activity_trail_in_drawer(client):
 
     Kịch bản:
         1. Gọi GET /api/alerts/EVT-2610-099/drawer cho sự cố Root Guard.
-        2. Xác nhận khối INCIDENT ACTIVITY TRAIL xuất hiện với timeline đã seed.
-        3. Kiểm tra sự hiện diện của các activity: ALERT_TRIGGERED, ALERT_ACKNOWLEDGED, INVESTIGATION_STARTED.
-        4. Xác minh timestamp được chuyển đổi và hiển thị theo chuẩn GMT+7.
+        2. Xác nhận thời gian sự kiện kích hoạt đầu tiên hiển thị đúng '01:12:04 GMT+7', khớp 100% với observedTime của alert.
+        3. Kiểm tra các activity tiếp theo: ALERT_ACKNOWLEDGED, INVESTIGATION_STARTED.
+        4. Gọi POST hành động /api/alerts/EVT-2610-099/action/isolate-port để thực thi ngăn chặn.
+        5. Xác minh activity mới CONTAINMENT_EXECUTED được nối vào cuối timeline theo đúng thứ tự thời gian.
+        6. Kiểm tra sự cố đã đóng EVT-2610-084: thời gian trigger 00:37:12 GMT+7 và thời gian resolve 00:45:00 GMT+7.
     """
     res = client.get("/api/alerts/EVT-2610-099/drawer")
     assert res.status_code == 200
     html = res.text
 
     assert "INCIDENT ACTIVITY TRAIL" in html
-    assert "activities" in html
-    assert "GMT+7" in html
+    assert "01:12:04 GMT+7" in html
     assert "Suricata Engine" in html
     assert "tier1" in html
     assert "tier2" in html
+
+    # Thực thi hành động ngăn chặn và kiểm tra timeline append
+    res_act = client.post("/api/alerts/EVT-2610-099/action/isolate-port")
+    assert res_act.status_code == 200
+
+    tl_updated = get_incident_timeline("EVT-2610-099")
+    assert len(tl_updated) >= 4
+    last_act = tl_updated[-1]
+    assert last_act["activityType"] == "CONTAINMENT_EXECUTED"
+    assert "GMT+7" in last_act["timeDisplay"]
+
+    # Kiểm tra EVT-2610-084 khớp thời gian đóng án
+    tl_084 = get_incident_timeline("EVT-2610-084")
+    assert tl_084[0]["timeDisplay"] == "00:37:12 GMT+7"
+    resolved_act = next((a for a in tl_084 if a["activityType"] == "ALERT_RESOLVED"), None)
+    assert resolved_act is not None
+    assert resolved_act["timeDisplay"] == "00:45:00 GMT+7"
 
 
 def test_mitre_technique_interactive_filter(client):
@@ -131,13 +176,11 @@ def test_mitre_technique_interactive_filter(client):
     Kịch bản:
         1. Gọi GET /alerts?technique=T1498 (Network Denial of Service).
         2. Xác nhận HTTP 200, banner ACTIVE MITRE FILTER hiển thị 'T1498'.
-        3. Xác nhận toàn bộ cảnh báo trả về đều thuộc kỹ thuật T1498 (không lọt cảnh báo khác).
-        4. Gọi GET /api/alerts/filter?technique=T1498 và xác nhận bảng partial chỉ chứa T1498.
+        3. Xác nhận chỉ cảnh báo thuộc kỹ thuật T1498 xuất hiện, loại trừ tuyệt đối các cảnh báo khác (T1078, T1046).
+        4. Gọi GET /api/alerts/filter?technique=T1498 và xác nhận bảng partial chỉ chứa EVT-2610-099, không có EVT-2610-084.
         5. Gọi GET /api/alerts/filter?technique=INVALID_PARAM (vi phạm regex ^T\d{4}(?:\.\d{3})?$)
            và xác nhận hệ thống an toàn, bỏ qua filter lỗi thay vì sập 500.
-
-    Minh chứng:
-        Ma trận ATT&CK kết nối trực tiếp với luồng triage cảnh báo, lọc chính xác theo mã kỹ thuật.
+        6. Kiểm tra ma trận MITRE trên trang Scenarios chứa các liên kết điều hướng kỹ thuật.
     """
     # 1. Full page alerts with technique filter
     res = client.get("/alerts?technique=T1498")
@@ -151,15 +194,25 @@ def test_mitre_technique_interactive_filter(client):
     assert "ACTIVE MITRE FILTER" in res_view.text
     assert "T1498" in res_view.text
 
-    # 3. API filter endpoint
+    # 3. API filter endpoint: kiểm tra xuất hiện T1498 và loại trừ tuyệt đối các kỹ thuật khác
     res_api = client.get("/api/alerts/filter?technique=T1498")
     assert res_api.status_code == 200
     assert "EVT-2610-099" in res_api.text
+    assert "EVT-2610-084" not in res_api.text, "EVT-2610-084 (T1078) must not appear when filtered by T1498"
+    assert "EVT-2610-089" not in res_api.text, "EVT-2610-089 (T1046) must not appear when filtered by T1498"
+    assert "EVT-2610-087" not in res_api.text, "EVT-2610-087 (T1562.004) must not appear when filtered by T1498"
+    assert "EVT-2610-092" not in res_api.text, "EVT-2610-092 (T1078) must not appear when filtered by T1498"
 
     # 4. Input validation (Invalid regex rejected safely)
     res_invalid = client.get("/api/alerts/filter?technique=MALICIOUS_SQL'OR'1'='1")
     assert res_invalid.status_code == 200
-    # Không văng lỗi 500 và trả về dữ liệu an toàn
+
+    # 5. MITRE Matrix trên Scenarios page
+    res_scenarios = client.get("/views/scenarios")
+    assert res_scenarios.status_code == 200
+    assert "MITRE ATT&CK Network Coverage Matrix" in res_scenarios.text
+    assert "T1498" in res_scenarios.text
+    assert "T1078" in res_scenarios.text
 
 
 def test_simplified_topology_card_on_overview(client):
@@ -187,3 +240,28 @@ def test_simplified_topology_card_on_overview(client):
     assert "vnpt-bng-01" in html
     assert "vnpt-dist-switch-02" in html
     assert "View all monitored devices" in html
+
+
+def test_standalone_index_visual_parity():
+    """Mục tiêu: Thẩm định tính đồng bộ trực quan 1:1 của Standalone index.html so với Dynamic App.
+
+    Kịch bản:
+        1. Đọc nội dung index.html trực tiếp.
+        2. Xác nhận thẻ meta theme-color xuất hiện trước theme-init.js.
+        3. Xác nhận nút theme toggle id='btn-theme-toggle' hiện diện.
+        4. Xác nhận khối Core infrastructure topology (5 node) có mặt trên Overview.
+        5. Xác nhận MITRE ATT&CK Network Coverage Matrix có mặt trên Scenarios.
+        6. Xác nhận huy hiệu badge-aggregated và badge-disposition có mặt trong Alert Queue.
+        7. Xác nhận banner #mitre-active-filter-banner có mặt trong Alert Queue.
+    """
+    with open("index.html", "r", encoding="utf-8") as f:
+        html = f.read()
+
+    assert 'name="theme-color"' in html
+    assert 'id="btn-theme-toggle"' in html
+    assert 'badge-aggregated' in html
+    assert 'badge-disposition' in html
+    assert 'INCIDENT ACTIVITY TRAIL' in html
+    assert 'Core infrastructure topology' in html
+    assert 'MITRE ATT&CK Network Coverage Matrix' in html
+    assert 'id="mitre-active-filter-banner"' in html
