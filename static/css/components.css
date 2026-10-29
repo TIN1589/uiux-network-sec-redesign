@@ -4093,3 +4093,47 @@ html[data-theme="dark"] .device-card.silent {
 html[data-theme="dark"] .device-telemetry-strip.silent {
   background-color: rgba(245, 158, 11, 0.1) !important;
 }
+
+/* Dark mode Mobile Alerts Card (< 768px - WCAG AA Compliant) */
+html[data-theme="dark"] .mobile-alert-card {
+  background-color: var(--color-surface-card, #16181A) !important;
+  border-color: var(--color-border-card, #272A2E) !important;
+}
+
+html[data-theme="dark"] .mobile-alert-card:hover {
+  background-color: var(--color-surface-card-subtle, #1C1E22) !important;
+  border-color: var(--color-border-divider, #32363C) !important;
+}
+
+html[data-theme="dark"] .m-alert-row3 {
+  border-top-color: var(--color-border-card, #272A2E) !important;
+}
+
+html[data-theme="dark"] .m-rule-tag,
+html[data-theme="dark"] .m-time-text,
+html[data-theme="dark"] .m-meta-entity {
+  color: var(--color-text-secondary, #9E9B93) !important;
+}
+
+/* Dark mode Mobile KPI Total Banner (< 768px - WCAG AA Compliant) */
+html[data-theme="dark"] .kpi-strip-5 .kpi-cell-total,
+html[data-theme="dark"] .kpi-cell-total {
+  background-color: var(--color-surface-card, #16181A) !important;
+  border-bottom-color: var(--color-border-card, #272A2E) !important;
+}
+
+/* Dark mode Button & Table Hover States */
+html[data-theme="dark"] .soc-btn-outline:hover,
+html[data-theme="dark"] .soc-btn-secondary:hover {
+  background-color: var(--color-surface-card-subtle, #1C1E22) !important;
+  color: var(--color-text-primary, #F1F0EB) !important;
+}
+
+html[data-theme="dark"] .kpi-cell.clickable:hover {
+  background-color: var(--color-surface-card-subtle, #1C1E22) !important;
+}
+
+html[data-theme="dark"] .soc-table tr.clickable:hover td {
+  background-color: var(--color-surface-card-subtle, #1C1E22) !important;
+}
+
