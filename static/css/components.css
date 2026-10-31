@@ -942,9 +942,9 @@ input, select, textarea {
 
 .segmented-pill-btn.active {
 
-  background-color: var(--color-obsidian-900);
+  background-color: var(--seg-on-bg);
 
-  color: #FFFFFF;
+  color: var(--seg-on-text);
 
   box-shadow: var(--shadow-2xs);
 
@@ -4044,17 +4044,17 @@ td.row-action-cell.menu-open,
 
 /* Aggregated Incident Badge (hits > 1) */
 .badge-aggregated {
-  background-color: #F4F7E6;
-  color: #4D6400;
-  border: 1px solid #D6E899;
+  background-color: var(--bg-inset);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 html[data-theme="dark"] .badge-aggregated {
-  background-color: rgba(198, 241, 53, 0.14) !important;
-  color: var(--color-accent-lime) !important;
-  border-color: rgba(198, 241, 53, 0.35) !important;
+  background-color: var(--bg-inset) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-default) !important;
 }
 
 /* Disposition Badges */
@@ -4410,8 +4410,8 @@ html[data-theme="dark"] .segmented-pill-btn:hover {
 }
 
 html[data-theme="dark"] .segmented-pill-btn.active {
-  background-color: var(--color-accent-lime, #C6F135) !important;
-  color: #0E0F0C !important;
+  background-color: var(--seg-on-bg) !important;
+  color: var(--seg-on-text) !important;
   font-weight: 700;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
