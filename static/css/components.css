@@ -4066,9 +4066,15 @@ html[data-theme="dark"] .badge-aggregated {
 }
 
 /* Disposition Badges */
+/* B13: Cho phep badge disposition xuong dong mem mai khi text dai, khong vo layout */
 .badge-disposition {
   font-weight: 600;
   letter-spacing: 0.02em;
+  white-space: normal;
+  line-height: 1.25;
+  display: inline-block;
+  max-width: 100%;
+  word-break: break-word;
 }
 .badge-disposition-tp {
   background-color: #FEE4E2;

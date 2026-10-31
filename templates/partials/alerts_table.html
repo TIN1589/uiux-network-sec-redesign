@@ -25,7 +25,8 @@
           <th scope="col" style="width: 150px;">SOURCE / DESTINATION</th>
           <th scope="col" style="width: 170px; min-width: 170px;">ASSET</th>
           <th scope="col" style="width: 130px;">OBSERVED</th>
-          <th scope="col" style="width: 110px;">STATE</th>
+          <!-- B13: Mo rong cot STATE tu 110px len 135px de chip dai khong bi vo layout -->
+          <th scope="col" style="width: 135px; min-width: 135px;">STATE</th>
           <th scope="col" style="width: 120px; text-align: right;"><span class="sr-only">Action</span></th>
         </tr>
       </thead>
@@ -78,7 +79,7 @@
           </td>
           <td>
             <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
-              <span class="soc-badge badge-{{ a.state | lower }}">{{ a.state }}</span>
+              <span class="soc-badge badge-{{ a.state | lower }}" title="Status: {{ a.state }}">{{ a.state }}</span>
               {% if a.state == 'Resolved' and a.disposition %}
               <span class="soc-badge badge-disposition {% if 'True Positive' in a.disposition %}badge-disposition-tp{% elif 'False Positive' in a.disposition %}badge-disposition-fp{% else %}badge-disposition-bp{% endif %}"
                     style="font-size: 10px; padding: 2px 6px;" title="{{ a.disposition }}">
