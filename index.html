@@ -405,7 +405,7 @@
 
         <!-- Role Switcher Section (ASSUMPTION-03) -->
 
-        <div style="padding: 12px 16px;">
+        <div id="role-demo-switcher" style="padding: 12px 16px;">
 
           <div style="font-size: 11px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">
 
@@ -1515,7 +1515,7 @@
 
             class="segmented-pill-btn state-pill active">
 
-      All <span style="margin-left: 4px; opacity: 0.8;">6</span>
+      All <span style="margin-left: 4px; opacity: 0.8;" title="6 total alerts in demo view">(6 total)</span>
 
     </button>
 
@@ -1531,7 +1531,7 @@
 
             class="segmented-pill-btn state-pill ">
 
-      New <span style="margin-left: 4px; opacity: 0.8;">4</span>
+      New <span style="margin-left: 4px; opacity: 0.8;" title="4 in database">(4)</span>
 
     </button>
 
@@ -1547,7 +1547,7 @@
 
             class="segmented-pill-btn state-pill ">
 
-      Investigating <span style="margin-left: 4px; opacity: 0.8;">1</span>
+      Investigating <span style="margin-left: 4px; opacity: 0.8;" title="1 in demo view">(1)</span>
 
     </button>
 
@@ -1563,7 +1563,7 @@
 
             class="segmented-pill-btn state-pill ">
 
-      Resolved <span style="margin-left: 4px; opacity: 0.8;">1</span>
+      Resolved <span style="margin-left: 4px; opacity: 0.8;" title="1 in demo view">(1)</span>
 
     </button>
 
@@ -1583,7 +1583,7 @@
 
     <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
 
-      <button type="button" onclick="executeBulkState('Acknowledged')" class="soc-btn soc-btn-sm" style="background-color: #FFFFFF; color: var(--color-obsidian-900);">
+      <button type="button" data-min-role="tier1" onclick="executeBulkState('Acknowledged')" class="soc-btn soc-btn-sm" style="background-color: #FFFFFF; color: var(--color-obsidian-900);">
 
         Acknowledge
 
@@ -1851,11 +1851,7 @@
 
       <h2 class="soc-card-title">Detections</h2>
 
-      <p id="al-events-found-sub" style="font-size: 12px; color: var(--color-text-muted); margin-top: 2px;">
-
-        6 events match
-
-      </p>
+      <p id="al-events-found-sub" style="font-size: 12px; color: var(--color-text-muted); margin-top: 2px;">Showing 5 matching alerts</p>
 
     </div>
 
@@ -1887,11 +1883,12 @@
 
           <th scope="col" style="width: 150px;">SOURCE / DESTINATION</th>
 
-          <th scope="col" style="width: 140px;">ASSET</th>
+          <th scope="col" style="width: 170px; min-width: 170px;">ASSET</th>
 
           <th scope="col" style="width: 130px;">OBSERVED</th>
 
-          <th scope="col" style="width: 110px;">STATE</th>
+          <!-- B13: Mo rong cot STATE tu 110px len 135px -->
+          <th scope="col" style="width: 135px; min-width: 135px;">STATE</th>
 
           <th scope="col" style="width: 120px; text-align: right;"><span class="sr-only">Action</span></th>
 
@@ -3308,7 +3305,8 @@
 
             <div class="soc-input-wrap">
 
-              <select id="sc-technique" name="code" onchange="handleScenarioTechniqueChange()" class="soc-select">
+              <!-- B9: Dropdown Attack technique -->
+              <select id="sc-technique" name="code" onchange="handleScenarioTechniqueChange(); this.title = this.options[this.selectedIndex].text;" title="T1046 – Network Service Scanning" class="soc-select">
 
                 <option value="T1046">T1046 – Network Service Scanning</option>
 
@@ -3372,7 +3370,8 @@
 
             <div class="soc-input-wrap">
 
-              <select id="sc-linked-alert" name="linkedEventId" onchange="updateComputedDeltaWell()" class="soc-select font-mono">
+              <!-- B9: Dropdown Linked live alert -->
+              <select id="sc-linked-alert" name="linkedEventId" onchange="updateComputedDeltaWell(); this.title = this.options[this.selectedIndex].text;" title="Rule 100200 · Port scan detected · 01:10:47.8" class="soc-select font-mono">
 
                 <option value="EVT-2610-089">Rule 100200 · Port scan detected · 01:10:47.8</option>
 
@@ -3482,7 +3481,7 @@
 
           <div style="padding-bottom: 10px;">
 
-            <label for="sc-detected-check" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+            <label for="sc-detected-check" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; min-height: 36px; padding: 4px 0;">
 
               <input type="checkbox" id="sc-detected-check" name="detected" checked class="soc-checkbox" />
 
@@ -3498,7 +3497,7 @@
 
             <label for="sc-notes" class="soc-label">Notes</label>
 
-            <textarea id="sc-notes" name="notes" rows="2" placeholder="What happened, what was observed" class="soc-textarea" style="min-height: 56px; resize: vertical;">Kịch bản kiểm thử E2E tự động hóa Playwright đạt chuẩn nghiệm thu VNPT N4.2.</textarea>
+            <textarea id="sc-notes" name="notes" rows="2" placeholder="What happened, what was observed" spellcheck="false" autocapitalize="off" autocomplete="off" class="soc-textarea" style="min-height: 72px; resize: vertical;">Kịch bản kiểm thử E2E tự động hóa Playwright đạt chuẩn nghiệm thu VNPT N4.2.</textarea>
 
           </div>
 
@@ -4382,6 +4381,8 @@
   <div class="drawer-action-triage-row">
 
     <button type="button"
+
+            data-min-role="tier1"
 
             hx-post="/api/alerts/EVT-2610-099/state"
 
