@@ -1174,6 +1174,8 @@ input, select, textarea {
 
   box-sizing: border-box;
 
+  resize: vertical;
+
   outline: none !important;
 
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
@@ -1206,9 +1208,9 @@ input, select, textarea {
 
   outline: none !important;
 
-  border-color: #141413 !important;
+  border-color: var(--focus-ring) !important;
 
-  box-shadow: 0 0 0 1px #141413 !important;
+  box-shadow: 0 0 0 1px var(--focus-ring) !important;
 
 }
 
