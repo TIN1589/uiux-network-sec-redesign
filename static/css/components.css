@@ -3467,9 +3467,9 @@ td.row-action-cell.menu-open,
 
   width: 100%;
 
-  border-radius: 3px;
+  border-radius: 4px;
 
-  background-color: #EBE8E0;
+  background-color: var(--grid);
 
 }
 
@@ -3479,9 +3479,9 @@ td.row-action-cell.menu-open,
 
   height: 100%;
 
-  border-radius: 3px;
+  border-radius: 4px;
 
-  background-color: #141413;
+  background-color: var(--bar-fill);
 
   transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -3503,7 +3503,7 @@ td.row-action-cell.menu-open,
 
   height: 20px;
 
-  background-color: var(--color-obsidian-900);
+  background-color: var(--text-primary);
 
 }
 
@@ -3519,7 +3519,7 @@ td.row-action-cell.menu-open,
 
   font-size: 11px;
 
-  color: var(--color-text-secondary);
+  color: var(--text-muted);
 
   white-space: nowrap;
 
