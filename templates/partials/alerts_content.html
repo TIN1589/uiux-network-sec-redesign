@@ -59,7 +59,7 @@
             hx-include="#alerts-filter-form"
             onclick="const h = document.getElementById('al-state-hidden'); if(h) h.value='ALL'; document.querySelectorAll('.state-pill').forEach(b => b.classList.remove('active')); this.classList.add('active');"
             class="segmented-pill-btn state-pill {% if not current_state or current_state == 'ALL' %}active{% endif %}">
-      All <span style="margin-left: 4px; opacity: 0.8;">{{ total_count }}</span>
+      All <span style="margin-left: 4px; opacity: 0.8;" title="{{ total_count }} total in database">({{ total_count }} total)</span>
     </button>
     <button type="button"
             hx-get="/api/alerts/filter?state=New"
@@ -67,7 +67,7 @@
             hx-include="#alerts-filter-form"
             onclick="const h = document.getElementById('al-state-hidden'); if(h) h.value='New'; document.querySelectorAll('.state-pill').forEach(b => b.classList.remove('active')); this.classList.add('active');"
             class="segmented-pill-btn state-pill {% if current_state == 'New' %}active{% endif %}">
-      New <span style="margin-left: 4px; opacity: 0.8;">{{ alerts_stats.new }}</span>
+      New <span style="margin-left: 4px; opacity: 0.8;" title="{{ alerts_stats.new }} in database">({{ alerts_stats.new }})</span>
     </button>
     <button type="button"
             hx-get="/api/alerts/filter?state=Investigating"
@@ -75,7 +75,7 @@
             hx-include="#alerts-filter-form"
             onclick="const h = document.getElementById('al-state-hidden'); if(h) h.value='Investigating'; document.querySelectorAll('.state-pill').forEach(b => b.classList.remove('active')); this.classList.add('active');"
             class="segmented-pill-btn state-pill {% if current_state == 'Investigating' %}active{% endif %}">
-      Investigating <span style="margin-left: 4px; opacity: 0.8;">{{ alerts_stats.investigating }}</span>
+      Investigating <span style="margin-left: 4px; opacity: 0.8;" title="{{ alerts_stats.investigating }} in database">({{ alerts_stats.investigating }})</span>
     </button>
     <button type="button"
             hx-get="/api/alerts/filter?state=Resolved"
@@ -83,7 +83,7 @@
             hx-include="#alerts-filter-form"
             onclick="const h = document.getElementById('al-state-hidden'); if(h) h.value='Resolved'; document.querySelectorAll('.state-pill').forEach(b => b.classList.remove('active')); this.classList.add('active');"
             class="segmented-pill-btn state-pill {% if current_state == 'Resolved' %}active{% endif %}">
-      Resolved <span style="margin-left: 4px; opacity: 0.8;">{{ alerts_stats.resolved }}</span>
+      Resolved <span style="margin-left: 4px; opacity: 0.8;" title="{{ alerts_stats.resolved }} in database">({{ alerts_stats.resolved }})</span>
     </button>
   </div>
 
