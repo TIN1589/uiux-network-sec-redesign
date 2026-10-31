@@ -3689,16 +3689,24 @@ td.row-action-cell.menu-open,
 
 
 
+/* B9: Mo rong cot Attack technique va Linked alert de hien thi day du chu */
 .sc-inputs-grid {
-
   display: grid;
-
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-
+  grid-template-columns: minmax(280px, 1.4fr) minmax(130px, 0.8fr) minmax(120px, 0.7fr) minmax(300px, 1.5fr);
   gap: 16px;
-
   align-items: flex-start;
+}
 
+@media (max-width: 1279.98px) {
+  .sc-inputs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .sc-inputs-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 

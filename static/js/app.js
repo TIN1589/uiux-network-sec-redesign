@@ -15,9 +15,27 @@ export const state = {
   editingScenarioId: null,
   autoRefreshOn: true,
   secSinceRefresh: 5,
-  currentRole: 'admin', // 'tier1' | 'tier2' | 'admin' — ASSUMPTION-03
+  currentRole: 'admin', // 'guest' | 'tier1' | 'tier2' | 'admin'
+  authenticatedRole: null,
   csrfToken: null
 };
+
+function getCsrfToken() {
+  const cookie = document.cookie
+    .split('; ')
+    .find((item) => item.startsWith('csrf_token='));
+  return cookie ? decodeURIComponent(cookie.slice('csrf_token='.length)) : '';
+}
+
+function csrfHeaders() {
+  const token = getCsrfToken();
+  return token ? { 'X-CSRF-Token': token } : {};
+}
+
+document.addEventListener('htmx:configRequest', (event) => {
+  const token = getCsrfToken();
+  if (token) event.detail.headers['X-CSRF-Token'] = token;
+});
 
 // Navigation and mobile drawer control
 /**
@@ -229,6 +247,7 @@ export async function executeBulkState(newState) {
 
     const response = await fetch('/api/alerts/bulk-state', {
       method: 'POST',
+      headers: csrfHeaders(),
       body: formData
     });
 
@@ -282,7 +301,11 @@ export function resetAllAlertFilters() {
 
 // Attack scenarios logic and form presets
 export function handleScenarioTechniqueChange() {
-  const tech = document.getElementById('sc-technique')?.value;
+  const techEl = document.getElementById('sc-technique');
+  const tech = techEl?.value;
+  if (techEl && techEl.selectedIndex >= 0) {
+    techEl.title = techEl.options[techEl.selectedIndex].text;
+  }
   const presets = {
     T1046: { tool: 'nmap 7.94', rule: '100200', alert: 'EVT-2610-089' },
     T1110: { tool: 'hydra 9.5', rule: '100210', alert: 'EVT-2610-092' },
@@ -298,7 +321,12 @@ export function handleScenarioTechniqueChange() {
 
     if (toolEl) toolEl.value = preset.tool;
     if (ruleEl) ruleEl.value = preset.rule;
-    if (alertEl) alertEl.value = preset.alert;
+    if (alertEl) {
+      alertEl.value = preset.alert;
+      if (alertEl.selectedIndex >= 0) {
+        alertEl.title = alertEl.options[alertEl.selectedIndex].text;
+      }
+    }
 
     updateComputedDeltaWell();
   }
@@ -317,13 +345,20 @@ export function handleScenarioRuleChange() {
     const alertEl = document.getElementById('sc-linked-alert');
     if (alertEl) {
       alertEl.value = mapRuleToAlert[rule];
+      if (alertEl.selectedIndex >= 0) {
+        alertEl.title = alertEl.options[alertEl.selectedIndex].text;
+      }
       updateComputedDeltaWell();
     }
   }
 }
 
 export function updateComputedDeltaWell() {
-  const evId = document.getElementById('sc-linked-alert')?.value;
+  const alertEl = document.getElementById('sc-linked-alert');
+  const evId = alertEl?.value;
+  if (alertEl && alertEl.selectedIndex >= 0) {
+    alertEl.title = alertEl.options[alertEl.selectedIndex].text;
+  }
   if (!evId) return;
 
   // Query delta info via API
@@ -528,11 +563,11 @@ export function showForgotCredentialsHint() {
     demoBox.style.transition = 'all 0.3s ease';
     demoBox.style.borderColor = 'var(--color-accent-lime)';
     demoBox.style.boxShadow = '0 0 0 2px var(--color-accent-lime)';
-    demoBox.style.backgroundColor = 'rgba(198, 241, 53, 0.18)';
+    demoBox.style.backgroundColor = 'var(--color-surface-highlight)';
     setTimeout(() => {
       demoBox.style.borderColor = 'var(--color-border-card)';
       demoBox.style.boxShadow = 'none';
-      demoBox.style.backgroundColor = 'rgba(231, 228, 220, 0.45)';
+      demoBox.style.backgroundColor = 'var(--color-surface-card-subtle)';
     }, 1800);
   }
 }
@@ -541,7 +576,7 @@ export async function submitSignInForm(e) {
   e.preventDefault();
   const user = (document.getElementById('signin-user')?.value || '').trim();
   const pwd = document.getElementById('signin-pwd')?.value || '';
-  const csrf = document.getElementById('signin-csrf')?.value || state.csrfToken || '';
+  let csrf = document.getElementById('signin-csrf')?.value || state.csrfToken || '';
 
   if (!user || pwd.length < 4) {
     const err = document.getElementById('signin-err-banner');
@@ -553,6 +588,13 @@ export async function submitSignInForm(e) {
   }
 
   try {
+    if (!csrf) {
+      const tokenResponse = await fetch('/api/auth/csrf-token');
+      if (tokenResponse.ok) {
+        const tokenData = await tokenResponse.json();
+        csrf = tokenData.csrf_token || '';
+      }
+    }
     const formData = new FormData();
     formData.append('username', user);
     formData.append('password', pwd);
@@ -579,6 +621,7 @@ export async function submitSignInForm(e) {
     sessionStorage.setItem('soc_auth_role', assignedRole);
     state.isAuthenticated = true;
     state.currentUser = data.username || user;
+    state.authenticatedRole = assignedRole;
 
     const analystNameEl = document.getElementById('topbar-analyst-name');
     if (analystNameEl) analystNameEl.textContent = data.username || user;
@@ -598,6 +641,7 @@ export async function submitSignInForm(e) {
       sessionStorage.setItem('soc_auth_role', assignedRole);
       state.isAuthenticated = true;
       state.currentUser = user;
+      state.authenticatedRole = assignedRole;
 
       const analystNameEl = document.getElementById('topbar-analyst-name');
       if (analystNameEl) analystNameEl.textContent = user;
@@ -620,7 +664,7 @@ export async function submitSignInForm(e) {
 
 // Analyst menu and role switcher
 
-const ROLE_HIERARCHY = { tier1: 1, tier2: 2, admin: 3 };
+const ROLE_HIERARCHY = { guest: 0, tier1: 1, tier2: 2, admin: 3 };
 const ROLE_LABELS = { tier1: 'Tier-1 Responder', tier2: 'Tier-2 Analyst', admin: 'SecOps Admin' };
 
 export function toggleAnalystMenu() {
@@ -640,7 +684,12 @@ export function closeAnalystMenu() {
 }
 
 export function switchRole(role) {
-  if (!ROLE_HIERARCHY[role]) return;
+  if (!Object.hasOwn(ROLE_HIERARCHY, role) || role === 'guest') return;
+  const isStandalone = window.location.protocol === 'file:';
+  if (!isStandalone && (!state.isAuthenticated || role !== state.authenticatedRole)) {
+    showToast('light', 'Your role is assigned by the authenticated session');
+    return;
+  }
   state.currentRole = role;
 
   // Update checkmarks
@@ -658,18 +707,27 @@ export function switchRole(role) {
 }
 
 export function applyRolePermissions(role) {
-  const level = ROLE_HIERARCHY[role] || 3;
+  const level = ROLE_HIERARCHY[role] ?? 0;
 
   // Elements marked with data-min-role get hidden if current role < required
   document.querySelectorAll('[data-min-role]').forEach(el => {
     const minRole = el.getAttribute('data-min-role');
-    const required = ROLE_HIERARCHY[minRole] || 1;
+    const required = ROLE_HIERARCHY[minRole] ?? 1;
     el.classList.toggle('role-hidden', level < required);
   });
+  document.querySelectorAll(
+    '[hx-post$="/ack"], .drawer-btn-ack, #bulk-action-bar button[onclick*="Acknowledged"], ' +
+    '.alert-row-checkbox, #al-select-all'
+  ).forEach(el => el.classList.toggle('role-hidden', level < ROLE_HIERARCHY.tier1));
+  const demoSwitcher = document.getElementById('role-demo-switcher');
+  demoSwitcher?.classList.toggle('hidden', window.location.protocol !== 'file:');
 }
 
 export function handleSignOut() {
-  fetch('/api/auth/logout', { method: 'POST' })
+  fetch('/api/auth/logout', {
+    method: 'POST',
+    headers: csrfHeaders()
+  })
     .catch(() => {})
     .finally(() => {
       closeAnalystMenu();
@@ -678,6 +736,9 @@ export function handleSignOut() {
       sessionStorage.removeItem('soc_guest_mode');
       state.isAuthenticated = false;
       state.currentUser = null;
+      state.authenticatedRole = null;
+      state.currentRole = 'guest';
+      applyRolePermissions('guest');
 
       const nameEl = document.getElementById('topbar-analyst-name');
       if (nameEl) nameEl.textContent = 'Guest';
@@ -1178,6 +1239,8 @@ window.handleSignOut = handleSignOut;
 function handleUnauthenticatedState(isHashSignIn) {
   state.isAuthenticated = false;
   state.currentUser = null;
+  state.authenticatedRole = null;
+  state.currentRole = 'guest';
   const isGuestMode = sessionStorage.getItem('soc_guest_mode') === 'true';
 
   const nameEl = document.getElementById('topbar-analyst-name');
@@ -1227,6 +1290,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if (data.authenticated) {
         state.isAuthenticated = true;
         state.currentUser = data.username;
+        state.authenticatedRole = data.role || null;
         sessionStorage.removeItem('soc_guest_mode');
         sessionStorage.setItem('soc_auth_user', data.username);
         if (data.role) sessionStorage.setItem('soc_auth_role', data.role);
@@ -1252,6 +1316,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if (savedUser) {
         state.isAuthenticated = true;
         state.currentUser = savedUser;
+        state.authenticatedRole = savedRole || null;
         const nameEl = document.getElementById('topbar-analyst-name');
         if (nameEl) nameEl.textContent = savedUser;
         const avatarEl = document.getElementById('analyst-avatar-circle');

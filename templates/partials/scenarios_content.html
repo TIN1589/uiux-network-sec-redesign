@@ -148,7 +148,8 @@
           <div class="soc-form-group">
             <label for="sc-technique" class="soc-label">Attack technique</label>
             <div class="soc-input-wrap">
-              <select id="sc-technique" name="code" onchange="handleScenarioTechniqueChange()" class="soc-select">
+              <!-- B9: Dropdown Attack technique hien thi day du chu va cap nhat tooltip title khi chon -->
+              <select id="sc-technique" name="code" onchange="handleScenarioTechniqueChange(); this.title = this.options[this.selectedIndex].text;" title="T1046 – Network Service Scanning" class="soc-select">
                 <option value="T1046">T1046 – Network Service Scanning</option>
                 <option value="T1110">T1110 – SSH Credential Brute Force</option>
                 <option value="T1557">T1557 – Spanning-Tree BPDU Spoofing</option>
@@ -180,7 +181,8 @@
           <div class="soc-form-group">
             <label for="sc-linked-alert" class="soc-label">Linked live alert</label>
             <div class="soc-input-wrap">
-              <select id="sc-linked-alert" name="linkedEventId" onchange="updateComputedDeltaWell()" class="soc-select font-mono">
+              <!-- B9: Dropdown Linked live alert cap nhat tooltip title khi chon -->
+              <select id="sc-linked-alert" name="linkedEventId" onchange="updateComputedDeltaWell(); this.title = this.options[this.selectedIndex].text;" title="Rule 100200 · Port scan detected · 01:10:47.8" class="soc-select font-mono">
                 <option value="EVT-2610-089">Rule 100200 · Port scan detected · 01:10:47.8</option>
                 <option value="EVT-2610-092">Rule 100210 · SSH Brute-force attempt · 01:07:11.4</option>
                 <option value="EVT-2610-099">Rule 100999 · Root Bridge BPDU inject · 01:12:04.6</option>
