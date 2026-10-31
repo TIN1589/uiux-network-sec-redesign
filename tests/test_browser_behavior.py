@@ -98,6 +98,43 @@ def test_local_icons_and_compact_desktop_without_external_network(browser_instan
     context.close()
 
 
+def test_standalone_switch_tab_syncs_desktop_and_mobile_navigation(browser_instance):
+    """Standalone content and both navigation variants must expose the same active tab."""
+    context = browser_instance.new_context(viewport={"width": 390, "height": 844})
+    page = context.new_page()
+    page.goto(Path("index.html").resolve().as_uri(), wait_until="networkidle")
+    page.evaluate(
+        """() => {
+          const modal = document.getElementById('signin-modal');
+          if (modal) modal.classList.remove('active');
+          window.switchTab('devices');
+        }"""
+    )
+
+    state = page.evaluate(
+        """() => ({
+          devicesVisible: getComputedStyle(document.getElementById('tab-devices')).display !== 'none',
+          desktopDevicesActive: document.getElementById('nav-devices').classList.contains('active'),
+          mobileDevicesActive: document.getElementById('mob-nav-devices').classList.contains('active'),
+          desktopOverviewActive: document.getElementById('nav-overview').classList.contains('active'),
+          mobileOverviewActive: document.getElementById('mob-nav-overview').classList.contains('active'),
+          desktopCurrent: document.getElementById('nav-devices').getAttribute('aria-current'),
+          mobileCurrent: document.getElementById('mob-nav-devices').getAttribute('aria-current')
+        })"""
+    )
+
+    assert state == {
+        "devicesVisible": True,
+        "desktopDevicesActive": True,
+        "mobileDevicesActive": True,
+        "desktopOverviewActive": False,
+        "mobileOverviewActive": False,
+        "desktopCurrent": "page",
+        "mobileCurrent": "page",
+    }
+    context.close()
+
+
 def test_mobile_computed_contrast_dark_mode(browser_instance):
     """Mục tiêu: Đảm bảo các component trên Mobile 390px trong Dark Mode đạt chuẩn WCAG AA thực tế.
 

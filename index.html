@@ -4996,17 +4996,23 @@
 
           });
 
-          document.querySelectorAll('.soc-nav-item').forEach(link => {
+          tabs.forEach(id => {
 
-            const href = link.getAttribute('href');
+            [`nav-${id}`, `mob-nav-${id}`].forEach(navId => {
 
-            const isActive = (tabId === 'overview' && href === '/') || href === `/${tabId}`;
+              const link = document.getElementById(navId);
 
-            link.classList.toggle('active', isActive);
+              if (!link) return;
 
-            if (isActive) link.setAttribute('aria-current', 'page');
+              const isActive = id === tabId;
 
-            else link.removeAttribute('aria-current');
+              link.classList.toggle('active', isActive);
+
+              if (isActive) link.setAttribute('aria-current', 'page');
+
+              else link.removeAttribute('aria-current');
+
+            });
 
           });
 
