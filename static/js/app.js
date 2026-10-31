@@ -198,18 +198,23 @@ export function clearBulkSelection() {
   syncBulkBar();
 }
 
+/**
+ * Đồng bộ thanh thao tác chọn nhiều và khoảng đệm bảo vệ nội dung trên mobile.
+ *
+ * @returns {void}
+ */
 export function syncBulkBar() {
   const bar = document.getElementById('bulk-action-bar');
   const countText = document.getElementById('bulk-count-text');
   if (!bar) return;
 
   const count = state.selectedAlertIds.size;
-  if (count > 0) {
-    bar.classList.remove('hidden');
-    if (countText) countText.textContent = `${count} selected`;
-  } else {
-    bar.classList.add('hidden');
-  }
+  const hasSelection = count > 0;
+  const alertsPage = bar.closest('#tab-alerts') || document.getElementById('tab-alerts');
+
+  bar.classList.toggle('hidden', !hasSelection);
+  alertsPage?.classList.toggle('bulk-selection-active', hasSelection);
+  if (countText) countText.textContent = `${count} selected`;
 }
 
 export async function executeBulkState(newState) {

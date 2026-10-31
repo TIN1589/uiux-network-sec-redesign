@@ -7,11 +7,25 @@ Tuân thủ nghiêm ngặt quy chuẩn tại .agents/rules/release-gates.md:
 """
 
 import re
+from pathlib import Path
 
 import pytest
 from playwright.sync_api import sync_playwright
 
 BASE_URL = "http://127.0.0.1:8000"
+EVIDENCE_ROOT = Path("evidence/04_ui_bugfixes_2026-10-30")
+
+
+def _capture_evidence(page, filename: str) -> None:
+    """Lưu ảnh nghiệm thu có thể tái tạo từ chính kịch bản browser test."""
+    EVIDENCE_ROOT.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(EVIDENCE_ROOT / filename), full_page=False)
+
+
+def _wait_for_dashboard_ready(page) -> None:
+    """Chờ splash PWA được tháo khỏi DOM trước khi đo hoặc chụp dashboard."""
+    if page.locator("#pwa-splash-overlay").count():
+        page.wait_for_selector("#pwa-splash-overlay", state="detached", timeout=5000)
 
 
 def _parse_rgb(rgb_str: str) -> tuple[int, int, int]:
@@ -390,6 +404,148 @@ def test_charts_legend_and_signin_panel_contrast_dark_mode(browser_instance):
     assert _contrast_ratio_rgb(inp_color, ctrl_bg) >= 7.0, "Sign-in input text must pass WCAG AAA (7.0:1)"
 
     context.close()
+
+
+def test_signin_history_restore_clears_loading_state_and_respects_session(browser_instance):
+    """BFCache must not leave Sign in disabled or expose /login to an active session."""
+    idle_context = browser_instance.new_context(viewport={"width": 1440, "height": 900})
+    idle_page = idle_context.new_page()
+    idle_page.goto(f"{BASE_URL}/login", wait_until="networkidle")
+
+    idle_page.evaluate(
+        """() => {
+          const form = document.querySelector('.auth-form');
+          const button = document.getElementById('signin-btn');
+          form.classList.add('htmx-request');
+          button.classList.add('htmx-request');
+          button.disabled = true;
+          button.setAttribute('aria-busy', 'true');
+          window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+        }"""
+    )
+    idle_page.wait_for_function(
+        """() => {
+          const form = document.querySelector('.auth-form');
+          const button = document.getElementById('signin-btn');
+          return !form.classList.contains('htmx-request')
+            && !button.classList.contains('htmx-request')
+            && !button.disabled;
+        }"""
+    )
+    idle_state = idle_page.evaluate(
+        """() => ({
+          buttonText: document.querySelector('#signin-btn .btn__label--idle').textContent.trim(),
+          busy: document.getElementById('signin-btn').hasAttribute('aria-busy')
+        })"""
+    )
+    assert idle_state == {"buttonText": "Sign in", "busy": False}
+    _capture_evidence(idle_page, "signin-bfcache-idle.png")
+    idle_context.close()
+
+    session_context = browser_instance.new_context(viewport={"width": 1440, "height": 900})
+    session_page = session_context.new_page()
+    session_page.goto(f"{BASE_URL}/login", wait_until="networkidle")
+    session_page.fill("#field-username", "admin")
+    session_page.fill("#field-password", "vnpt-soc-2026")
+    session_page.click("#signin-btn")
+    session_page.wait_for_url(f"{BASE_URL}/", timeout=10000)
+
+    session_page.go_back(wait_until="domcontentloaded")
+    session_page.wait_for_url(f"{BASE_URL}/", timeout=10000)
+    _wait_for_dashboard_ready(session_page)
+    assert session_page.locator("#signin-btn").count() == 0
+    _capture_evidence(session_page, "signin-back-keeps-dashboard.png")
+    session_context.close()
+
+
+def test_light_toast_keeps_readable_text_in_dark_theme(browser_instance):
+    """The light role toast must retain WCAG AA text contrast in dark theme."""
+    context = browser_instance.new_context(viewport={"width": 1440, "height": 900})
+    page = context.new_page()
+    page.goto(f"{BASE_URL}/?guest=1", wait_until="networkidle")
+    _wait_for_dashboard_ready(page)
+    page.evaluate(
+        """() => {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.querySelectorAll('.toast-item').forEach((toast) => toast.remove());
+          window.switchRole('admin');
+        }"""
+    )
+    page.wait_for_selector(".toast-light", state="visible")
+    page.wait_for_timeout(500)
+
+    toast = page.evaluate(
+        """() => {
+          const element = document.querySelector('.toast-light');
+          const style = getComputedStyle(element);
+          return {
+            text: element.textContent.trim(),
+            color: style.color,
+            background: style.backgroundColor
+          };
+        }"""
+    )
+    assert "Active Role: SecOps Admin" in toast["text"]
+    assert _contrast_ratio_rgb(toast["color"], toast["background"]) >= 4.5
+    _capture_evidence(page, "dark-theme-light-toast.png")
+    context.close()
+
+
+@pytest.mark.parametrize("width", [390, 360])
+def test_mobile_bulk_bar_does_not_shift_selected_alert_content(browser_instance, width):
+    """Selecting an alert keeps the card anchored and floats actions above bottom navigation."""
+    context = browser_instance.new_context(
+        viewport={"width": width, "height": 844},
+        device_scale_factor=2.0,
+    )
+    page = context.new_page()
+    page.goto(f"{BASE_URL}/alerts?guest=1", wait_until="networkidle")
+    _wait_for_dashboard_ready(page)
+
+    checkbox = page.locator(".mobile-alert-card .alert-row-checkbox").first
+    checkbox.scroll_into_view_if_needed()
+    before_top = page.locator(".mobile-alert-card").first.evaluate(
+        "element => element.getBoundingClientRect().top"
+    )
+    checkbox.check()
+    page.wait_for_selector("#bulk-action-bar", state="visible")
+    page.wait_for_timeout(250)
+
+    layout = page.evaluate(
+        """() => {
+          const card = document.querySelector('.mobile-alert-card');
+          const bar = document.getElementById('bulk-action-bar');
+          const nav = document.querySelector('.mobile-bottom-bar');
+          const barRect = bar.getBoundingClientRect();
+          const navRect = nav.getBoundingClientRect();
+          return {
+            cardTop: card.getBoundingClientRect().top,
+            barPosition: getComputedStyle(bar).position,
+            barLeft: barRect.left,
+            barRight: barRect.right,
+            barBottom: barRect.bottom,
+            navTop: navRect.top,
+            activePadding: document.getElementById('tab-alerts').classList.contains('bulk-selection-active'),
+            pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
+          };
+        }"""
+    )
+
+    assert abs(layout["cardTop"] - before_top) <= 1
+    assert layout["barPosition"] == "fixed"
+    assert layout["barBottom"] <= layout["navTop"] - 4
+    assert layout["barLeft"] >= 0 and layout["barRight"] <= width
+    assert layout["activePadding"]
+    assert not layout["pageOverflow"]
+    _capture_evidence(page, f"mobile-bulk-selection-{width}px.png")
+
+    page.get_by_role("button", name="Clear").click()
+    assert page.locator("#bulk-action-bar").is_hidden()
+    assert not page.locator("#tab-alerts").evaluate(
+        "element => element.classList.contains('bulk-selection-active')"
+    )
+    context.close()
+
 
 def test_service_worker_offline_cache_match_with_query_params(browser_instance):
     """Mục tiêu: Đảm bảo Service Worker xử lý query params khi offline thật sự với ignoreSearch.

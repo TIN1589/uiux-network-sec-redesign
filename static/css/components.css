@@ -2268,6 +2268,47 @@ td.row-action-cell.menu-open,
 }
 
 
+@media (max-width: 767.98px) {
+
+  .bulk-action-bar {
+
+    position: fixed;
+
+    top: auto;
+
+    right: 14px;
+
+    bottom: calc(68px + var(--sab));
+
+    left: 14px;
+
+    z-index: 45;
+
+    padding: 12px 14px;
+
+  }
+
+
+
+  .bulk-action-bar > div:last-child {
+
+    width: 100%;
+
+  }
+
+
+
+  /* Chừa chỗ cuộn cho thanh thao tác hai hàng mà không đẩy vị trí hiện tại của danh sách. */
+
+  #tab-alerts.bulk-selection-active {
+
+    padding-bottom: 132px;
+
+  }
+
+}
+
+
 
 /* SLIDE-OVER ALERT DRAWER / BOTTOM SHEET */
 
@@ -3252,7 +3293,7 @@ td.row-action-cell.menu-open,
 
   border: 1px solid var(--color-border-card);
 
-  color: var(--color-text-primary);
+  color: var(--color-obsidian-900);
 
 }
 
