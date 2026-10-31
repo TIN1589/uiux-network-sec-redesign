@@ -513,7 +513,9 @@ def run_evidence_pipeline():
 
     manifest_file = compute_manifest()
     metadata_file = write_release_metadata(commit_sha, manifest_file)
-    print(f"=== Evidence Generation Complete: {manifest_file} / {metadata_file} ===")
+    manifest_rel = os.path.relpath(manifest_file)
+    metadata_rel = os.path.relpath(metadata_file)
+    print(f"=== Evidence Generation Complete: {manifest_rel} / {metadata_rel} ===")
 
 
 if __name__ == "__main__":
