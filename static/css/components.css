@@ -162,15 +162,15 @@ input, select, textarea {
 
 
 
-/* Button Type 1: Primary (bg #121212, text white, pill, height 40px) */
+/* Button Type 1: Primary (bg var(--btn-pri-bg), text var(--btn-pri-text), pill, height 40px) */
 
 .soc-btn-primary {
 
-  background-color: #121212;
+  background-color: var(--btn-pri-bg);
 
-  color: #FFFFFF;
+  color: var(--btn-pri-text);
 
-  border: 1px solid #121212;
+  border: 1px solid var(--btn-pri-bg);
 
   min-height: 40px;
 
@@ -188,25 +188,23 @@ input, select, textarea {
 
 .soc-btn-primary:hover {
 
-  background-color: #262626;
-
-  border-color: #262626;
+  opacity: 0.92;
 
 }
 
 
 
-/* Button Type 2: Secondary / Outline (bg white, border 1px #141413, pill, min-height 34px) */
+/* Button Type 2: Secondary / Outline (bg var(--btn-bg), border 1px var(--border-strong), pill, min-height 34px) */
 
 .soc-btn-outline,
 
 .soc-btn-secondary {
 
-  background-color: #FFFFFF;
+  background-color: var(--btn-bg);
 
-  color: #141413;
+  color: var(--text-primary);
 
-  border: 1px solid #141413;
+  border: 1px solid var(--border-strong);
 
   min-height: 34px;
 
@@ -222,9 +220,21 @@ input, select, textarea {
 
 .soc-btn-secondary:hover {
 
-  background-color: #F3F1EC;
+  background-color: var(--hover-bg);
 
-  color: #141413;
+  color: var(--text-primary);
+
+}
+
+
+
+#btn-theme-toggle {
+
+  background-color: var(--bg-surface);
+
+  border: 1px solid var(--border-input);
+
+  color: currentColor;
 
 }
 
