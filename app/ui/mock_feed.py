@@ -5,8 +5,8 @@ Mọi địa chỉ IP chỉ nằm trong các dải TEST-NET được bảo lưu 
 (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24). Tuyệt đối không đọc từ CSDL thật.
 """
 
-from datetime import datetime
 import random
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 TICK = 2.4

@@ -14,6 +14,7 @@ import secrets
 import time
 import urllib.parse
 from datetime import UTC, datetime, timedelta, timezone
+from pathlib import Path
 
 from fastapi import Cookie, FastAPI, Form, Request, Response
 from fastapi.responses import (
@@ -26,6 +27,10 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+STATIC_DIR = BASE_DIR / "static"
+TEMPLATES_DIR = BASE_DIR / "templates"
 
 # Cấu hình môi trường vận hành an toàn VNPT SOC
 DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() in ("1", "true", "yes")
@@ -108,23 +113,23 @@ async def security_headers_middleware(request: Request, call_next):
     return response
 
 # Mount Static Assets (CSS, JS, Icons)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     """Phục vụ file favicon.ico gốc cho các trình duyệt tự động truy vấn."""
-    return FileResponse("static/img/favicon/favicon.ico")
+    return FileResponse(STATIC_DIR / "img/favicon/favicon.ico")
 
 @app.get("/manifest.webmanifest", include_in_schema=False)
 async def webmanifest():
     """Phục vụ file Web App Manifest chuẩn cho PWA trên iOS và Android."""
-    return FileResponse("static/manifest.webmanifest", media_type="application/manifest+json")
+    return FileResponse(STATIC_DIR / "manifest.webmanifest", media_type="application/manifest+json")
 
 @app.get("/sw.js", include_in_schema=False)
 async def service_worker():
     """Phục vụ Service Worker tại root scope để có toàn quyền điều phối cache và offline."""
     return FileResponse(
-        "static/sw.js",
+        STATIC_DIR / "sw.js",
         media_type="application/javascript",
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -135,10 +140,10 @@ async def service_worker():
 @app.get("/offline", include_in_schema=False)
 async def offline_page():
     """Phục vụ trang thông báo mất kết nối mạng khi thiết bị offline hoàn toàn."""
-    return FileResponse("static/offline.html")
+    return FileResponse(STATIC_DIR / "offline.html")
 
 # Configure Jinja2 Template Engine
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Jinja2 URL generator tương thích ngược cho cả Path parameters và Query parameters
 def _jinja_url_for(name: str, **params) -> str:
@@ -2526,5 +2531,5 @@ async def export_scenarios_csv():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
 

@@ -313,10 +313,10 @@ def test_timezone_integrity_and_utcnow_deprecation():
     """Mục tiêu: Kiểm tra tuân thủ Release Gate 4 (Không dùng datetime.utcnow() và dynamic UTC).
 
     Kịch bản:
-        1. Đọc trực tiếp app.py và xác nhận không có bất kỳ lệnh datetime.utcnow() nào.
+        1. Đọc trực tiếp app/main.py và xác nhận không có bất kỳ lệnh datetime.utcnow() nào.
         2. Kiểm tra alert_observed_to_utc_iso() trả về định dạng UTC ISO-8601 hợp lệ kết thúc bằng 'Z'.
     """
-    with open("app.py", "r", encoding="utf-8") as f:
+    with open("app/main.py", "r", encoding="utf-8") as f:
         app_source = f.read()
 
     assert "datetime.utcnow()" not in app_source, "datetime.utcnow() is deprecated and forbidden by Release Gate 4"
