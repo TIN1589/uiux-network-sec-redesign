@@ -424,9 +424,9 @@ input, select, textarea {
 
 .badge-resolved {
 
-  background-color: var(--color-state-resolved-bg);
+  background-color: var(--chip-ok-bg);
 
-  color: var(--color-state-resolved-text);
+  color: var(--chip-ok-text);
 
 }
 
@@ -434,9 +434,9 @@ input, select, textarea {
 
 .badge-reporting {
 
-  background-color: #DCFCE7;
+  background-color: var(--chip-ok-bg);
 
-  color: #166534;
+  color: var(--chip-ok-text);
 
 }
 
