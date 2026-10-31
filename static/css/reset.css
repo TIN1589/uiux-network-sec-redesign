@@ -61,8 +61,36 @@ body {
   outline-offset: 2px;
 }
 
-input, select, textarea {
+/* Color scheme dark giúp trình duyệt hiển thị popup select, thanh cuộn và controls native đồng bộ với theme tối */
+[data-theme="dark"],
+[data-theme="dark"] select {
+  color-scheme: dark;
+}
+
+/* Quy chuẩn các điều khiển nhập liệu hệ thống: nền đặc, chữ rõ và viền đạt ngưỡng tương phản */
+input, textarea, select {
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  font: inherit;
   outline: none;
+}
+
+::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+/* Màu đặc cho popup option và optgroup: popup gốc của hệ điều hành không tô được nền trong suốt */
+select option, select optgroup {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+/* Tương phản cao cho văn bản được bôi đen */
+::selection {
+  background: var(--seg-on-bg);
+  color: var(--seg-on-text);
 }
 
 #app-sidebar :focus-visible {

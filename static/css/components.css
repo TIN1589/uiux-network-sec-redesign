@@ -1016,9 +1016,9 @@ input, select, textarea {
 
   border-radius: var(--radius-input);
 
-  border: 1px solid var(--color-border-input);
+  border: 1px solid var(--border-input);
 
-  background-color: #FFFFFF;
+  background-color: var(--bg-input);
 
   box-sizing: border-box;
 
@@ -1032,9 +1032,9 @@ input, select, textarea {
 
 .soc-input-icon-wrap:focus-within {
 
-  border-color: #141413 !important;
+  border-color: var(--focus-ring) !important;
 
-  box-shadow: 0 0 0 1px #141413 !important;
+  box-shadow: 0 0 0 1px var(--focus-ring) !important;
 
 }
 
@@ -1094,11 +1094,11 @@ input, select, textarea {
 
   border-radius: var(--radius-input);
 
-  border: 1px solid var(--color-border-input);
+  border: 1px solid var(--border-input);
 
-  background-color: #FFFFFF;
+  background-color: var(--bg-input);
 
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 
   box-sizing: border-box;
 
@@ -1124,11 +1124,11 @@ input, select, textarea {
 
   border-radius: var(--radius-input);
 
-  border: 1px solid var(--color-border-input);
+  border: 1px solid var(--border-input);
 
-  background-color: #FFFFFF;
+  background-color: var(--bg-input);
 
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 
   box-sizing: border-box;
 
@@ -1166,11 +1166,11 @@ input, select, textarea {
 
   border-radius: var(--radius-input);
 
-  border: 1px solid var(--color-border-input);
+  border: 1px solid var(--border-input);
 
-  background-color: #FFFFFF;
+  background-color: var(--bg-input);
 
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 
   box-sizing: border-box;
 
@@ -3083,7 +3083,7 @@ td.row-action-cell.menu-open,
 
   padding: 10px 12px;
 
-  background: rgba(231, 228, 220, 0.45);
+  background: var(--color-surface-card-subtle);
 
   border: 1px dashed var(--color-border-card);
 
@@ -3153,7 +3153,7 @@ td.row-action-cell.menu-open,
 
   flex: 1;
 
-  min-height: 32px;
+  min-height: 34px;
 
   padding: 4px 8px;
 
@@ -3167,7 +3167,7 @@ td.row-action-cell.menu-open,
 
   justify-content: center;
 
-  background: #FFFFFF;
+  background: var(--color-surface-card);
 
   border: 1px solid var(--color-border-card);
 
@@ -3185,11 +3185,11 @@ td.row-action-cell.menu-open,
 
 .signin-demo-pill:hover {
 
-  background: var(--color-bg-workspace);
+  background: var(--color-surface-hover);
 
   border-color: var(--color-border-input);
 
-  color: #000000;
+  color: var(--color-text-primary);
 
 }
 
@@ -3565,9 +3565,7 @@ td.row-action-cell.menu-open,
 
 /* Role-gated elements: hide when role is insufficient */
 
-[data-min-role="tier2"].role-hidden,
-
-[data-min-role="admin"].role-hidden {
+[data-min-role].role-hidden {
 
   display: none !important;
 
@@ -4087,16 +4085,18 @@ html[data-theme="dark"] .badge-disposition-bp {
 
 /* Dark mode inputs, selects & search fields */
 html[data-theme="dark"] .soc-input,
-html[data-theme="dark"] .soc-select {
-  background-color: var(--color-surface-card);
-  color: var(--color-text-primary);
-  border-color: var(--color-border-input);
+html[data-theme="dark"] .soc-select,
+html[data-theme="dark"] .soc-textarea {
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-input);
 }
 html[data-theme="dark"] .soc-input:focus,
-html[data-theme="dark"] .soc-select:focus {
-  border-color: var(--color-accent-lime);
+html[data-theme="dark"] .soc-select:focus,
+html[data-theme="dark"] .soc-textarea:focus {
+  border-color: var(--focus-ring);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(198, 241, 53, 0.2);
+  box-shadow: 0 0 0 2px rgba(170, 179, 192, 0.25);
 }
 
 /* Dark mode Table styling */
@@ -4317,14 +4317,14 @@ html[data-theme="dark"] .soc-table tr.clickable:hover td {
 /* COMPREHENSIVE DARK MODE OVERRIDES (REMEDIATION BATCH 3) */
 html[data-theme="dark"] .soc-input-wrap,
 html[data-theme="dark"] .soc-input-icon-wrap {
-  background-color: var(--color-surface-card, #16181A) !important;
-  border-color: var(--color-border-input, #32363C) !important;
+  background-color: var(--bg-input) !important;
+  border-color: var(--border-input) !important;
 }
 
 html[data-theme="dark"] .soc-input-wrap:focus-within,
 html[data-theme="dark"] .soc-input-icon-wrap:focus-within {
-  border-color: var(--color-accent-lime, #C6F135) !important;
-  box-shadow: 0 0 0 1px var(--color-accent-lime, #C6F135) !important;
+  border-color: var(--focus-ring) !important;
+  box-shadow: 0 0 0 1px var(--focus-ring) !important;
 }
 
 html[data-theme="dark"] .soc-input-wrap input,
