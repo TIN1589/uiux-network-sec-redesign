@@ -1252,20 +1252,39 @@ input, select, textarea {
 
 
 
+/* B11: Custom checkbox ro net tren ca hai theme voi dau tick SVG clip-path va focus ring ro rang */
 .soc-checkbox {
-
+  appearance: none;
+  -webkit-appearance: none;
   width: 16px;
-
   height: 16px;
-
+  border: 1px solid var(--border-input);
   border-radius: 4px;
-
-  border: 1px solid var(--color-border-input);
-
+  background-color: var(--bg-input);
+  display: inline-grid;
+  place-content: center;
   cursor: pointer;
+  margin: 0;
+  vertical-align: middle;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
 
-  accent-color: #121212;
+.soc-checkbox:checked {
+  background-color: var(--btn-pri-bg);
+  border-color: var(--btn-pri-bg);
+}
 
+.soc-checkbox:checked::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  background-color: var(--btn-pri-text);
+}
+
+.soc-checkbox:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 
