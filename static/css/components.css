@@ -3409,7 +3409,7 @@ td.row-action-cell.menu-open,
 
   border-radius: 3px;
 
-  background-color: #EBE8E0;
+  background-color: var(--grid);
 
   overflow: hidden;
 
@@ -3423,7 +3423,7 @@ td.row-action-cell.menu-open,
 
   border-radius: 3px;
 
-  background-color: #141413;
+  background-color: var(--bar-fill);
 
   transition: width 0.3s ease;
 
@@ -4408,9 +4408,9 @@ html[data-theme="dark"] .segmented-pill-btn.active {
 
 /* Dark mode Devices Security Alerts Progress Bar */
 html[data-theme="dark"] .bar-track {
-  background-color: var(--color-surface-card-subtle, #272A2E) !important;
+  background-color: var(--grid) !important;
 }
 
 html[data-theme="dark"] .bar-fill {
-  background-color: var(--color-accent-lime, #C6F135) !important;
+  background-color: var(--bar-fill) !important;
 }
