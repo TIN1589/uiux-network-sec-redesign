@@ -1,0 +1,22 @@
+# Generated and local workspaces
+/graphify-out/
+/evidence/
+/scratch/
+/scripts/
+/.agents/
+/.codex/
+/.vscode/
+
+# Tool caches and temporary Python output
+**/__pycache__/
+/.pytest_cache/
+/.pytest_temp_cache/
+/.ruff_cache/
+
+# Vendored/minified dependencies and binary presentation assets
+/static/vendor/
+/static/fonts/
+/static/img/
+
+# Historical backups are not part of the active corpus
+*.backup

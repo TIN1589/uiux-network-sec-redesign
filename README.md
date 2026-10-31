@@ -202,6 +202,8 @@ Dự án sử dụng kiến trúc Hypermedia-Driven hiệu năng cao, giảm thi
 ```text
 redesign/
 ├── app/
+│   ├── __init__.py         # Public package interface; re-export FastAPI app cho tests/tooling
+│   ├── main.py             # FastAPI app, API endpoints & in-memory state store
 │   └── ui/
 │       ├── __init__.py         # Khởi tạo gói UI
 │       ├── mock_feed.py        # Sinh log RFC 5737 TEST-NET giả lập (Pure generator, Zero RAM leak)
@@ -256,14 +258,27 @@ redesign/
 │   ├── components/             # Các thành phần tái sử dụng dashboard (kèm pwa_prompt.html)
 │   ├── pages/                  # Các trang đầy đủ dashboard
 │   └── partials/               # Fragment HTML phục vụ HTMX swapping
-├── tests/                      # Bộ kiểm thử tự động Pytest (21/21 passed)
-├── evidence/                   # 6 phân nhóm minh chứng ngoài Git (77 tệp minh chứng)
-├── app.py                      # FastAPI app, API endpoints & in-memory state store
+├── tests/                      # Bộ kiểm thử tự động Pytest
+├── scripts/                    # Tooling tạo evidence có thể chạy lại
+├── evidence/                   # Artifact nghiệm thu sinh ra; không phải runtime source
+├── scratch/                    # Chẩn đoán/thử nghiệm cục bộ; bị Git ignore
+├── graphify-out/               # Knowledge graph sinh tự động; bị Git ignore
+├── .graphifyignore             # Giới hạn corpus vào source/test/doc có ý nghĩa
 ├── run.py                      # Script khởi chạy server hỗ trợ LAN IP cho mobile
 ├── index.html                  # Bản preview tĩnh độc lập (Standalone Preview)
 ├── requirements.txt            # Danh sách dependencies
 └── README.md                   # Tài liệu hướng dẫn & quy chuẩn
 ```
+
+### Ranh giới codebase
+
+- **Runtime source:** `app/`, `templates/`, `static/`, `index.html`, `run.py`.
+- **Kiểm thử và guardrail:** `tests/`, `pytest.ini`.
+- **Tooling có thể chạy lại:** `scripts/`.
+- **Artifact sinh ra, không chỉnh sửa như source:** `graphify-out/`, `evidence/`, `scratch/`, các thư mục cache.
+
+Graphify chỉ lập chỉ mục phần source/test/doc có ý nghĩa theo `.graphifyignore`; vendor minified,
+font, ảnh PWA, evidence và scratch không tham gia vào graph kiến trúc.
 
 ---
 
