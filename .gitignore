@@ -66,6 +66,7 @@ AGENTS.md
 graphify-out/
 scripts/*
 !scripts/generate_sprint2_evidence.py
+!scripts/run_manual_acceptance.py
 evidence/
 .evidence/
 test-results/
