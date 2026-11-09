@@ -59,12 +59,14 @@
         </div>
 
         <!-- Quick Demo Fill Pills (Dành cho người chấm / demo kiểm thử) -->
+        {% if demo_mode %}
+        {# Demo credentials are excluded entirely when DEMO_MODE is disabled. #}
         <div class="signin-demo-box">
           <div class="signin-demo-header">
             <span class="signin-demo-title">
               <i class="fa-solid fa-key" style="margin-right: 4px;" aria-hidden="true"></i>Quick Demo Fill
             </span>
-            <span class="signin-demo-pwd-hint">pwd: vnpt-soc-2026</span>
+            <span class="signin-demo-pwd-hint">pwd: {{ demo_password }}</span>
           </div>
           <div class="signin-demo-pills">
             <button type="button" onclick="fillDemoCredentials('admin')" class="signin-demo-pill" title="Fill SecOps Admin credentials">
@@ -78,6 +80,8 @@
             </button>
           </div>
         </div>
+
+        {% endif %}
 
         <!-- Error Banner -->
         <div id="signin-err-banner" role="alert" class="hidden" style="padding: 12px 16px; border-radius: var(--radius-md); background-color: var(--color-sev-critical-bg); color: var(--color-sev-critical-text); font-size: 13px; font-weight: 500;">

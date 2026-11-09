@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_every_font_awesome_compat_class_has_a_local_svg_definition():
     """Prevent a newly introduced fa-* class from silently rendering blank."""
-    sources = [ROOT / "index.html", ROOT / "app.py"]
+    sources = [ROOT / "index.html", ROOT / "app/main.py"]
     sources.extend((ROOT / "templates").rglob("*.html"))
     combined = "\n".join(path.read_text(encoding="utf-8") for path in sources)
 

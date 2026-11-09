@@ -103,8 +103,9 @@
 
 .nav-btn.active,
 .nav-btn[aria-current="page"] {
-  background-color: var(--color-obsidian-800);
-  color: #FFFFFF !important;
+  background-color: var(--side-active);
+  color: var(--side-text) !important;
+  border-left: 3px solid var(--color-accent-lime);
 }
 
 .nav-btn.active i,

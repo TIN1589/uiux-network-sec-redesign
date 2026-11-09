@@ -12,6 +12,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 
+def _public_csrf_token(client: TestClient) -> str:
+    """Lấy token CSRF công khai dùng cho biểu mẫu đăng nhập."""
+    response = client.get("/api/auth/csrf-token")
+    assert response.status_code == 200
+    return response.json()["csrf_token"]
+
+
 @pytest.fixture
 def client():
     """Tạo client kiểm thử FastAPI chuẩn."""
@@ -47,7 +54,11 @@ def test_invalid_credential_non_htmx_returns_full_page_422(client):
     """
     res = client.post(
         "/login",
-        data={"username": "admin", "password": "wrong-password-123"},
+        data={
+            "username": "admin",
+            "password": "wrong-password-123",
+            "csrf_token": _public_csrf_token(client),
+        },
         follow_redirects=False,
     )
     assert res.status_code == 422
@@ -66,13 +77,27 @@ def test_invalid_credential_htmx_returns_fragment_422(client):
     """
     res = client.post(
         "/login",
-        data={"username": "admin", "password": "wrong-password-123"},
+        data={
+            "username": "admin",
+            "password": "wrong-password-123",
+            "csrf_token": _public_csrf_token(client),
+        },
         headers={"HX-Request": "true"},
     )
     assert res.status_code == 422
     assert "Incorrect username or password." in res.text
     assert "<!DOCTYPE html>" not in res.text
     assert "auth-alert" in res.text
+
+
+def test_signin_rejects_missing_csrf(client):
+    """Mục tiêu: Mọi POST đăng nhập thiếu CSRF đều bị từ chối."""
+    res = client.post(
+        "/login",
+        data={"username": "admin", "password": "vnpt-soc-2026"},
+        follow_redirects=False,
+    )
+    assert res.status_code == 403
 
 
 def test_demo_mode_disabled_does_not_leak_demo_credentials():
@@ -85,12 +110,18 @@ def test_demo_mode_disabled_does_not_leak_demo_credentials():
     """
     from fastapi.templating import Jinja2Templates
     templates = Jinja2Templates(directory="templates")
-    html = templates.get_template("auth/_demo_accounts.html").render(
+    demo_accounts_html = templates.get_template("auth/_demo_accounts.html").render(
         demo_mode=False,
         demo_password="vnpt-soc-2026",
     )
-    assert "Demo accounts" not in html
-    assert "vnpt-soc-2026" not in html
+    dashboard_modal_html = templates.get_template("components/signin_modal.html").render(
+        demo_mode=False,
+        demo_password="vnpt-soc-2026",
+    )
+    for html in (demo_accounts_html, dashboard_modal_html):
+        assert "Demo accounts" not in html
+        assert 'class="signin-demo-box"' not in html
+        assert "vnpt-soc-2026" not in html
 
 
 def test_production_fails_to_start_if_demo_mode_enabled(monkeypatch):

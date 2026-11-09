@@ -26,6 +26,28 @@
 }
 
 :root {
+  /* Form & Interactive Component Tokens (Quy chuẩn màu đặc và tương phản AA) */
+  --bg-input: #ffffff;
+  --border-input: #d9d5ca;
+  --btn-bg: #ffffff;
+  --btn-pri-bg: #121212;
+  --btn-pri-text: #ffffff;
+  --bar-fill: #141413;
+  --grid: #ebe8e0;
+  --text-primary: #141413;
+  --text-muted: #5f5b53;
+  --seg-on-bg: #121212;
+  --seg-on-text: #ffffff;
+  --chip-ok-bg: #dcfce7;
+  --chip-ok-text: #166534;
+  --bg-inset: #f3f1ec;
+  --border-default: #e7e4dc;
+  --focus-ring: #141413;
+  --hover-bg: #ece9e1;
+  --bg-surface: #ffffff;
+  --side-active: #262626;
+  --side-text: #f3f1ec;
+
   /* Brand Core Palette */
   --color-bg-workspace: #F3F1EC;         /* bg/page: Warm Stone canvas (#f3f1ec) */
   --color-surface-card: #FFFFFF;         /* bg/surface: Crisp white card surface */
@@ -147,6 +169,29 @@
 
 /* DARK THEME DESIGN TOKENS (SOC 24/7 Operations Room & Video Wall) */
 html[data-theme="dark"] {
+  /* Form & Interactive Component Tokens (Quy chuẩn màu đặc và tương phản tối ưu WCAG AA) */
+  --bg-input: #12151a;
+  --border-input: #6a768a;
+  --btn-bg: transparent;
+  --btn-pri-bg: #e6e9ee;
+  --btn-pri-text: #12151a;
+  --bar-fill: #aab3c0;
+  --grid: #2a303a;
+  --text-primary: #e6e9ee;
+  --text-muted: #a3abb7;
+  --seg-on-bg: #3a4350;
+  --seg-on-text: #f2f4f7;
+  --chip-ok-bg: rgba(62, 207, 142, 0.16);
+  --chip-ok-text: #86e3b3;
+  --bg-inset: #20252d;
+  --border-default: #2a303a;
+  --focus-ring: #aab3c0;
+  --hover-bg: rgba(255, 255, 255, 0.08);
+  --bg-surface: #16181a;
+  --border-strong: #6a768a;
+  --side-active: #22252a;
+  --side-text: #f1f0eb;
+
   /* Brand Core Palette - Dark Mode */
   --color-bg-workspace: #0E0F0C;         /* Obsidian Matte canvas (#0e0f0c) */
   --color-surface-card: #16181A;         /* Deep charcoal surface */

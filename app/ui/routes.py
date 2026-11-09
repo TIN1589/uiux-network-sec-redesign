@@ -1,6 +1,8 @@
 """Bộ định tuyến cho các thành phần giao diện động VNPT SOC (Log feed, Topology)."""
 
 import time
+from pathlib import Path
+
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -8,7 +10,8 @@ from fastapi.templating import Jinja2Templates
 from app.ui import mock_feed
 
 router = APIRouter(prefix="/ui", tags=["ui"])
-templates = Jinja2Templates(directory="templates")
+TEMPLATES_DIR = Path(__file__).resolve().parents[2] / "templates"
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 @router.get("/log-feed", response_class=HTMLResponse, name="ui.log_feed")

@@ -14,8 +14,9 @@ import secrets
 import time
 import urllib.parse
 from datetime import UTC, datetime, timedelta, timezone
+from pathlib import Path
 
-from fastapi import Cookie, FastAPI, Form, Request, Response
+from fastapi import Cookie, FastAPI, Form, HTTPException, Request, Response
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -26,6 +27,10 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+STATIC_DIR = BASE_DIR / "static"
+TEMPLATES_DIR = BASE_DIR / "templates"
 
 # Cấu hình môi trường vận hành an toàn VNPT SOC
 DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() in ("1", "true", "yes")
@@ -41,6 +46,8 @@ _SECRET_KEY = secrets.token_hex(32)          # Random mỗi lần khởi động
 _SESSION_MAX_AGE = 8 * 3600                  # 8 hours in seconds
 _CSRF_MAX_AGE = 3600                         # 1 hour
 _SERIALIZER = URLSafeTimedSerializer(_SECRET_KEY)
+_PUBLIC_AUTH_CSRF_SESSION = "public_auth_session"
+_ROLE_LEVELS = {"tier1": 1, "tier2": 2, "admin": 3}
 
 # Demo credentials cho môi trường kiểm thử/nghiệm thu VNPT SOC N4.2
 # Hỗ trợ 3 vai trò: SecOps Admin, Tier-2 Analyst, Tier-1 Responder
@@ -108,23 +115,23 @@ async def security_headers_middleware(request: Request, call_next):
     return response
 
 # Mount Static Assets (CSS, JS, Icons)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     """Phục vụ file favicon.ico gốc cho các trình duyệt tự động truy vấn."""
-    return FileResponse("static/img/favicon/favicon.ico")
+    return FileResponse(STATIC_DIR / "img/favicon/favicon.ico")
 
 @app.get("/manifest.webmanifest", include_in_schema=False)
 async def webmanifest():
     """Phục vụ file Web App Manifest chuẩn cho PWA trên iOS và Android."""
-    return FileResponse("static/manifest.webmanifest", media_type="application/manifest+json")
+    return FileResponse(STATIC_DIR / "manifest.webmanifest", media_type="application/manifest+json")
 
 @app.get("/sw.js", include_in_schema=False)
 async def service_worker():
     """Phục vụ Service Worker tại root scope để có toàn quyền điều phối cache và offline."""
     return FileResponse(
-        "static/sw.js",
+        STATIC_DIR / "sw.js",
         media_type="application/javascript",
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -135,10 +142,10 @@ async def service_worker():
 @app.get("/offline", include_in_schema=False)
 async def offline_page():
     """Phục vụ trang thông báo mất kết nối mạng khi thiết bị offline hoàn toàn."""
-    return FileResponse("static/offline.html")
+    return FileResponse(STATIC_DIR / "offline.html")
 
 # Configure Jinja2 Template Engine
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Jinja2 URL generator tương thích ngược cho cả Path parameters và Query parameters
 def _jinja_url_for(name: str, **params) -> str:
@@ -177,7 +184,7 @@ def _jinja_csrf_token() -> str:
     Returns:
         str: Chuỗi token CSRF đã ký và mã hóa an toàn.
     """
-    return _generate_csrf_token("public_auth_session")
+    return _generate_csrf_token(_PUBLIC_AUTH_CSRF_SESSION)
 
 templates.env.globals["url_for"] = _jinja_url_for
 templates.env.globals["csrf_token"] = _jinja_csrf_token
@@ -1272,6 +1279,71 @@ def _validate_csrf_token(token: str, session_id: str) -> bool:
     except (BadSignature, SignatureExpired):
         return False
 
+def _require_role(session_id: str | None, minimum_role: str) -> dict:
+    """Require an authenticated session with at least the requested SOC role.
+
+    Args:
+        session_id: Session cookie supplied by the client.
+        minimum_role: Lowest role permitted for the route.
+
+    Returns:
+        dict: Authenticated session data.
+
+    Raises:
+        HTTPException: If the session is missing, expired, or lacks permission.
+    """
+    session = _get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    current_level = _ROLE_LEVELS.get(session.get("role", ""), 0)
+    required_level = _ROLE_LEVELS[minimum_role]
+    if current_level < required_level:
+        raise HTTPException(status_code=403, detail="Insufficient role")
+    return session
+
+def _require_csrf(request: Request, session_id: str) -> None:
+    """Validate the signed CSRF header against the authenticated session.
+
+    Args:
+        request: Incoming state-changing request.
+        session_id: Authenticated session identifier from the cookie.
+
+    Raises:
+        HTTPException: If the token is absent, invalid, or expired.
+    """
+    token = request.headers.get("X-CSRF-Token", "")
+    if not token or not _validate_csrf_token(token, session_id):
+        raise HTTPException(status_code=403, detail="Invalid CSRF token")
+
+def _set_session_cookies(
+    response: Response,
+    session_id: str,
+    max_age: int | None,
+) -> None:
+    """Set the HttpOnly session cookie and its JavaScript-readable CSRF pair.
+
+    Args:
+        response: Response receiving the authentication cookies.
+        session_id: New authenticated session identifier.
+        max_age: Optional persistent-session lifetime in seconds.
+    """
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        max_age=max_age,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+    )
+    response.set_cookie(
+        key="csrf_token",
+        value=_generate_csrf_token(session_id),
+        max_age=max_age,
+        httponly=False,
+        samesite="lax",
+        secure=False,
+    )
+
 def get_window_max_minutes(win: str) -> int:
     """Quy đổi chuỗi cửa sổ thời gian sang số phút tối đa để lọc dữ liệu.
 
@@ -1869,14 +1941,14 @@ async def acknowledge_alert(
     Acknowledge an alert. Called from Web UI or Telegram webhook.
     Tracks who acknowledged (ASSUMPTION-05).
     """
+    session = _require_role(session_id, "tier1")
+    _require_csrf(request, session_id)
     alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
     if alert:
         alert["state"] = "Acknowledged"
-        # Determine acker: explicit source param (Telegram) or session username
-        session = _get_session(session_id)
-        acker = source or (session["username"] if session else "admin")
-        role = session["role"] if session else "tier1"
-        alert["ackedBy"] = acker                           # e.g. "admin" or "telegram:84912345678"
+        acker = session["username"]
+        role = session["role"]
+        alert["ackedBy"] = acker
         alert["ackedAt"] = datetime.now(UTC).isoformat()
         log_audit(
             action="ACKNOWLEDGE_ALERT",
@@ -1918,10 +1990,15 @@ async def update_alert_state(
     Returns:
         HTMLResponse: Giao diện drawer cập nhật kèm header HX-Trigger hiển thị thông báo toast.
     """
+    allowed_states = {"New", "Investigating", "Acknowledged", "Resolved"}
+    if state not in allowed_states:
+        raise HTTPException(status_code=422, detail="Unsupported alert state")
+    minimum_role = "tier1" if state == "Acknowledged" else "tier2"
+    session = _require_role(session_id, minimum_role)
+    _require_csrf(request, session_id)
     alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
-    session = _get_session(session_id)
-    username = session["username"] if session else "analyst"
-    role = session["role"] if session else "tier1"
+    username = session["username"]
+    role = session["role"]
 
     if alert:
         alert["state"] = state
@@ -1960,13 +2037,14 @@ async def execute_containment_action(
     Returns:
         HTMLResponse: Drawer cập nhật kèm thông báo Toast Notification qua HX-Trigger.
     """
+    session = _require_role(session_id, "tier2")
+    _require_csrf(request, session_id)
     alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
     if not alert:
         return HTMLResponse("<div class='p-6 text-stone-500'>Alert not found</div>", status_code=404)
 
-    session = _get_session(session_id)
-    username = session["username"] if session else "analyst"
-    role = session["role"] if session else "tier2"
+    username = session["username"]
+    role = session["role"]
 
     src_ip = alert.get("srcIp", "198.51.100.24")
     hostname = alert.get("asset", "vnpt-device")
@@ -2016,13 +2094,14 @@ async def resolve_alert_with_disposition(
     Returns:
         HTMLResponse: Drawer chi tiết cập nhật trạng thái Resolved và gắn nhãn Disposition.
     """
+    session = _require_role(session_id, "tier2")
+    _require_csrf(request, session_id)
     alert = next((a for a in alerts_store if a["eventId"] == event_id), None)
     if not alert:
         return HTMLResponse("<div class='p-6 text-stone-500'>Alert not found</div>", status_code=404)
 
-    session = _get_session(session_id)
-    username = session["username"] if session else "analyst"
-    role = session["role"] if session else "tier2"
+    username = session["username"]
+    role = session["role"]
 
     alert["state"] = "Resolved"
     alert["disposition"] = disposition
@@ -2049,8 +2128,9 @@ async def resolve_alert_with_disposition(
     )
 
 @app.get("/api/audit-logs", response_class=JSONResponse)
-async def get_audit_logs():
+async def get_audit_logs(session_id: str | None = Cookie(None)):
     """Truy xuất danh sách nhật ký kiểm toán thao tác an ninh mạng SOC (Chốt chặn 4)."""
+    _require_role(session_id, "admin")
     return {"total": len(AUDIT_LOGS), "logs": AUDIT_LOGS}
 
 @app.get("/api/mitre/matrix", response_class=JSONResponse)
@@ -2059,7 +2139,12 @@ async def get_mitre_matrix_api(window: str = "24h"):
     return {"window": window, "matrix": compute_mitre_matrix_stats(window)}
 
 @app.post("/api/alerts/bulk-state", response_class=JSONResponse)
-async def bulk_update_alerts(state: str = Form(...), event_ids: list[str] = Form(...)):  # noqa: B008
+async def bulk_update_alerts(
+    request: Request,
+    state: str = Form(...),
+    event_ids: list[str] = Form(...),  # noqa: B008
+    session_id: str | None = Cookie(None),
+):
     """Cập nhật trạng thái hàng loạt cho nhiều sự cố cảnh báo được chọn.
 
     Args:
@@ -2069,11 +2154,22 @@ async def bulk_update_alerts(state: str = Form(...), event_ids: list[str] = Form
     Returns:
         dict: Kết quả cập nhật JSON gồm trạng thái thành công và số bản ghi đã đổi.
     """
+    session = _require_role(session_id, "tier2")
+    _require_csrf(request, session_id)
+    if state not in {"New", "Investigating", "Acknowledged", "Resolved"}:
+        raise HTTPException(status_code=422, detail="Unsupported alert state")
     updated_count = 0
     for a in alerts_store:
         if a["eventId"] in event_ids:
             a["state"] = state
             updated_count += 1
+            log_audit(
+                action="BULK_CHANGE_ALERT_STATE",
+                username=session["username"],
+                role=session["role"],
+                target_event_id=a["eventId"],
+                details=f"State updated to '{state}' in bulk operation.",
+            )
     return {"success": True, "updated": updated_count}
 
 @app.post("/api/scenarios", response_class=HTMLResponse)
@@ -2085,7 +2181,8 @@ async def save_scenario(
     rule: str = Form(...),
     linkedEventId: str = Form(...),
     detected: bool = Form(False),
-    notes: str = Form(...)
+    notes: str = Form(...),
+    session_id: str | None = Cookie(None),
 ):
     """Lưu hoặc cập nhật một kịch bản kiểm thử tấn công trong phòng thí nghiệm SOC.
 
@@ -2102,6 +2199,8 @@ async def save_scenario(
     Returns:
         HTMLResponse: Bảng kịch bản mới cập nhật render từ `partials/scenarios_table.html`.
     """
+    _require_role(session_id, "admin")
+    _require_csrf(request, session_id)
     linked_alert = next((a for a in alerts_store if a["eventId"] == linkedEventId), None)
     delta = linked_alert["testDeltaSec"] if linked_alert else 1.8
 
@@ -2166,7 +2265,10 @@ async def save_scenario(
     )
 
 @app.get("/api/scenarios/{scenario_id}/edit", response_class=JSONResponse)
-async def get_scenario_edit_data(scenario_id: str):
+async def get_scenario_edit_data(
+    scenario_id: str,
+    session_id: str | None = Cookie(None),
+):
     """Truy xuất dữ liệu chi tiết của một kịch bản kiểm thử để nạp vào biểu mẫu chỉnh sửa.
 
     Args:
@@ -2175,13 +2277,18 @@ async def get_scenario_edit_data(scenario_id: str):
     Returns:
         dict: Dữ liệu kịch bản dạng JSON hoặc mã lỗi 404.
     """
+    _require_role(session_id, "admin")
     row = next((s for s in scenarios_store if s["id"] == scenario_id), None)
     if not row:
         return JSONResponse({"error": "Not found"}, status_code=404)
     return row
 
 @app.delete("/api/scenarios/{scenario_id}", response_class=HTMLResponse)
-async def delete_scenario(request: Request, scenario_id: str):
+async def delete_scenario(
+    request: Request,
+    scenario_id: str,
+    session_id: str | None = Cookie(None),
+):
     """Xóa một bản ghi kịch bản kiểm thử khỏi kho lưu trữ in-memory.
 
     Args:
@@ -2191,6 +2298,8 @@ async def delete_scenario(request: Request, scenario_id: str):
     Returns:
         HTMLResponse: Bảng danh sách kịch bản sau khi xóa.
     """
+    _require_role(session_id, "admin")
+    _require_csrf(request, session_id)
     global scenarios_store
     scenarios_store = [s for s in scenarios_store if s["id"] != scenario_id]
     return templates.TemplateResponse(
@@ -2249,8 +2358,16 @@ async def get_csrf_token(response: Response, session_id: str | None = Cookie(Non
     Returns:
         dict: Đối tượng JSON chứa giá trị csrf_token hợp lệ.
     """
-    sid = session_id if _get_session(session_id) else secrets.token_urlsafe(16)
+    sid = session_id if _get_session(session_id) else _PUBLIC_AUTH_CSRF_SESSION
     token = _generate_csrf_token(sid)
+    response.set_cookie(
+        key="csrf_token",
+        value=token,
+        max_age=_CSRF_MAX_AGE,
+        httponly=False,
+        samesite="lax",
+        secure=False,
+    )
     return {"csrf_token": token}
 
 @app.post("/api/auth/login", response_class=JSONResponse)
@@ -2274,6 +2391,12 @@ async def login(
     Returns:
         JSONResponse: Trạng thái thành công kèm username và role, hoặc mã lỗi 401.
     """
+    if not csrf_token or not _validate_csrf_token(
+        csrf_token,
+        _PUBLIC_AUTH_CSRF_SESSION,
+    ):
+        raise HTTPException(status_code=403, detail="Invalid CSRF token")
+
     normalized_user = username.strip().lower()
     account = _DEMO_ACCOUNTS.get(normalized_user)
 
@@ -2283,24 +2406,23 @@ async def login(
     role = account["role"]
     session_id = _create_session(normalized_user, role=role)
 
-    # Set HttpOnly, SameSite=Lax session cookie (8h)
-    response.set_cookie(
-        key="session_id",
-        value=session_id,
-        max_age=_SESSION_MAX_AGE,
-        httponly=True,
-        samesite="lax",
-        secure=False  # Set True in production with HTTPS
-    )
+    _set_session_cookies(response, session_id, _SESSION_MAX_AGE)
 
     return {"success": True, "username": normalized_user, "role": role, "label": account["label"]}
 
 @app.post("/api/auth/logout", response_class=JSONResponse)
-async def logout(response: Response, session_id: str | None = Cookie(None)):
+async def logout(
+    request: Request,
+    response: Response,
+    session_id: str | None = Cookie(None),
+):
     """Invalidate session and clear cookie."""
+    if _get_session(session_id):
+        _require_csrf(request, session_id)
     if session_id and session_id in _sessions:
         del _sessions[session_id]
     response.delete_cookie("session_id")
+    response.delete_cookie("csrf_token")
     return {"success": True}
 
 @app.get("/api/auth/me", response_class=JSONResponse)
@@ -2377,6 +2499,12 @@ async def login_post(
     Returns:
         Response: HTMX redirect hoặc fragment lỗi 422; hoặc HTTP 303 Redirect / 422 Full page khi tắt JS.
     """
+    if not csrf_token or not _validate_csrf_token(
+        csrf_token,
+        _PUBLIC_AUTH_CSRF_SESSION,
+    ):
+        raise HTTPException(status_code=403, detail="Invalid CSRF token")
+
     normalized_user = username.strip().lower()
     account = _DEMO_ACCOUNTS.get(normalized_user)
     is_htmx = request.headers.get("hx-request") == "true"
@@ -2411,30 +2539,19 @@ async def login_post(
 
     if is_htmx:
         res = Response(status_code=200, headers={"HX-Redirect": "/"})
-        res.set_cookie(
-            key="session_id",
-            value=session_id,
-            max_age=cookie_max_age,
-            httponly=True,
-            samesite="lax",
-            secure=False,
-        )
+        _set_session_cookies(res, session_id, cookie_max_age)
         return res
 
     res = RedirectResponse(url="/", status_code=303)
-    res.set_cookie(
-        key="session_id",
-        value=session_id,
-        max_age=cookie_max_age,
-        httponly=True,
-        samesite="lax",
-        secure=False,
-    )
+    _set_session_cookies(res, session_id, cookie_max_age)
     return res
 
 
 @app.post("/auth/guest", name="auth.guest")
-async def guest_post(request: Request):
+async def guest_post(
+    request: Request,
+    csrf_token: str | None = Form(None),
+):
     """Điều hướng truy cập nhanh vào chế độ Khách (Read-only) không cần mật khẩu.
 
     Args:
@@ -2443,6 +2560,11 @@ async def guest_post(request: Request):
     Returns:
         Response hoặc RedirectResponse điều hướng về trang chủ kèm cờ guest=1.
     """
+    if not csrf_token or not _validate_csrf_token(
+        csrf_token,
+        _PUBLIC_AUTH_CSRF_SESSION,
+    ):
+        raise HTTPException(status_code=403, detail="Invalid CSRF token")
     is_htmx = request.headers.get("hx-request") == "true"
     if is_htmx:
         return Response(status_code=200, headers={"HX-Redirect": "/?guest=1"})
@@ -2464,7 +2586,7 @@ async def forgot_get(request: Request):
 # CSV export handlers
 
 @app.get("/api/export/alerts.csv")
-async def export_alerts_csv():
+async def export_alerts_csv(session_id: str | None = Cookie(None)):
     """Xuất danh sách toàn bộ cảnh báo SOC ra định dạng CSV với cơ chế bảo vệ Formula Injection.
 
     Phòng vệ CSV Injection (Rule 3.3): Mọi hàng dữ liệu đều được lọc qua hàm csv_safe_row()
@@ -2473,6 +2595,7 @@ async def export_alerts_csv():
     Returns:
         StreamingResponse: Luồng dữ liệu tệp 'soc_alerts_export.csv'.
     """
+    _require_role(session_id, "tier2")
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["EventID", "RuleID", "Severity", "Title", "SourceIP", "DestinationIP", "Asset", "Observed", "State"])
@@ -2496,12 +2619,13 @@ async def export_alerts_csv():
     )
 
 @app.get("/api/export/scenarios.csv")
-async def export_scenarios_csv():
+async def export_scenarios_csv(session_id: str | None = Cookie(None)):
     """Xuất kết quả kiểm thử kịch bản tấn công MITRE ATT&CK ra định dạng CSV có bảo vệ an toàn.
 
     Returns:
         StreamingResponse: Luồng dữ liệu tệp 'soc_attack_scenarios.csv'.
     """
+    _require_role(session_id, "tier2")
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Tested", "Technique", "Name", "Tool", "Rule", "LinkedAlert", "Detected", "DeltaSeconds", "Notes"])
@@ -2526,5 +2650,5 @@ async def export_scenarios_csv():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
 

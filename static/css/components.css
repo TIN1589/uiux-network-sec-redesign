@@ -162,15 +162,15 @@ input, select, textarea {
 
 
 
-/* Button Type 1: Primary (bg #121212, text white, pill, height 40px) */
+/* Button Type 1: Primary (bg var(--btn-pri-bg), text var(--btn-pri-text), pill, height 40px) */
 
 .soc-btn-primary {
 
-  background-color: #121212;
+  background-color: var(--btn-pri-bg);
 
-  color: #FFFFFF;
+  color: var(--btn-pri-text);
 
-  border: 1px solid #121212;
+  border: 1px solid var(--btn-pri-bg);
 
   min-height: 40px;
 
@@ -188,25 +188,23 @@ input, select, textarea {
 
 .soc-btn-primary:hover {
 
-  background-color: #262626;
-
-  border-color: #262626;
+  opacity: 0.92;
 
 }
 
 
 
-/* Button Type 2: Secondary / Outline (bg white, border 1px #141413, pill, min-height 34px) */
+/* Button Type 2: Secondary / Outline (bg var(--btn-bg), border 1px var(--border-strong), pill, min-height 34px) */
 
 .soc-btn-outline,
 
 .soc-btn-secondary {
 
-  background-color: #FFFFFF;
+  background-color: var(--btn-bg);
 
-  color: #141413;
+  color: var(--text-primary);
 
-  border: 1px solid #141413;
+  border: 1px solid var(--border-strong);
 
   min-height: 34px;
 
@@ -222,9 +220,21 @@ input, select, textarea {
 
 .soc-btn-secondary:hover {
 
-  background-color: #F3F1EC;
+  background-color: var(--hover-bg);
 
-  color: #141413;
+  color: var(--text-primary);
+
+}
+
+
+
+#btn-theme-toggle {
+
+  background-color: var(--bg-surface);
+
+  border: 1px solid var(--border-input);
+
+  color: currentColor;
 
 }
 
@@ -414,9 +424,9 @@ input, select, textarea {
 
 .badge-resolved {
 
-  background-color: var(--color-state-resolved-bg);
+  background-color: var(--chip-ok-bg);
 
-  color: var(--color-state-resolved-text);
+  color: var(--chip-ok-text);
 
 }
 
@@ -424,9 +434,9 @@ input, select, textarea {
 
 .badge-reporting {
 
-  background-color: #DCFCE7;
+  background-color: var(--chip-ok-bg);
 
-  color: #166534;
+  color: var(--chip-ok-text);
 
 }
 
@@ -472,7 +482,7 @@ input, select, textarea {
 
 .dot-disconnected { background-color: var(--color-status-disconnected); }
 
-.dot-dark { background-color: var(--color-obsidian-900); }
+.dot-dark { background-color: var(--text-muted); }
 
 .dot-lime { background-color: var(--color-accent-lime); }
 
@@ -546,7 +556,7 @@ input, select, textarea {
 
   justify-content: flex-start;
 
-  border-left: 1px solid var(--color-border-card, #E7E4DC);
+  border-left: 1px solid var(--border-default);
 
   transition: background-color var(--transition-fast);
 
@@ -722,13 +732,13 @@ input, select, textarea {
 
     padding: 10px 14px !important;
 
-    background-color: #F8F7F4 !important;
+    background-color: var(--bg-inset) !important;
 
     border-left: none !important;
 
     border-top: none !important;
 
-    border-bottom: 1px solid #E7E4DC !important;
+    border-bottom: 1px solid var(--border-default) !important;
 
   }
 
@@ -822,7 +832,7 @@ input, select, textarea {
 
     border-left: none;
 
-    border-top: 1px solid #E7E4DC;
+    border-top: 1px solid var(--border-default);
 
     padding: 12px 14px;
 
@@ -838,7 +848,7 @@ input, select, textarea {
 
   .kpi-cell:nth-child(2n) {
 
-    border-left: 1px solid #E7E4DC;
+    border-left: 1px solid var(--border-default);
 
   }
 
@@ -932,9 +942,9 @@ input, select, textarea {
 
 .segmented-pill-btn.active {
 
-  background-color: var(--color-obsidian-900);
+  background-color: var(--seg-on-bg);
 
-  color: #FFFFFF;
+  color: var(--seg-on-text);
 
   box-shadow: var(--shadow-2xs);
 
@@ -1016,9 +1026,9 @@ input, select, textarea {
 
   border-radius: var(--radius-input);
 
-  border: 1px solid var(--color-border-input);
+  border: 1px solid var(--border-input);
 
-  background-color: #FFFFFF;
+  background-color: var(--bg-input);
 
   box-sizing: border-box;
 
@@ -1032,9 +1042,9 @@ input, select, textarea {
 
 .soc-input-icon-wrap:focus-within {
 
-  border-color: #141413 !important;
+  border-color: var(--focus-ring) !important;
 
-  box-shadow: 0 0 0 1px #141413 !important;
+  box-shadow: 0 0 0 1px var(--focus-ring) !important;
 
 }
 
@@ -1094,11 +1104,11 @@ input, select, textarea {
 
   border-radius: var(--radius-input);
 
-  border: 1px solid var(--color-border-input);
+  border: 1px solid var(--border-input);
 
-  background-color: #FFFFFF;
+  background-color: var(--bg-input);
 
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 
   box-sizing: border-box;
 
@@ -1124,11 +1134,11 @@ input, select, textarea {
 
   border-radius: var(--radius-input);
 
-  border: 1px solid var(--color-border-input);
+  border: 1px solid var(--border-input);
 
-  background-color: #FFFFFF;
+  background-color: var(--bg-input);
 
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 
   box-sizing: border-box;
 
@@ -1166,13 +1176,15 @@ input, select, textarea {
 
   border-radius: var(--radius-input);
 
-  border: 1px solid var(--color-border-input);
+  border: 1px solid var(--border-input);
 
-  background-color: #FFFFFF;
+  background-color: var(--bg-input);
 
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 
   box-sizing: border-box;
+
+  resize: vertical;
 
   outline: none !important;
 
@@ -1206,9 +1218,9 @@ input, select, textarea {
 
   outline: none !important;
 
-  border-color: #141413 !important;
+  border-color: var(--focus-ring) !important;
 
-  box-shadow: 0 0 0 1px #141413 !important;
+  box-shadow: 0 0 0 1px var(--focus-ring) !important;
 
 }
 
@@ -1240,20 +1252,39 @@ input, select, textarea {
 
 
 
+/* B11: Custom checkbox ro net tren ca hai theme voi dau tick SVG clip-path va focus ring ro rang */
 .soc-checkbox {
-
+  appearance: none;
+  -webkit-appearance: none;
   width: 16px;
-
   height: 16px;
-
+  border: 1px solid var(--border-input);
   border-radius: 4px;
-
-  border: 1px solid var(--color-border-input);
-
+  background-color: var(--bg-input);
+  display: inline-grid;
+  place-content: center;
   cursor: pointer;
+  margin: 0;
+  vertical-align: middle;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
 
-  accent-color: #121212;
+.soc-checkbox:checked {
+  background-color: var(--btn-pri-bg);
+  border-color: var(--btn-pri-bg);
+}
 
+.soc-checkbox:checked::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  background-color: var(--btn-pri-text);
+}
+
+.soc-checkbox:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 
@@ -2268,6 +2299,47 @@ td.row-action-cell.menu-open,
 }
 
 
+@media (max-width: 767.98px) {
+
+  .bulk-action-bar {
+
+    position: fixed;
+
+    top: auto;
+
+    right: 14px;
+
+    bottom: calc(68px + var(--sab));
+
+    left: 14px;
+
+    z-index: 45;
+
+    padding: 12px 14px;
+
+  }
+
+
+
+  .bulk-action-bar > div:last-child {
+
+    width: 100%;
+
+  }
+
+
+
+  /* Chừa chỗ cuộn cho thanh thao tác hai hàng mà không đẩy vị trí hiện tại của danh sách. */
+
+  #tab-alerts.bulk-selection-active {
+
+    padding-bottom: 132px;
+
+  }
+
+}
+
+
 
 /* SLIDE-OVER ALERT DRAWER / BOTTOM SHEET */
 
@@ -3042,7 +3114,7 @@ td.row-action-cell.menu-open,
 
   padding: 10px 12px;
 
-  background: rgba(231, 228, 220, 0.45);
+  background: var(--color-surface-card-subtle);
 
   border: 1px dashed var(--color-border-card);
 
@@ -3112,7 +3184,7 @@ td.row-action-cell.menu-open,
 
   flex: 1;
 
-  min-height: 32px;
+  min-height: 34px;
 
   padding: 4px 8px;
 
@@ -3126,7 +3198,7 @@ td.row-action-cell.menu-open,
 
   justify-content: center;
 
-  background: #FFFFFF;
+  background: var(--color-surface-card);
 
   border: 1px solid var(--color-border-card);
 
@@ -3144,11 +3216,11 @@ td.row-action-cell.menu-open,
 
 .signin-demo-pill:hover {
 
-  background: var(--color-bg-workspace);
+  background: var(--color-surface-hover);
 
   border-color: var(--color-border-input);
 
-  color: #000000;
+  color: var(--color-text-primary);
 
 }
 
@@ -3252,7 +3324,7 @@ td.row-action-cell.menu-open,
 
   border: 1px solid var(--color-border-card);
 
-  color: var(--color-text-primary);
+  color: var(--color-obsidian-900);
 
 }
 
@@ -3366,7 +3438,7 @@ td.row-action-cell.menu-open,
 
   border-radius: 3px;
 
-  background-color: #EBE8E0;
+  background-color: var(--grid);
 
   overflow: hidden;
 
@@ -3380,7 +3452,7 @@ td.row-action-cell.menu-open,
 
   border-radius: 3px;
 
-  background-color: #141413;
+  background-color: var(--bar-fill);
 
   transition: width 0.3s ease;
 
@@ -3424,9 +3496,9 @@ td.row-action-cell.menu-open,
 
   width: 100%;
 
-  border-radius: 3px;
+  border-radius: 4px;
 
-  background-color: #EBE8E0;
+  background-color: var(--grid);
 
 }
 
@@ -3436,9 +3508,9 @@ td.row-action-cell.menu-open,
 
   height: 100%;
 
-  border-radius: 3px;
+  border-radius: 4px;
 
-  background-color: #141413;
+  background-color: var(--bar-fill);
 
   transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -3460,7 +3532,7 @@ td.row-action-cell.menu-open,
 
   height: 20px;
 
-  background-color: var(--color-obsidian-900);
+  background-color: var(--text-primary);
 
 }
 
@@ -3476,7 +3548,7 @@ td.row-action-cell.menu-open,
 
   font-size: 11px;
 
-  color: var(--color-text-secondary);
+  color: var(--text-muted);
 
   white-space: nowrap;
 
@@ -3524,9 +3596,7 @@ td.row-action-cell.menu-open,
 
 /* Role-gated elements: hide when role is insufficient */
 
-[data-min-role="tier2"].role-hidden,
-
-[data-min-role="admin"].role-hidden {
+[data-min-role].role-hidden {
 
   display: none !important;
 
@@ -3638,16 +3708,24 @@ td.row-action-cell.menu-open,
 
 
 
+/* B9: Mo rong cot Attack technique va Linked alert de hien thi day du chu */
 .sc-inputs-grid {
-
   display: grid;
-
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-
+  grid-template-columns: minmax(280px, 1.4fr) minmax(130px, 0.8fr) minmax(120px, 0.7fr) minmax(300px, 1.5fr);
   gap: 16px;
-
   align-items: flex-start;
+}
 
+@media (max-width: 1279.98px) {
+  .sc-inputs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .sc-inputs-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 
@@ -3993,23 +4071,29 @@ td.row-action-cell.menu-open,
 
 /* Aggregated Incident Badge (hits > 1) */
 .badge-aggregated {
-  background-color: #F4F7E6;
-  color: #4D6400;
-  border: 1px solid #D6E899;
+  background-color: var(--bg-inset);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 html[data-theme="dark"] .badge-aggregated {
-  background-color: rgba(198, 241, 53, 0.14) !important;
-  color: var(--color-accent-lime) !important;
-  border-color: rgba(198, 241, 53, 0.35) !important;
+  background-color: var(--bg-inset) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-default) !important;
 }
 
 /* Disposition Badges */
+/* B13: Cho phep badge disposition xuong dong mem mai khi text dai, khong vo layout */
 .badge-disposition {
   font-weight: 600;
   letter-spacing: 0.02em;
+  white-space: normal;
+  line-height: 1.25;
+  display: inline-block;
+  max-width: 100%;
+  word-break: break-word;
 }
 .badge-disposition-tp {
   background-color: #FEE4E2;
@@ -4046,16 +4130,18 @@ html[data-theme="dark"] .badge-disposition-bp {
 
 /* Dark mode inputs, selects & search fields */
 html[data-theme="dark"] .soc-input,
-html[data-theme="dark"] .soc-select {
-  background-color: var(--color-surface-card);
-  color: var(--color-text-primary);
-  border-color: var(--color-border-input);
+html[data-theme="dark"] .soc-select,
+html[data-theme="dark"] .soc-textarea {
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-input);
 }
 html[data-theme="dark"] .soc-input:focus,
-html[data-theme="dark"] .soc-select:focus {
-  border-color: var(--color-accent-lime);
+html[data-theme="dark"] .soc-select:focus,
+html[data-theme="dark"] .soc-textarea:focus {
+  border-color: var(--focus-ring);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(198, 241, 53, 0.2);
+  box-shadow: 0 0 0 2px rgba(170, 179, 192, 0.25);
 }
 
 /* Dark mode Table styling */
@@ -4276,14 +4362,14 @@ html[data-theme="dark"] .soc-table tr.clickable:hover td {
 /* COMPREHENSIVE DARK MODE OVERRIDES (REMEDIATION BATCH 3) */
 html[data-theme="dark"] .soc-input-wrap,
 html[data-theme="dark"] .soc-input-icon-wrap {
-  background-color: var(--color-surface-card, #16181A) !important;
-  border-color: var(--color-border-input, #32363C) !important;
+  background-color: var(--bg-input) !important;
+  border-color: var(--border-input) !important;
 }
 
 html[data-theme="dark"] .soc-input-wrap:focus-within,
 html[data-theme="dark"] .soc-input-icon-wrap:focus-within {
-  border-color: var(--color-accent-lime, #C6F135) !important;
-  box-shadow: 0 0 0 1px var(--color-accent-lime, #C6F135) !important;
+  border-color: var(--focus-ring) !important;
+  box-shadow: 0 0 0 1px var(--focus-ring) !important;
 }
 
 html[data-theme="dark"] .soc-input-wrap input,
@@ -4357,17 +4443,17 @@ html[data-theme="dark"] .segmented-pill-btn:hover {
 }
 
 html[data-theme="dark"] .segmented-pill-btn.active {
-  background-color: var(--color-accent-lime, #C6F135) !important;
-  color: #0E0F0C !important;
+  background-color: var(--seg-on-bg) !important;
+  color: var(--seg-on-text) !important;
   font-weight: 700;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 /* Dark mode Devices Security Alerts Progress Bar */
 html[data-theme="dark"] .bar-track {
-  background-color: var(--color-surface-card-subtle, #272A2E) !important;
+  background-color: var(--grid) !important;
 }
 
 html[data-theme="dark"] .bar-fill {
-  background-color: var(--color-accent-lime, #C6F135) !important;
+  background-color: var(--bar-fill) !important;
 }

@@ -22,7 +22,20 @@ from app import (
 @pytest.fixture
 def client():
     """Khởi tạo TestClient của FastAPI."""
-    return TestClient(app)
+    test_client = TestClient(app)
+    public_token = test_client.get("/api/auth/csrf-token").json()["csrf_token"]
+    response = test_client.post(
+        "/api/auth/login",
+        data={
+            "username": "admin",
+            "password": "vnpt-soc-2026",
+            "csrf_token": public_token,
+        },
+    )
+    assert response.status_code == 200
+    session_token = test_client.get("/api/auth/csrf-token").json()["csrf_token"]
+    test_client.headers.update({"X-CSRF-Token": session_token})
+    return test_client
 
 
 def _relative_luminance(hex_color: str) -> float:
@@ -313,10 +326,10 @@ def test_timezone_integrity_and_utcnow_deprecation():
     """Mục tiêu: Kiểm tra tuân thủ Release Gate 4 (Không dùng datetime.utcnow() và dynamic UTC).
 
     Kịch bản:
-        1. Đọc trực tiếp app.py và xác nhận không có bất kỳ lệnh datetime.utcnow() nào.
+        1. Đọc trực tiếp app/main.py và xác nhận không có bất kỳ lệnh datetime.utcnow() nào.
         2. Kiểm tra alert_observed_to_utc_iso() trả về định dạng UTC ISO-8601 hợp lệ kết thúc bằng 'Z'.
     """
-    with open("app.py", "r", encoding="utf-8") as f:
+    with open("app/main.py", "r", encoding="utf-8") as f:
         app_source = f.read()
 
     assert "datetime.utcnow()" not in app_source, "datetime.utcnow() is deprecated and forbidden by Release Gate 4"

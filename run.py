@@ -3,8 +3,8 @@ Convenience launcher for Network Security Monitor SOC Command Center
 Stack: FastAPI + Jinja2 + HTMX + Chart.js + Modern Vanilla CSS3 + Vanilla ES6+
 """
 
-import sys
 import socket
+
 import uvicorn
 
 
@@ -14,7 +14,7 @@ def get_lan_ip() -> str:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.connect(("8.8.8.8", 80))
             return s.getsockname()[0]
-    except Exception:
+    except OSError:
         return "127.0.0.1"
 
 
@@ -29,5 +29,5 @@ if __name__ == "__main__":
     print(f"  Mobile / LAN (Wi-Fi):  http://{lan_ip}:{port}/login")
     print(f"  Mobile Dashboard:      http://{lan_ip}:{port}/?guest=1")
     print("=" * 70)
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
 

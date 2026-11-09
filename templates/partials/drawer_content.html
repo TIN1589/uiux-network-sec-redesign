@@ -186,6 +186,7 @@
   <div class="drawer-action-triage-row">
     {% if alert.state == 'New' %}
     <button type="button"
+            data-min-role="tier1"
             hx-post="/api/alerts/{{ alert.eventId }}/state"
             hx-vals='{"state": "Acknowledged"}'
             hx-target="#alert-drawer-container"
