@@ -146,6 +146,7 @@
             <div class="q-action" onclick="event.stopPropagation()">
               {% if a.state == 'New' %}
               <button type="button"
+                      data-min-role="tier1"
                       hx-post="/api/alerts/{{ a.eventId }}/ack"
                       hx-target="#tab-overview"
                       hx-swap="outerHTML"

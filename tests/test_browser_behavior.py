@@ -28,6 +28,16 @@ def _wait_for_dashboard_ready(page) -> None:
         page.wait_for_selector("#pwa-splash-overlay", state="detached", timeout=5000)
 
 
+def _sign_in(page, username: str = "admin") -> None:
+    """Create a real browser session before exercising privileged controls."""
+    page.goto(f"{BASE_URL}/login", wait_until="networkidle")
+    page.fill("#field-username", username)
+    page.fill("#field-password", "vnpt-soc-2026")
+    page.click("#signin-btn")
+    page.wait_for_url(f"{BASE_URL}/", timeout=10000)
+    _wait_for_dashboard_ready(page)
+
+
 def _parse_rgb(rgb_str: str) -> tuple[int, int, int]:
     """Trích xuất (r, g, b) từ chuỗi rgb(...) hoặc rgba(...)."""
     m = re.search(r"rgba?\((\d+),\s*(\d+),\s*(\d+)", rgb_str)
@@ -132,6 +142,38 @@ def test_standalone_switch_tab_syncs_desktop_and_mobile_navigation(browser_insta
         "desktopCurrent": "page",
         "mobileCurrent": "page",
     }
+    context.close()
+
+
+def test_guest_controls_match_read_only_server_permissions(browser_instance):
+    """Guest UI hides mutation/export affordances while authenticated Admin retains them."""
+    context = browser_instance.new_context(viewport={"width": 390, "height": 844})
+    page = context.new_page()
+    page.goto(f"{BASE_URL}/alerts?guest=1", wait_until="networkidle")
+    _wait_for_dashboard_ready(page)
+    page.wait_for_function(
+        """() => getComputedStyle(document.querySelector('[data-min-role="tier2"]')).display === 'none'"""
+    )
+
+    assert page.get_by_role("link", name="Export CSV").is_hidden()
+    assert page.locator("#al-select-all").is_hidden()
+    assert page.locator(".alert-row-checkbox:visible").count() == 0
+    assert page.locator("#role-demo-switcher").evaluate(
+        "element => element.classList.contains('hidden')"
+    )
+    _capture_evidence(page, "guest-read-only-controls.png")
+
+    page.goto(f"{BASE_URL}/login", wait_until="networkidle")
+    page.fill("#field-username", "admin")
+    page.fill("#field-password", "vnpt-soc-2026")
+    page.click("#signin-btn")
+    page.wait_for_url(f"{BASE_URL}/", timeout=10000)
+    _wait_for_dashboard_ready(page)
+    assert page.locator('[data-min-role="tier1"]').first.is_visible()
+
+    page.goto(f"{BASE_URL}/alerts", wait_until="networkidle")
+    assert page.get_by_role("link", name="Export CSV").is_visible()
+    assert page.locator(".alert-row-checkbox:visible").count() > 0
     context.close()
 
 
@@ -499,8 +541,7 @@ def test_light_toast_keeps_readable_text_in_dark_theme(browser_instance):
     """The light role toast must retain WCAG AA text contrast in dark theme."""
     context = browser_instance.new_context(viewport={"width": 1440, "height": 900})
     page = context.new_page()
-    page.goto(f"{BASE_URL}/?guest=1", wait_until="networkidle")
-    _wait_for_dashboard_ready(page)
+    _sign_in(page)
     page.evaluate(
         """() => {
           document.documentElement.setAttribute('data-theme', 'dark');
@@ -536,8 +577,8 @@ def test_mobile_bulk_bar_does_not_shift_selected_alert_content(browser_instance,
         device_scale_factor=2.0,
     )
     page = context.new_page()
-    page.goto(f"{BASE_URL}/alerts?guest=1", wait_until="networkidle")
-    _wait_for_dashboard_ready(page)
+    _sign_in(page)
+    page.goto(f"{BASE_URL}/alerts", wait_until="networkidle")
 
     checkbox = page.locator(".mobile-alert-card .alert-row-checkbox").first
     checkbox.scroll_into_view_if_needed()

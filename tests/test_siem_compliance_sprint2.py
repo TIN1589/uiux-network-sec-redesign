@@ -22,7 +22,20 @@ from app import (
 @pytest.fixture
 def client():
     """Khởi tạo TestClient của FastAPI."""
-    return TestClient(app)
+    test_client = TestClient(app)
+    public_token = test_client.get("/api/auth/csrf-token").json()["csrf_token"]
+    response = test_client.post(
+        "/api/auth/login",
+        data={
+            "username": "admin",
+            "password": "vnpt-soc-2026",
+            "csrf_token": public_token,
+        },
+    )
+    assert response.status_code == 200
+    session_token = test_client.get("/api/auth/csrf-token").json()["csrf_token"]
+    test_client.headers.update({"X-CSRF-Token": session_token})
+    return test_client
 
 
 def _relative_luminance(hex_color: str) -> float:
