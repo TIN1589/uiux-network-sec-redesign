@@ -80,7 +80,8 @@ def test_local_icons_and_compact_desktop_without_external_network(browser_instan
     context = browser_instance.new_context(viewport={"width": 1200, "height": 850})
     page = context.new_page()
     page.route("https://**/*", lambda route: route.abort())
-    page.goto(f"{BASE_URL}/alerts?guest=1", wait_until="networkidle")
+    _sign_in(page)
+    page.goto(f"{BASE_URL}/alerts", wait_until="networkidle")
     page.wait_for_function("document.querySelectorAll('#app-sidebar .local-icon').length >= 4")
 
     result = page.evaluate(
@@ -145,30 +146,17 @@ def test_standalone_switch_tab_syncs_desktop_and_mobile_navigation(browser_insta
     context.close()
 
 
-def test_guest_controls_match_read_only_server_permissions(browser_instance):
-    """Guest UI hides mutation/export affordances while authenticated Admin retains them."""
+def test_anonymous_navigation_is_gated_and_admin_controls_remain_available(browser_instance):
+    """Anonymous clients see login while a real Admin retains privileged controls."""
     context = browser_instance.new_context(viewport={"width": 390, "height": 844})
     page = context.new_page()
-    page.goto(f"{BASE_URL}/alerts?guest=1", wait_until="networkidle")
-    _wait_for_dashboard_ready(page)
-    page.wait_for_function(
-        """() => getComputedStyle(document.querySelector('[data-min-role="tier2"]')).display === 'none'"""
-    )
+    page.goto(f"{BASE_URL}/alerts", wait_until="networkidle")
+    page.wait_for_url(f"{BASE_URL}/login", timeout=10000)
+    assert page.locator("#main-content").count() == 0
+    assert page.locator(".auth-guest-form").count() == 0
+    _capture_evidence(page, "anonymous-auth-gate.png")
 
-    assert page.get_by_role("link", name="Export CSV").is_hidden()
-    assert page.locator("#al-select-all").is_hidden()
-    assert page.locator(".alert-row-checkbox:visible").count() == 0
-    assert page.locator("#role-demo-switcher").evaluate(
-        "element => element.classList.contains('hidden')"
-    )
-    _capture_evidence(page, "guest-read-only-controls.png")
-
-    page.goto(f"{BASE_URL}/login", wait_until="networkidle")
-    page.fill("#field-username", "admin")
-    page.fill("#field-password", "vnpt-soc-2026")
-    page.click("#signin-btn")
-    page.wait_for_url(f"{BASE_URL}/", timeout=10000)
-    _wait_for_dashboard_ready(page)
+    _sign_in(page)
     assert page.locator('[data-min-role="tier1"]').first.is_visible()
 
     page.goto(f"{BASE_URL}/alerts", wait_until="networkidle")
@@ -181,12 +169,12 @@ def test_mobile_computed_contrast_dark_mode(browser_instance):
     """Mục tiêu: Đảm bảo các component trên Mobile 390px trong Dark Mode đạt chuẩn WCAG AA thực tế.
 
     Kịch bản:
-        1. Mở trang /alerts?guest=1 tại viewport 390x844 (Mobile).
+        1. Đăng nhập rồi mở trang /alerts tại viewport 390x844 (Mobile).
         2. Kích hoạt Dark Theme.
         3. Truy vấn getComputedStyle của .mobile-alert-card và .m-alert-row2:
            - Màu nền card không được là màu trắng, phải là than chì tối rgb(22, 24, 26).
            - Tỷ lệ tương phản giữa tiêu đề và nền card phải >= 4.5:1 (đạt WCAG AA).
-        4. Mở trang /?guest=1 tại viewport 390x844 (Mobile Overview).
+        4. Mở trang / tại viewport 390x844 (Mobile Overview).
         5. Truy vấn getComputedStyle của banner .kpi-strip-5 .kpi-cell-total:
            - Màu nền banner không được là #F8F7F4, phải là than chì tối.
            - Tỷ lệ tương phản giữa số đếm KPI và nền banner phải >= 4.5:1.
@@ -195,7 +183,8 @@ def test_mobile_computed_contrast_dark_mode(browser_instance):
     page = context.new_page()
 
     # 1. Mobile Alerts Card
-    page.goto(f"{BASE_URL}/alerts?guest=1", wait_until="networkidle")
+    _sign_in(page)
+    page.goto(f"{BASE_URL}/alerts", wait_until="networkidle")
     page.evaluate("() => { if (window.setTheme) window.setTheme('dark'); else document.documentElement.setAttribute('data-theme', 'dark'); }")
     page.wait_for_timeout(300)
 
@@ -207,7 +196,7 @@ def test_mobile_computed_contrast_dark_mode(browser_instance):
     assert contrast_card >= 4.5, f"Mobile alert card contrast {contrast_card:.2f}:1 fails WCAG AA 4.5:1"
 
     # 2. Mobile Overview KPI Total Banner
-    page.goto(f"{BASE_URL}/?guest=1", wait_until="networkidle")
+    page.goto(f"{BASE_URL}/", wait_until="networkidle")
     page.evaluate("() => { if (window.setTheme) window.setTheme('dark'); else document.documentElement.setAttribute('data-theme', 'dark'); }")
     page.wait_for_timeout(300)
 
@@ -225,7 +214,7 @@ def test_desktop_computed_contrast_dark_mode(browser_instance):
     """Mục tiêu: Đảm bảo các component trên Desktop 1440px trong Dark Mode đạt chuẩn WCAG AA/AAA thực tế.
 
     Kịch bản:
-        1. Mở trang /alerts?guest=1 tại viewport 1440x900.
+        1. Đăng nhập rồi mở trang /alerts tại viewport 1440x900.
         2. Kích hoạt Dark Theme.
         3. Kiểm tra .queue-row.normal:
            - Nền card là than chì tối rgb(22, 24, 26).
@@ -239,7 +228,8 @@ def test_desktop_computed_contrast_dark_mode(browser_instance):
     context = browser_instance.new_context(viewport={"width": 1440, "height": 900})
     page = context.new_page()
 
-    page.goto(f"{BASE_URL}/alerts?guest=1", wait_until="networkidle")
+    _sign_in(page)
+    page.goto(f"{BASE_URL}/alerts", wait_until="networkidle")
     page.evaluate("() => { if (window.setTheme) window.setTheme('dark'); else document.documentElement.setAttribute('data-theme', 'dark'); }")
     page.wait_for_timeout(300)
 
@@ -280,7 +270,8 @@ def test_keyboard_controller_full_interaction_flow(browser_instance):
     context = browser_instance.new_context(viewport={"width": 1440, "height": 900})
     page = context.new_page()
 
-    page.goto(f"{BASE_URL}/alerts?guest=1", wait_until="networkidle")
+    _sign_in(page)
+    page.goto(f"{BASE_URL}/alerts", wait_until="networkidle")
     page.evaluate("() => { const m = document.getElementById('signin-modal'); if (m) m.classList.remove('active'); }")
     page.wait_for_timeout(200)
 
@@ -347,7 +338,8 @@ def test_cold_load_fouc_prevention(browser_instance):
     context = browser_instance.new_context(viewport={"width": 1440, "height": 900})
     page = context.new_page()
 
-    page.goto(f"{BASE_URL}/?guest=1", wait_until="networkidle")
+    _sign_in(page)
+    page.goto(f"{BASE_URL}/", wait_until="networkidle")
     page.evaluate("() => localStorage.setItem('soc-theme', 'dark')")
 
     page.reload(wait_until="domcontentloaded")
@@ -364,7 +356,7 @@ def test_search_input_wrapper_and_pills_contrast_dark_mode(browser_instance):
     """Mục tiêu: Đảm bảo ô tìm kiếm (wrapper + input) và Segmented Pills đạt chuẩn WCAG AA/AAA.
 
     Kịch bản:
-        1. Mở trang /alerts?guest=1 tại viewport 1440x900 trong Dark Mode.
+        1. Đăng nhập rồi mở trang /alerts tại viewport 1440x900 trong Dark Mode.
         2. Kiểm tra wrapper .soc-input-icon-wrap không có nền trắng #FFFFFF, dùng nền than chì tối.
         3. Tỷ lệ tương phản giữa chữ nhập và nền wrapper phải >= 7.0:1 (WCAG AAA).
         4. Kiểm tra nhóm nút lọc Segmented Pills .segmented-pill-group:
@@ -374,7 +366,8 @@ def test_search_input_wrapper_and_pills_contrast_dark_mode(browser_instance):
     context = browser_instance.new_context(viewport={"width": 1440, "height": 900})
     page = context.new_page()
 
-    page.goto(f"{BASE_URL}/alerts?guest=1", wait_until="networkidle")
+    _sign_in(page)
+    page.goto(f"{BASE_URL}/alerts", wait_until="networkidle")
     page.evaluate("() => document.documentElement.setAttribute('data-theme', 'dark')")
     page.wait_for_timeout(300)
 
@@ -397,11 +390,11 @@ def test_mitre_matrix_and_scenario_cards_contrast_dark_mode(browser_instance):
     """Mục tiêu: Đảm bảo cột Tactic MITRE và Mobile Scenario Cards không bị trắng trên trắng.
 
     Kịch bản:
-        1. Mở trang /scenarios?guest=1 tại Desktop (1440px) trong Dark Mode.
+        1. Đăng nhập rồi mở trang /scenarios tại Desktop (1440px) trong Dark Mode.
         2. Kiểm tra cột tactic .mitre-tactic-col:
            - Nền là dark inset #1C1E22, không fallback về #F3F1EC.
            - Tiêu đề tactic đạt tương phản >= 7.0:1 (WCAG AAA).
-        3. Mở trang /scenarios?guest=1 tại Mobile (390px) trong Dark Mode.
+        3. Mở trang /scenarios tại Mobile (390px) trong Dark Mode.
         4. Kiểm tra thẻ scenario bình thường:
            - Nền không được là #FFFFFF, phải là dark surface #16181A.
            - Tiêu đề đạt tương phản >= 7.0:1 (WCAG AAA).
@@ -410,7 +403,8 @@ def test_mitre_matrix_and_scenario_cards_contrast_dark_mode(browser_instance):
     # 1. Desktop MITRE Matrix
     context_dt = browser_instance.new_context(viewport={"width": 1440, "height": 900})
     page_dt = context_dt.new_page()
-    page_dt.goto(f"{BASE_URL}/scenarios?guest=1", wait_until="networkidle")
+    _sign_in(page_dt)
+    page_dt.goto(f"{BASE_URL}/scenarios", wait_until="networkidle")
     page_dt.evaluate("() => document.documentElement.setAttribute('data-theme', 'dark')")
     page_dt.wait_for_timeout(300)
 
@@ -424,7 +418,8 @@ def test_mitre_matrix_and_scenario_cards_contrast_dark_mode(browser_instance):
     # 2. Mobile Scenario Cards
     context_mb = browser_instance.new_context(viewport={"width": 390, "height": 844})
     page_mb = context_mb.new_page()
-    page_mb.goto(f"{BASE_URL}/scenarios?guest=1", wait_until="networkidle")
+    _sign_in(page_mb)
+    page_mb.goto(f"{BASE_URL}/scenarios", wait_until="networkidle")
     page_mb.evaluate("() => document.documentElement.setAttribute('data-theme', 'dark')")
     page_mb.wait_for_timeout(300)
 
@@ -445,7 +440,7 @@ def test_charts_legend_and_signin_panel_contrast_dark_mode(browser_instance):
     """Mục tiêu: Đảm bảo Chart legends và Panel Sign-in trong Dark Mode không gây mỏi mắt hay chói sáng.
 
     Kịch bản:
-        1. Mở trang /?guest=1 (Overview) trong Dark Mode.
+        1. Đăng nhập rồi mở trang / (Overview) trong Dark Mode.
         2. Kiểm tra nhãn Donut metric và nhãn Chart legend:
            - Tương phản trên nền card phải >= 4.5:1 (WCAG AA).
         3. Mở trang /login trong Dark Mode.
@@ -457,7 +452,8 @@ def test_charts_legend_and_signin_panel_contrast_dark_mode(browser_instance):
     # 1. Overview Chart Legends
     context = browser_instance.new_context(viewport={"width": 1440, "height": 900})
     page = context.new_page()
-    page.goto(f"{BASE_URL}/?guest=1", wait_until="networkidle")
+    _sign_in(page)
+    page.goto(f"{BASE_URL}/", wait_until="networkidle")
     page.evaluate("() => document.documentElement.setAttribute('data-theme', 'dark')")
     page.wait_for_timeout(300)
 
@@ -467,8 +463,11 @@ def test_charts_legend_and_signin_panel_contrast_dark_mode(browser_instance):
 
     assert _contrast_ratio_rgb(donut_label_color, card_bg) >= 4.5, "Donut center label must pass WCAG AA (4.5:1)"
     assert _contrast_ratio_rgb(legend_label_color, card_bg) >= 4.5, "Chart legend label must pass WCAG AA (4.5:1)"
+    context.close()
 
     # 2. Sign-in Page Dark Panel
+    context = browser_instance.new_context(viewport={"width": 1440, "height": 900})
+    page = context.new_page()
     page.goto(f"{BASE_URL}/login", wait_until="networkidle")
     page.evaluate("() => document.documentElement.setAttribute('data-theme', 'dark')")
     page.wait_for_timeout(300)
@@ -629,7 +628,7 @@ def test_service_worker_offline_cache_match_with_query_params(browser_instance):
     """Mục tiêu: Đảm bảo Service Worker xử lý query params khi offline thật sự với ignoreSearch.
 
     Kịch bản:
-        1. Mở trang /?guest=1 trên Chromium để kích hoạt đăng ký Service Worker /sw.js.
+        1. Đăng nhập rồi mở trang / trên Chromium để kích hoạt đăng ký Service Worker /sw.js.
         2. Chờ Service Worker sẵn sàng (navigator.serviceWorker.ready) và precache hoàn tất
            vào đúng cache 'vnpt-soc-pwa-v1.0.4-local-icons'.
         3. Chuyển context trình duyệt sang chế độ OFFLINE (context.set_offline(True)).
@@ -643,7 +642,8 @@ def test_service_worker_offline_cache_match_with_query_params(browser_instance):
     """
     context = browser_instance.new_context()
     page = context.new_page()
-    page.goto(f"{BASE_URL}/?guest=1", wait_until="networkidle")
+    _sign_in(page)
+    page.goto(f"{BASE_URL}/", wait_until="networkidle")
 
     sw_status = page.evaluate("""async () => {
         if (!('serviceWorker' in navigator)) return { supported: false };

@@ -33,7 +33,7 @@ STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 
 # Cấu hình môi trường vận hành an toàn VNPT SOC
-DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() in ("1", "true", "yes")
+DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() in ("1", "true", "yes")
 ENV = os.getenv("ENV", "development").lower()
 SHOW_BUILD_VERSION = os.getenv("SHOW_BUILD_VERSION", "false").lower() in ("1", "true", "yes")
 
@@ -62,9 +62,53 @@ _ADMIN_PWD_PLAIN = "vnpt-soc-2026"          # Backward compatibility
 # In-memory session store: {session_id: {username, role, created_at}}
 _sessions: dict = {}
 
+_PUBLIC_ROUTE_PATHS = {
+    "/favicon.ico",
+    "/manifest.webmanifest",
+    "/sw.js",
+    "/offline",
+    "/login",
+    "/auth/login",
+    "/auth/forgot",
+    "/api/auth/csrf-token",
+    "/api/auth/login",
+    "/api/auth/logout",
+    "/api/auth/me",
+    "/ui/log-feed",
+}
+_PUBLIC_ROUTE_PREFIXES = ("/static/",)
+
 app = FastAPI(title="Network Security Monitor – SOC Command Center")
 
 # Content Security Policy Middleware: Cấp phát CSP Nonce ngẫu nhiên cho từng request
+def _is_public_route(path: str) -> bool:
+    """Return whether a request path is intentionally public.
+
+    Dashboard pages, HTMX fragments, read APIs, API documentation, and future
+    routes are protected by default unless they are explicitly allowlisted.
+    """
+    return path in _PUBLIC_ROUTE_PATHS or path.startswith(_PUBLIC_ROUTE_PREFIXES)
+
+
+@app.middleware("http")
+async def authentication_guard_middleware(request: Request, call_next):
+    """Require a server-validated session for every non-public Dynamic route."""
+    path = request.url.path
+    if _is_public_route(path):
+        return await call_next(request)
+
+    session = _get_session(request.cookies.get("session_id"))
+    if session:
+        request.state.auth_session = session
+        return await call_next(request)
+
+    if request.headers.get("HX-Request", "").lower() == "true":
+        return Response(status_code=401, headers={"HX-Redirect": "/login"})
+    if path.startswith("/api/"):
+        return JSONResponse({"detail": "Authentication required"}, status_code=401)
+    return RedirectResponse(url="/login", status_code=303)
+
+
 @app.middleware("http")
 async def security_headers_middleware(request: Request, call_next):
     """Middleware áp dụng Content Security Policy và cấp phát CSP Nonce ngẫu nhiên cho từng request.
@@ -162,7 +206,6 @@ def _jinja_url_for(name: str, **params) -> str:
     if not route:
         mappings = {
             "auth.login": "/login",
-            "auth.guest": "/auth/guest",
             "auth.forgot": "/auth/forgot",
             "ui.log_feed": "/ui/log-feed",
         }
@@ -1221,6 +1264,17 @@ def _verify_password(plain: str, stored_plain: str) -> bool:
         hashlib.pbkdf2_hmac('sha256', stored_plain.encode(), b'vnpt-soc-salt', 260000).hex()
     )
 
+
+def _authenticate_demo_account(username: str, password: str) -> dict | None:
+    """Authenticate a demo account only when demo mode is explicitly enabled."""
+    if not DEMO_MODE:
+        return None
+    account = _DEMO_ACCOUNTS.get(username)
+    if not account or not _verify_password(password, account["password"]):
+        return None
+    return account
+
+
 def _create_session(username: str, role: str = "admin") -> str:
     """Khởi tạo phiên làm việc (Session) mới và lưu vào in-memory session store.
 
@@ -1279,6 +1333,14 @@ def _validate_csrf_token(token: str, session_id: str) -> bool:
     except (BadSignature, SignatureExpired):
         return False
 
+def _require_authenticated_session(session_id: str | None) -> dict:
+    """Return a valid authenticated session or reject the request."""
+    session = _get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return session
+
+
 def _require_role(session_id: str | None, minimum_role: str) -> dict:
     """Require an authenticated session with at least the requested SOC role.
 
@@ -1292,9 +1354,7 @@ def _require_role(session_id: str | None, minimum_role: str) -> dict:
     Raises:
         HTTPException: If the session is missing, expired, or lacks permission.
     """
-    session = _get_session(session_id)
-    if not session:
-        raise HTTPException(status_code=401, detail="Authentication required")
+    session = _require_authenticated_session(session_id)
     current_level = _ROLE_LEVELS.get(session.get("role", ""), 0)
     required_level = _ROLE_LEVELS[minimum_role]
     if current_level < required_level:
@@ -2398,9 +2458,9 @@ async def login(
         raise HTTPException(status_code=403, detail="Invalid CSRF token")
 
     normalized_user = username.strip().lower()
-    account = _DEMO_ACCOUNTS.get(normalized_user)
+    account = _authenticate_demo_account(normalized_user, password)
 
-    if not account or not _verify_password(password, account["password"]):
+    if not account:
         return JSONResponse({"success": False, "error": "Invalid username or password"}, status_code=401)
 
     role = account["role"]
@@ -2506,10 +2566,10 @@ async def login_post(
         raise HTTPException(status_code=403, detail="Invalid CSRF token")
 
     normalized_user = username.strip().lower()
-    account = _DEMO_ACCOUNTS.get(normalized_user)
+    account = _authenticate_demo_account(normalized_user, password)
     is_htmx = request.headers.get("hx-request") == "true"
 
-    if not account or not _verify_password(password, account["password"]):
+    if not account:
         if is_htmx:
             return templates.TemplateResponse(
                 request=request,
@@ -2545,30 +2605,6 @@ async def login_post(
     res = RedirectResponse(url="/", status_code=303)
     _set_session_cookies(res, session_id, cookie_max_age)
     return res
-
-
-@app.post("/auth/guest", name="auth.guest")
-async def guest_post(
-    request: Request,
-    csrf_token: str | None = Form(None),
-):
-    """Điều hướng truy cập nhanh vào chế độ Khách (Read-only) không cần mật khẩu.
-
-    Args:
-        request: FastAPI Request instance.
-
-    Returns:
-        Response hoặc RedirectResponse điều hướng về trang chủ kèm cờ guest=1.
-    """
-    if not csrf_token or not _validate_csrf_token(
-        csrf_token,
-        _PUBLIC_AUTH_CSRF_SESSION,
-    ):
-        raise HTTPException(status_code=403, detail="Invalid CSRF token")
-    is_htmx = request.headers.get("hx-request") == "true"
-    if is_htmx:
-        return Response(status_code=200, headers={"HX-Redirect": "/?guest=1"})
-    return RedirectResponse(url="/?guest=1", status_code=303)
 
 
 @app.get("/auth/forgot", name="auth.forgot")

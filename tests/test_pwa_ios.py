@@ -11,6 +11,22 @@ from app import app
 client = TestClient(app)
 
 
+def _authenticated_client() -> TestClient:
+    """Create an explicit demo-mode session for protected PWA surfaces."""
+    test_client = TestClient(app)
+    csrf = test_client.get("/api/auth/csrf-token").json()["csrf_token"]
+    response = test_client.post(
+        "/api/auth/login",
+        data={
+            "username": "admin",
+            "password": "vnpt-soc-2026",
+            "csrf_token": csrf,
+        },
+    )
+    assert response.status_code == 200
+    return test_client
+
+
 def test_manifest_webmanifest_endpoint():
     """Kiểm thử route phục vụ Web App Manifest (/manifest.webmanifest).
 
@@ -77,7 +93,7 @@ def test_pwa_ios_meta_tags_in_base_templates():
                 apple-touch-icon và viewport-fit=cover.
     """
     # 1. Dashboard chính
-    res_home = client.get("/")
+    res_home = _authenticated_client().get("/")
     assert res_home.status_code == 200
     assert 'rel="manifest" href="/manifest.webmanifest"' in res_home.text
     assert 'name="apple-mobile-web-app-capable" content="yes"' in res_home.text
@@ -104,7 +120,7 @@ def test_csp_allows_service_worker_and_manifest():
     Kịch bản: Gửi HTTP GET tới / và /login, phân tích chuỗi header Content-Security-Policy.
     Minh chứng: Cả 2 CSP đều chứa worker-src 'self' và manifest-src 'self'.
     """
-    res_home = client.get("/")
+    res_home = _authenticated_client().get("/")
     csp_home = res_home.headers.get("Content-Security-Policy", "")
     assert "worker-src 'self'" in csp_home
     assert "manifest-src 'self'" in csp_home
@@ -121,13 +137,13 @@ def test_rules_table_mobile_structure_and_constraints():
 
     Mục tiêu: Đảm bảo bảng rules-table trên màn hình hẹp (<430px) có min-width bảo vệ,
               cột DESCRIPTION có min-width >= 250px và không bị triệt tiêu về 0px gây đè chữ ('SESERIPTION').
-    Kịch bản: Gửi HTTP GET tới /views/overview và /?guest=1, phân tích markup thead của bảng .rules-table.
+    Kịch bản: Đăng nhập rồi gửi HTTP GET tới /views/overview, phân tích markup thead của bảng .rules-table.
     Minh chứng:
         - Thẻ th của DESCRIPTION chứa class 'desc-col' và 'min-width: 250px;'.
         - Thẻ th của RULE chứa class 'rule-col' và SEVERITY chứa class 'sev-col'.
         - CSS components.css chứa định nghĩa min-width 680px cho .rules-table.
     """
-    res = client.get("/views/overview")
+    res = _authenticated_client().get("/views/overview")
     assert res.status_code == 200
     assert 'class="desc-col" style="min-width: 250px;"' in res.text
     assert 'class="rule-col" style="width: 110px; min-width: 110px;"' in res.text

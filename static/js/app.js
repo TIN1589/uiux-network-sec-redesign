@@ -15,7 +15,7 @@ export const state = {
   editingScenarioId: null,
   autoRefreshOn: true,
   secSinceRefresh: 5,
-  currentRole: 'admin', // 'guest' | 'tier1' | 'tier2' | 'admin'
+  currentRole: 'guest', // 'guest' | 'tier1' | 'tier2' | 'admin'
   authenticatedRole: null,
   csrfToken: null
 };
@@ -450,6 +450,10 @@ export function cancelScenarioEdit(silent = false) {
  * Chuyển hướng người dùng tới trang Đăng nhập độc lập (/login).
  */
 export function openSignInModal() {
+  if (window.location.protocol === 'file:') {
+    document.getElementById('signin-modal')?.classList.add('active');
+    return;
+  }
   window.location.href = '/login';
 }
 
@@ -462,21 +466,25 @@ export function closeSignInModal() {
 }
 
 /**
- * Tiếp tục phiên làm việc với tư cách Khách xem (Read-only Guest).
- * Ghi nhận cờ soc_guest_mode để ngăn chặn modal tự động bật lại khi chuyển trang hoặc F5.
+ * Tiếp tục xem dữ liệu mô phỏng trong Standalone Preview demo.
+ * Cờ preview chỉ điều khiển UI file:// và không bao giờ là bằng chứng xác thực.
  */
 export function continueAsGuest() {
-  sessionStorage.setItem('soc_guest_mode', 'true');
+  if (window.location.protocol !== 'file:') {
+    window.location.href = '/login';
+    return;
+  }
+  sessionStorage.setItem('soc_preview_mode', 'true');
   closeSignInModal();
   const analystNameEl = document.getElementById('topbar-analyst-name');
   if (analystNameEl && !state.isAuthenticated) {
-    analystNameEl.textContent = 'Guest';
+    analystNameEl.textContent = 'Preview demo';
   }
   const avatarCircle = document.getElementById('analyst-avatar-circle');
   if (avatarCircle && !state.isAuthenticated) {
-    avatarCircle.textContent = 'G';
+    avatarCircle.textContent = 'P';
   }
-  showToast('light', 'Viewing as Guest (Read-only mode)');
+  showToast('light', 'Viewing simulated Preview demo data');
 }
 
 export function hideSignInError() {
@@ -537,19 +545,20 @@ export function fillDemoCredentials(role) {
   const pwdInp = document.getElementById('signin-pwd');
   hideSignInError();
 
-  const demoAccounts = {
-    admin: { user: 'admin', pwd: 'vnpt-soc-2026', label: 'SecOps Admin' },
-    tier2: { user: 'tier2', pwd: 'vnpt-soc-2026', label: 'Tier-2 Analyst' },
-    tier1: { user: 'tier1', pwd: 'vnpt-soc-2026', label: 'Tier-1 Responder' }
-  };
-
-  const cred = demoAccounts[role] || demoAccounts.admin;
-  if (userInp) userInp.value = cred.user;
+  const safeRole = ['admin', 'tier2', 'tier1'].includes(role) ? role : 'admin';
+  const chip = document.querySelector(`[data-demo-role="${safeRole}"]`);
+  const user = chip?.getAttribute('data-demo-user') || '';
+  const pwd = chip?.getAttribute('data-demo-pwd') || '';
+  if (!user || !pwd) {
+    showToast('light', 'Demo credentials are unavailable');
+    return;
+  }
+  if (userInp) userInp.value = user;
   if (pwdInp) {
-    pwdInp.value = cred.pwd;
+    pwdInp.value = pwd;
     handleSignInPwdInput();
   }
-  showToast('light', `Loaded demo credentials: ${cred.label}`);
+  showToast('light', `Loaded demo credentials: ${ROLE_LABELS[safeRole]}`);
 }
 
 /**
@@ -557,7 +566,7 @@ export function fillDemoCredentials(role) {
  * Cung cấp hướng dẫn trực quan ngay trên modal và làm nổi bật cụm Quick Demo Fill.
  */
 export function showForgotCredentialsHint() {
-  showToast('dark', 'Demo Sandbox: Use Quick Demo Fill pills below or password: vnpt-soc-2026');
+  showToast('dark', 'Contact your administrator or use Quick Demo Fill when demo mode is enabled');
   const demoBox = document.querySelector('.signin-demo-box');
   if (demoBox) {
     demoBox.style.transition = 'all 0.3s ease';
@@ -615,10 +624,13 @@ export async function submitSignInForm(e) {
       return;
     }
 
-    const assignedRole = data.role || (user.toLowerCase().includes('tier2') ? 'tier2' : (user.toLowerCase().includes('tier1') ? 'tier1' : 'admin'));
-    sessionStorage.removeItem('soc_guest_mode');
-    sessionStorage.setItem('soc_auth_user', data.username || user);
-    sessionStorage.setItem('soc_auth_role', assignedRole);
+    const assignedRole = data.role;
+    if (!assignedRole || !Object.hasOwn(ROLE_HIERARCHY, assignedRole) || assignedRole === 'guest') {
+      throw new Error('Authentication response did not include a valid role');
+    }
+    sessionStorage.removeItem('soc_preview_mode');
+    sessionStorage.removeItem('soc_auth_user');
+    sessionStorage.removeItem('soc_auth_role');
     state.isAuthenticated = true;
     state.currentUser = data.username || user;
     state.authenticatedRole = assignedRole;
@@ -634,9 +646,9 @@ export async function submitSignInForm(e) {
     showToast('dark', `Signed in as ${data.username || user} (${ROLE_LABELS[assignedRole] || assignedRole})`);
   } catch (err) {
     // Dual-Mode Fallback: Xử lý đăng nhập giả lập khi chạy xem trước tĩnh (file:// hoặc không chạy FastAPI cổng 8000)
-    if (window.location.protocol === 'file:' || (window.location.port !== '8000' && window.location.port !== '')) {
+    if (window.location.protocol === 'file:') {
       const assignedRole = user.toLowerCase().includes('tier2') ? 'tier2' : (user.toLowerCase().includes('tier1') ? 'tier1' : 'admin');
-      sessionStorage.removeItem('soc_guest_mode');
+      sessionStorage.removeItem('soc_preview_mode');
       sessionStorage.setItem('soc_auth_user', user);
       sessionStorage.setItem('soc_auth_role', assignedRole);
       state.isAuthenticated = true;
@@ -733,7 +745,7 @@ export function handleSignOut() {
       closeAnalystMenu();
       sessionStorage.removeItem('soc_auth_user');
       sessionStorage.removeItem('soc_auth_role');
-      sessionStorage.removeItem('soc_guest_mode');
+      sessionStorage.removeItem('soc_preview_mode');
       state.isAuthenticated = false;
       state.currentUser = null;
       state.authenticatedRole = null;
@@ -741,9 +753,9 @@ export function handleSignOut() {
       applyRolePermissions('guest');
 
       const nameEl = document.getElementById('topbar-analyst-name');
-      if (nameEl) nameEl.textContent = 'Guest';
+      if (nameEl) nameEl.textContent = window.location.protocol === 'file:' ? 'Preview demo' : 'Signed out';
       const avatarEl = document.getElementById('analyst-avatar-circle');
-      if (avatarEl) avatarEl.textContent = 'G';
+      if (avatarEl) avatarEl.textContent = window.location.protocol === 'file:' ? 'P' : '—';
 
       showToast('light', 'Signed out successfully');
       openSignInModal();
@@ -1185,6 +1197,15 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// Keep HTMX lifecycle handling in trusted module code so the strict CSP does
+// not require `unsafe-eval` for hx-on attribute expressions.
+document.addEventListener('htmx:afterRequest', (event) => {
+  const trigger = event.detail?.elt || event.target;
+  if (event.detail?.successful && trigger?.id === 'scenario-test-form') {
+    cancelScenarioEdit(true);
+  }
+});
+
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeAllRowMenus();
@@ -1232,7 +1253,7 @@ window.handleSignOut = handleSignOut;
 
 /**
  * Xử lý trạng thái khi người dùng chưa đăng nhập.
- * Nếu chưa từng chọn chế độ Guest, tự động chuyển hướng sang trang Sign In (/login).
+ * Dynamic chuyển về Sign In; Standalone chỉ mở modal Preview demo.
  *
  * @param {boolean} isHashSignIn - Cờ nhận diện URL đã có hash #signin.
  */
@@ -1241,16 +1262,24 @@ function handleUnauthenticatedState(isHashSignIn) {
   state.currentUser = null;
   state.authenticatedRole = null;
   state.currentRole = 'guest';
-  const isGuestMode = sessionStorage.getItem('soc_guest_mode') === 'true';
+  sessionStorage.removeItem('soc_auth_user');
+  sessionStorage.removeItem('soc_auth_role');
+
+  if (window.location.protocol !== 'file:') {
+    window.location.href = '/login';
+    return;
+  }
+
+  const isPreviewMode = sessionStorage.getItem('soc_preview_mode') === 'true';
 
   const nameEl = document.getElementById('topbar-analyst-name');
-  if (nameEl) nameEl.textContent = 'Guest';
+  if (nameEl) nameEl.textContent = 'Preview demo';
   const avatarEl = document.getElementById('analyst-avatar-circle');
-  if (avatarEl) avatarEl.textContent = 'G';
+  if (avatarEl) avatarEl.textContent = 'P';
   applyRolePermissions(state.currentRole);
 
-  if (!isGuestMode) {
-    window.location.href = '/login';
+  if (!isPreviewMode || isHashSignIn) {
+    openSignInModal();
   }
 }
 
@@ -1258,8 +1287,8 @@ function handleUnauthenticatedState(isHashSignIn) {
 window.addEventListener('DOMContentLoaded', () => {
   // Ghi nhận cờ guest nếu được chuyển hướng từ /login
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('guest') === '1') {
-    sessionStorage.setItem('soc_guest_mode', 'true');
+  if (window.location.protocol === 'file:' && urlParams.get('preview') === '1') {
+    sessionStorage.setItem('soc_preview_mode', 'true');
   }
 
   syncActiveNav(window.location.pathname);
@@ -1291,9 +1320,9 @@ window.addEventListener('DOMContentLoaded', () => {
         state.isAuthenticated = true;
         state.currentUser = data.username;
         state.authenticatedRole = data.role || null;
-        sessionStorage.removeItem('soc_guest_mode');
-        sessionStorage.setItem('soc_auth_user', data.username);
-        if (data.role) sessionStorage.setItem('soc_auth_role', data.role);
+        sessionStorage.removeItem('soc_preview_mode');
+        sessionStorage.removeItem('soc_auth_user');
+        sessionStorage.removeItem('soc_auth_role');
 
         const nameEl = document.getElementById('topbar-analyst-name');
         if (nameEl) nameEl.textContent = data.username;
@@ -1311,9 +1340,10 @@ window.addEventListener('DOMContentLoaded', () => {
     })
     .catch(() => {
       // Static Offline / Dual-Mode Preview Fallback
-      const savedUser = sessionStorage.getItem('soc_auth_user');
-      const savedRole = sessionStorage.getItem('soc_auth_role');
-      if (savedUser) {
+      const isStandalone = window.location.protocol === 'file:';
+      const savedUser = isStandalone ? sessionStorage.getItem('soc_auth_user') : null;
+      const savedRole = isStandalone ? sessionStorage.getItem('soc_auth_role') : null;
+      if (isStandalone && savedUser) {
         state.isAuthenticated = true;
         state.currentUser = savedUser;
         state.authenticatedRole = savedRole || null;

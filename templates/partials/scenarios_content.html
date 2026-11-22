@@ -139,7 +139,6 @@
       <form id="scenario-test-form"
             hx-post="/api/scenarios"
             hx-target="#scenarios-table-container"
-            hx-on::after-request="if(event.detail.successful) { cancelScenarioEdit(true); }"
             style="display: flex; flex-direction: column; gap: 20px;">
 
         <input type="hidden" id="sc-edit-id-input" name="id" value="" />

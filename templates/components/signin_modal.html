@@ -69,13 +69,13 @@
             <span class="signin-demo-pwd-hint">pwd: {{ demo_password }}</span>
           </div>
           <div class="signin-demo-pills">
-            <button type="button" onclick="fillDemoCredentials('admin')" class="signin-demo-pill" title="Fill SecOps Admin credentials">
+            <button type="button" onclick="fillDemoCredentials('admin')" class="signin-demo-pill" data-demo-role="admin" data-demo-user="admin" data-demo-pwd="{{ demo_password }}" title="Fill SecOps Admin credentials">
               Admin
             </button>
-            <button type="button" onclick="fillDemoCredentials('tier2')" class="signin-demo-pill" title="Fill Tier-2 Analyst credentials">
+            <button type="button" onclick="fillDemoCredentials('tier2')" class="signin-demo-pill" data-demo-role="tier2" data-demo-user="tier2" data-demo-pwd="{{ demo_password }}" title="Fill Tier-2 Analyst credentials">
               Tier-2
             </button>
-            <button type="button" onclick="fillDemoCredentials('tier1')" class="signin-demo-pill" title="Fill Tier-1 Responder credentials">
+            <button type="button" onclick="fillDemoCredentials('tier1')" class="signin-demo-pill" data-demo-role="tier1" data-demo-user="tier1" data-demo-pwd="{{ demo_password }}" title="Fill Tier-1 Responder credentials">
               Tier-1
             </button>
           </div>
@@ -128,9 +128,6 @@
 
           <button type="submit" class="soc-btn soc-btn-primary soc-btn-lg" style="margin-top: 8px;">
             Sign in
-          </button>
-          <button type="button" onclick="continueAsGuest()" class="soc-btn soc-btn-outline" style="width: 100%; min-height: 40px;">
-            Continue as Guest (Read-only)
           </button>
         </form>
 

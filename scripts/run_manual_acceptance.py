@@ -110,6 +110,9 @@ def main() -> int:
     server_process: subprocess.Popen[str] | None = None
     server_log_handle = None
     base_url = args.base_url.rstrip("/") if args.base_url else ""
+    env = os.environ.copy()
+    env["ENV"] = "test"
+    env["DEMO_MODE"] = "true"
 
     try:
         if not base_url:
@@ -138,10 +141,10 @@ def main() -> int:
                 stderr=subprocess.STDOUT,
                 text=True,
                 creationflags=creation_flags,
+                env=env,
             )
             _wait_until_ready(base_url, server_process)
 
-        env = os.environ.copy()
         env["MANUAL_ACCEPTANCE_BASE_URL"] = base_url
         env["MANUAL_ACCEPTANCE_EVIDENCE_DIR"] = str(evidence_dir)
         env["MANUAL_ACCEPTANCE_HEADED"] = "1" if args.headed else "0"

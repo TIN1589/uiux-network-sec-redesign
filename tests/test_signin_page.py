@@ -7,6 +7,9 @@ Tuân thủ nghiêm ngặt chuẩn kiểm thử N4.2:
 """
 
 import os
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -124,18 +127,55 @@ def test_demo_mode_disabled_does_not_leak_demo_credentials():
         assert "vnpt-soc-2026" not in html
 
 
-def test_production_fails_to_start_if_demo_mode_enabled(monkeypatch):
+def test_demo_credentials_cannot_create_session_when_demo_mode_is_disabled(
+    client,
+    monkeypatch,
+):
+    """Both login handlers must fail closed when demo mode is disabled."""
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "DEMO_MODE", False)
+    api_response = client.post(
+        "/api/auth/login",
+        data={
+            "username": "admin",
+            "password": "vnpt-soc-2026",
+            "csrf_token": _public_csrf_token(client),
+        },
+    )
+    form_response = client.post(
+        "/login",
+        data={
+            "username": "admin",
+            "password": "vnpt-soc-2026",
+            "csrf_token": _public_csrf_token(client),
+        },
+        follow_redirects=False,
+    )
+
+    assert api_response.status_code == 401
+    assert form_response.status_code == 422
+    assert "session_id" not in client.cookies
+
+
+def test_production_fails_to_start_if_demo_mode_enabled():
     """Mục tiêu: Ngăn chặn tuyệt đối việc bật DEMO_MODE trên môi trường production.
 
     Kịch bản:
         1. Thiết lập biến môi trường DEMO_MODE=true và ENV=production.
         2. Kiểm tra ngoại lệ RuntimeError được ném ra để chặn khởi động.
     """
-    monkeypatch.setenv("DEMO_MODE", "true")
-    monkeypatch.setenv("ENV", "production")
+    env = os.environ.copy()
+    env["DEMO_MODE"] = "true"
+    env["ENV"] = "production"
+    result = subprocess.run(
+        [sys.executable, "-c", "import app.main"],
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    with pytest.raises(RuntimeError, match="DEMO_MODE cannot be enabled in production"):
-        demo = os.getenv("DEMO_MODE", "false").lower() in ("1", "true", "yes")
-        env = os.getenv("ENV", "development").lower()
-        if demo and env == "production":
-            raise RuntimeError("Security violation: DEMO_MODE cannot be enabled in production environment.")
+    assert result.returncode != 0
+    assert "DEMO_MODE cannot be enabled in production" in (result.stdout + result.stderr)
