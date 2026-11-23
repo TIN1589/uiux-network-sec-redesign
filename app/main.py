@@ -25,6 +25,28 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+from pydantic import BaseModel, Field
+from webauthn import (
+    generate_authentication_options,
+    generate_registration_options,
+    verify_authentication_response,
+    verify_registration_response,
+)
+from webauthn.helpers import (
+    base64url_to_bytes,
+    bytes_to_base64url,
+    options_to_json,
+)
+from webauthn.helpers.exceptions import WebAuthnException
+from webauthn.helpers.structs import (
+    AttestationConveyancePreference,
+    AuthenticatorSelectionCriteria,
+    AuthenticatorTransport,
+    CredentialDeviceType,
+    PublicKeyCredentialDescriptor,
+    ResidentKeyRequirement,
+    UserVerificationRequirement,
+)
 
 from app.auth_store import AuthStore
 
@@ -87,6 +109,108 @@ _SERIALIZER = URLSafeTimedSerializer(_SECRET_KEY)
 _PUBLIC_AUTH_CSRF_SESSION = "public_auth_session"
 _ROLE_LEVELS = {"tier1": 1, "tier2": 2, "admin": 3}
 
+
+def _webauthn_rp_id(value: str) -> str:
+    """Validate a WebAuthn RP ID without accepting a URL or port."""
+    rp_id = value.strip().lower()
+    label = r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+    if (
+        not rp_id
+        or len(rp_id) > 253
+        or not re.fullmatch(rf"{label}(?:\.{label})*", rp_id)
+    ):
+        raise RuntimeError(
+            "WEBAUTHN_RP_ID must be a hostname without a scheme, port, or path."
+        )
+    return rp_id
+
+
+def _webauthn_origins(value: str, rp_id: str) -> tuple[str, ...]:
+    """Parse exact trusted origins and enforce browser secure-context rules."""
+    configured: list[str] = []
+    for raw_origin in value.split(","):
+        origin = raw_origin.strip().rstrip("/")
+        if not origin:
+            continue
+        parsed = urllib.parse.urlsplit(origin)
+        try:
+            _ = parsed.port
+        except ValueError as exc:
+            raise RuntimeError(f"Invalid WebAuthn origin: {origin}") from exc
+        hostname = (parsed.hostname or "").lower()
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.path
+            or parsed.query
+            or parsed.fragment
+            or origin != f"{parsed.scheme}://{parsed.netloc}"
+        ):
+            raise RuntimeError(
+                "WEBAUTHN_ORIGINS must contain exact origins without paths."
+            )
+        if hostname != rp_id and not hostname.endswith(f".{rp_id}"):
+            raise RuntimeError(
+                f"WebAuthn origin host '{hostname}' is outside RP ID '{rp_id}'."
+            )
+        if parsed.scheme == "http" and (
+            ENV == "production" or hostname not in {"localhost", "127.0.0.1"}
+        ):
+            raise RuntimeError(
+                "WebAuthn origins require HTTPS except localhost in non-production."
+            )
+        configured.append(origin)
+    if not configured:
+        raise RuntimeError("WEBAUTHN_ORIGINS must contain at least one trusted origin.")
+    return tuple(dict.fromkeys(configured))
+
+
+_WEBAUTHN_RP_ID = _webauthn_rp_id(os.getenv("WEBAUTHN_RP_ID", "localhost"))
+_WEBAUTHN_RP_NAME = os.getenv(
+    "WEBAUTHN_RP_NAME",
+    "VNPT SOC Command Center",
+).strip()
+if not _WEBAUTHN_RP_NAME:
+    raise RuntimeError("WEBAUTHN_RP_NAME must not be empty.")
+_WEBAUTHN_ORIGINS = _webauthn_origins(
+    os.getenv("WEBAUTHN_ORIGINS", "http://localhost:8000"),
+    _WEBAUTHN_RP_ID,
+)
+_WEBAUTHN_CHALLENGE_TTL = _positive_env_int(
+    "WEBAUTHN_CHALLENGE_TTL_SECONDS",
+    5 * 60,
+)
+if _WEBAUTHN_CHALLENGE_TTL > 60 * 60:
+    raise RuntimeError("WEBAUTHN_CHALLENGE_TTL_SECONDS cannot exceed 3600.")
+
+
+class WebAuthnRegistrationOptionsRequest(BaseModel):
+    """Fresh password step-up required before issuing a registration challenge."""
+
+    password: str = Field(min_length=1, max_length=1024)
+
+
+class WebAuthnRegistrationVerifyRequest(BaseModel):
+    """Browser credential returned by navigator.credentials.create()."""
+
+    credential: dict[str, object]
+    device_label: str | None = Field(default=None, max_length=128)
+
+
+class WebAuthnAuthenticationVerifyRequest(BaseModel):
+    """Discoverable credential assertion returned by navigator.credentials.get()."""
+
+    credential: dict[str, object]
+    remember: bool = True
+
+
+class WebAuthnCredentialRevokeRequest(BaseModel):
+    """Fresh password confirmation for destructive credential removal."""
+
+    password: str = Field(min_length=1, max_length=1024)
+
 # Demo credentials cho môi trường kiểm thử/nghiệm thu VNPT SOC N4.2
 # Hỗ trợ 3 vai trò: SecOps Admin, Tier-2 Analyst, Tier-1 Responder
 _DEMO_ACCOUNTS = {
@@ -119,6 +243,8 @@ _PUBLIC_ROUTE_PATHS = {
     "/api/auth/login",
     "/api/auth/logout",
     "/api/auth/me",
+    "/api/auth/webauthn/authenticate/options",
+    "/api/auth/webauthn/authenticate/verify",
     "/ui/log-feed",
 }
 _PUBLIC_ROUTE_PREFIXES = ("/static/",)
@@ -1414,6 +1540,132 @@ def _require_csrf(request: Request, session_id: str) -> None:
     if not token or not _validate_csrf_token(token, session_id):
         raise HTTPException(status_code=403, detail="Invalid CSRF token")
 
+
+def _registration_challenge_from_credential(
+    credential: dict[str, object],
+    *,
+    error_detail: str = "Invalid passkey registration response",
+    error_status: int = 400,
+) -> str:
+    """Read the untrusted clientData challenge for server-side lookup."""
+    try:
+        response = credential["response"]
+        if not isinstance(response, dict):
+            raise TypeError
+        encoded_client_data = response["clientDataJSON"]
+        if not isinstance(encoded_client_data, str) or len(encoded_client_data) > 8192:
+            raise TypeError
+        client_data = json.loads(
+            base64url_to_bytes(encoded_client_data).decode("utf-8")
+        )
+        challenge = client_data["challenge"]
+    except (KeyError, TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError):
+        raise HTTPException(
+            status_code=error_status,
+            detail=error_detail,
+        ) from None
+    if not isinstance(challenge, str) or not 1 <= len(challenge) <= 2048:
+        raise HTTPException(
+            status_code=error_status,
+            detail=error_detail,
+        )
+    return challenge
+
+
+def _authentication_credential_id(credential: dict[str, object]) -> str:
+    """Return a canonical bounded credential ID before the public-key lookup."""
+    credential_id = credential.get("id")
+    if (
+        not isinstance(credential_id, str)
+        or not 1 <= len(credential_id) <= 1367
+        or not re.fullmatch(r"[A-Za-z0-9_-]+", credential_id)
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Passkey authentication failed",
+        )
+    try:
+        credential_id_bytes = base64url_to_bytes(credential_id)
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=401,
+            detail="Passkey authentication failed",
+        ) from None
+    if not 1 <= len(credential_id_bytes) <= 1023:
+        raise HTTPException(
+            status_code=401,
+            detail="Passkey authentication failed",
+        )
+    return bytes_to_base64url(credential_id_bytes)
+
+
+def _require_public_auth_csrf(request: Request) -> None:
+    """Require the signed public-auth token on anonymous JSON auth ceremonies."""
+    token = request.headers.get("X-CSRF-Token", "")
+    if not token or not _validate_csrf_token(token, _PUBLIC_AUTH_CSRF_SESSION):
+        raise HTTPException(status_code=403, detail="Invalid CSRF token")
+
+
+def _safe_credential_metadata(credential: dict) -> dict:
+    """Return only account-owned metadata needed by the passkey manager UI."""
+    return {
+        "id": credential["credential_id"],
+        "device_label": credential["device_label"],
+        "transports": credential["transports"],
+        "backup_state": credential["backup_state"],
+        "backup_eligible": credential["backup_eligible"],
+        "created_at": credential["created_at"],
+        "last_used_at": credential["last_used_at"],
+    }
+
+
+def _registration_transports(credential: dict[str, object]) -> list[str]:
+    """Validate the optional authenticator transport hints returned by the browser."""
+    response = credential.get("response")
+    if not isinstance(response, dict):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid passkey registration response",
+        )
+    transports = response.get("transports", [])
+    if transports is None:
+        return []
+    if not isinstance(transports, list) or not all(
+        isinstance(transport, str) for transport in transports
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid passkey registration response",
+        )
+    try:
+        return sorted(
+            {AuthenticatorTransport(transport).value for transport in transports}
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid passkey registration response",
+        ) from None
+
+
+def _registered_credential_descriptors(
+    username: str,
+) -> list[PublicKeyCredentialDescriptor]:
+    """Build exclusion descriptors for credentials already owned by the account."""
+    descriptors: list[PublicKeyCredentialDescriptor] = []
+    for credential in _AUTH_STORE.list_credentials(username):
+        transports = [
+            AuthenticatorTransport(transport)
+            for transport in credential["transports"]
+        ]
+        descriptors.append(
+            PublicKeyCredentialDescriptor(
+                id=base64url_to_bytes(credential["credential_id"]),
+                transports=transports or None,
+            )
+        )
+    return descriptors
+
 def _set_session_cookies(
     response: Response,
     session_id: str,
@@ -2468,6 +2720,331 @@ async def get_csrf_token(response: Response, session_id: str | None = Cookie(Non
         secure=_COOKIE_SECURE,
     )
     return {"csrf_token": token}
+
+
+@app.post(
+    "/api/auth/webauthn/authenticate/options",
+    response_class=JSONResponse,
+)
+async def webauthn_authentication_options(request: Request):
+    """Issue username-less options for a discoverable passkey ceremony."""
+    _require_public_auth_csrf(request)
+    _AUTH_STORE.cleanup_webauthn_challenges()
+    challenge_token = _AUTH_STORE.create_webauthn_challenge(
+        "authentication",
+        ttl_seconds=_WEBAUTHN_CHALLENGE_TTL,
+    )
+    options = generate_authentication_options(
+        rp_id=_WEBAUTHN_RP_ID,
+        challenge=base64url_to_bytes(challenge_token),
+        timeout=_WEBAUTHN_CHALLENGE_TTL * 1000,
+        user_verification=UserVerificationRequirement.REQUIRED,
+    )
+    return JSONResponse(content=json.loads(options_to_json(options)))
+
+
+@app.post(
+    "/api/auth/webauthn/authenticate/verify",
+    response_class=JSONResponse,
+)
+async def verify_webauthn_authentication(
+    request: Request,
+    response: Response,
+    payload: WebAuthnAuthenticationVerifyRequest,
+):
+    """Verify a discoverable assertion and create a revocable server session."""
+    _require_public_auth_csrf(request)
+    challenge_token = _registration_challenge_from_credential(
+        payload.credential,
+        error_detail="Passkey authentication failed",
+        error_status=401,
+    )
+    challenge = _AUTH_STORE.get_challenge(challenge_token, "authentication")
+    if challenge is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Passkey challenge is expired or replayed",
+        )
+
+    credential_id = _authentication_credential_id(payload.credential)
+    try:
+        credential = _AUTH_STORE.get_credential(credential_id)
+    except ValueError:
+        credential = None
+    if credential is None:
+        raise HTTPException(status_code=401, detail="Passkey authentication failed")
+    account = _AUTH_STORE.get_user(credential["username"])
+    if account is None or not account["is_active"]:
+        raise HTTPException(status_code=401, detail="Passkey authentication failed")
+
+    try:
+        verification = verify_authentication_response(
+            credential=payload.credential,
+            expected_challenge=base64url_to_bytes(challenge_token),
+            expected_rp_id=_WEBAUTHN_RP_ID,
+            expected_origin=list(_WEBAUTHN_ORIGINS),
+            credential_public_key=credential["public_key"],
+            credential_current_sign_count=credential["sign_count"],
+            require_user_verification=True,
+        )
+    except (WebAuthnException, TypeError, ValueError):
+        raise HTTPException(
+            status_code=401,
+            detail="Passkey authentication failed",
+        ) from None
+    observed_backup_eligible = (
+        verification.credential_device_type == CredentialDeviceType.MULTI_DEVICE
+    )
+    if (
+        not verification.user_verified
+        or not secrets.compare_digest(
+            verification.credential_id,
+            base64url_to_bytes(credential_id),
+        )
+        or observed_backup_eligible != credential["backup_eligible"]
+    ):
+        raise HTTPException(status_code=401, detail="Passkey authentication failed")
+
+    try:
+        session_id = _AUTH_STORE.finalize_webauthn_authentication(
+            challenge_token,
+            credential_id,
+            verification.new_sign_count,
+            backup_state=verification.credential_backed_up,
+            remember=payload.remember,
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=401,
+            detail="Passkey authentication failed",
+        ) from None
+    if session_id is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Passkey challenge was already used",
+        )
+
+    cookie_max_age = _SESSION_MAX_AGE if payload.remember else None
+    _set_session_cookies(response, session_id, cookie_max_age)
+    label = (
+        _DEMO_ACCOUNTS[account["username"]]["label"]
+        if account["is_demo"] and account["username"] in _DEMO_ACCOUNTS
+        else {
+            "admin": "SecOps Admin",
+            "tier2": "Tier-2 Analyst",
+            "tier1": "Tier-1 Responder",
+        }[account["role"]]
+    )
+    log_audit(
+        action="PASSKEY_LOGIN_SUCCESS",
+        activity_type="PASSKEY_LOGIN_SUCCESS",
+        username=account["username"],
+        role=account["role"],
+        summary="Passkey sign-in succeeded",
+        details="A user-verified passkey created a new server session.",
+    )
+    return {
+        "success": True,
+        "username": account["username"],
+        "role": account["role"],
+        "label": label,
+    }
+
+
+@app.post(
+    "/api/auth/webauthn/register/options",
+    response_class=JSONResponse,
+)
+async def webauthn_registration_options(
+    request: Request,
+    payload: WebAuthnRegistrationOptionsRequest,
+    session_id: str | None = Cookie(None),
+):
+    """Issue session-bound creation options after a fresh password step-up."""
+    session = _require_authenticated_session(session_id)
+    _require_csrf(request, session_id or "")
+    account = _authenticate_account(session["username"], payload.password)
+    if account is None:
+        raise HTTPException(status_code=401, detail="Password verification failed")
+
+    _AUTH_STORE.cleanup_webauthn_challenges()
+    user_handle = _AUTH_STORE.get_or_create_webauthn_user_handle(
+        session["username"]
+    )
+    challenge_token = _AUTH_STORE.create_webauthn_challenge(
+        "registration",
+        username=session["username"],
+        session_id=session_id,
+        ttl_seconds=_WEBAUTHN_CHALLENGE_TTL,
+    )
+    options = generate_registration_options(
+        rp_id=_WEBAUTHN_RP_ID,
+        rp_name=_WEBAUTHN_RP_NAME,
+        user_id=user_handle,
+        user_name=session["username"],
+        user_display_name=account["label"],
+        challenge=base64url_to_bytes(challenge_token),
+        timeout=_WEBAUTHN_CHALLENGE_TTL * 1000,
+        attestation=AttestationConveyancePreference.NONE,
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            resident_key=ResidentKeyRequirement.REQUIRED,
+            require_resident_key=True,
+            user_verification=UserVerificationRequirement.REQUIRED,
+        ),
+        exclude_credentials=_registered_credential_descriptors(
+            session["username"]
+        ),
+    )
+    log_audit(
+        action="PASSKEY_REGISTRATION_STARTED",
+        activity_type="PASSKEY_REGISTRATION_STARTED",
+        username=session["username"],
+        role=session["role"],
+        summary="Passkey registration started",
+        details="Fresh password verification passed; registration challenge issued.",
+    )
+    return JSONResponse(content=json.loads(options_to_json(options)))
+
+
+@app.post(
+    "/api/auth/webauthn/register/verify",
+    response_class=JSONResponse,
+)
+async def verify_webauthn_registration(
+    request: Request,
+    payload: WebAuthnRegistrationVerifyRequest,
+    session_id: str | None = Cookie(None),
+):
+    """Verify and persist a passkey registration response exactly once."""
+    session = _require_authenticated_session(session_id)
+    _require_csrf(request, session_id or "")
+    challenge_token = _registration_challenge_from_credential(payload.credential)
+    challenge = _AUTH_STORE.get_challenge(
+        challenge_token,
+        "registration",
+        username=session["username"],
+        session_id=session_id,
+    )
+    if challenge is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Passkey challenge is expired, replayed, or belongs to another session",
+        )
+
+    try:
+        verification = verify_registration_response(
+            credential=payload.credential,
+            expected_challenge=base64url_to_bytes(challenge_token),
+            expected_rp_id=_WEBAUTHN_RP_ID,
+            expected_origin=list(_WEBAUTHN_ORIGINS),
+            require_user_verification=True,
+        )
+    except (WebAuthnException, TypeError, ValueError):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid passkey registration response",
+        ) from None
+    if not verification.user_verified:
+        raise HTTPException(
+            status_code=400,
+            detail="Passkey user verification is required",
+        )
+
+    transports = _registration_transports(payload.credential)
+    consumed = _AUTH_STORE.consume_challenge(
+        challenge_token,
+        "registration",
+        username=session["username"],
+        session_id=session_id,
+    )
+    if consumed is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Passkey challenge was already used",
+        )
+
+    credential_id = bytes_to_base64url(verification.credential_id)
+    try:
+        stored = _AUTH_STORE.store_credential(
+            credential_id,
+            session["username"],
+            verification.credential_public_key,
+            sign_count=verification.sign_count,
+            transports=transports,
+            backup_state=verification.credential_backed_up,
+            backup_eligible=(
+                verification.credential_device_type
+                == CredentialDeviceType.MULTI_DEVICE
+            ),
+            device_label=payload.device_label,
+        )
+    except ValueError as exc:
+        status_code = 409 if "already registered" in str(exc) else 400
+        raise HTTPException(status_code=status_code, detail=str(exc)) from None
+
+    log_audit(
+        action="PASSKEY_REGISTERED",
+        activity_type="PASSKEY_REGISTERED",
+        username=session["username"],
+        role=session["role"],
+        summary="Passkey registered",
+        details="A user-verified passkey was added to the account.",
+    )
+    return {
+        "success": True,
+        "credential": _safe_credential_metadata(stored),
+    }
+
+
+@app.get(
+    "/api/auth/webauthn/credentials",
+    response_class=JSONResponse,
+)
+async def list_webauthn_credentials(
+    session_id: str | None = Cookie(None),
+):
+    """List active passkeys owned by the authenticated account."""
+    session = _require_authenticated_session(session_id)
+    credentials = _AUTH_STORE.list_credentials(session["username"])
+    return {
+        "credentials": [
+            _safe_credential_metadata(credential) for credential in credentials
+        ]
+    }
+
+
+@app.delete(
+    "/api/auth/webauthn/credentials/{credential_id}",
+    response_class=JSONResponse,
+)
+async def revoke_webauthn_credential(
+    credential_id: str,
+    request: Request,
+    payload: WebAuthnCredentialRevokeRequest,
+    session_id: str | None = Cookie(None),
+):
+    """Revoke one owned passkey after CSRF and fresh password verification."""
+    session = _require_authenticated_session(session_id)
+    _require_csrf(request, session_id or "")
+    if _authenticate_account(session["username"], payload.password) is None:
+        raise HTTPException(status_code=401, detail="Password verification failed")
+    try:
+        credential = _AUTH_STORE.get_credential(credential_id)
+    except ValueError:
+        credential = None
+    if credential is None or credential["username"] != session["username"]:
+        raise HTTPException(status_code=404, detail="Passkey not found")
+    if not _AUTH_STORE.revoke_credential(credential_id):
+        raise HTTPException(status_code=409, detail="Passkey was already revoked")
+    log_audit(
+        action="PASSKEY_REVOKED",
+        activity_type="PASSKEY_REVOKED",
+        username=session["username"],
+        role=session["role"],
+        summary="Passkey revoked",
+        details=f"Credential ending in {credential_id[-8:]} was revoked.",
+    )
+    return {"success": True}
 
 @app.post("/api/auth/login", response_class=JSONResponse)
 async def login(

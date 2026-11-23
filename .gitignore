@@ -62,6 +62,7 @@ AGENTS.md
 # Testing and evidence artifacts ignored from git
 .pytest_cache/
 .pytest_temp_cache/
+.pytest_basetemp/
 .ruff_cache/
 graphify-out/
 scripts/*
