@@ -237,6 +237,8 @@ def test_production_starts_with_managed_secret_and_persistent_database(tmp_path)
     env["ENV"] = "production"
     env["AUTH_SECRET_KEY"] = "production-test-secret-that-is-long-enough-2026"
     env["AUTH_DB_PATH"] = str(tmp_path / "production-auth.sqlite3")
+    env["WEBAUTHN_RP_ID"] = "soc.example.com"
+    env["WEBAUTHN_ORIGINS"] = "https://soc.example.com"
     result = subprocess.run(
         [sys.executable, "-c", "import app.main"],
         cwd=Path(__file__).resolve().parents[1],

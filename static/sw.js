@@ -26,7 +26,7 @@
 
 
 
-const CACHE_NAME = 'vnpt-soc-pwa-v1.0.4-local-icons';
+const CACHE_NAME = 'vnpt-soc-pwa-v1.0.5-passkeys';
 
 
 
@@ -90,6 +90,10 @@ const PRECACHE_ASSETS = [
   '/static/js/icons.js',
 
   '/static/js/app.js',
+
+  '/static/js/passkey-manager.js',
+
+  '/static/js/webauthn-client.js',
 
   '/static/js/charts.js',
 

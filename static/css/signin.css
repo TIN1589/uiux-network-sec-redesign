@@ -1052,3 +1052,72 @@ html[data-theme="dark"] .demo__chip:hover {
 html[data-theme="dark"] .auth-panel__footer {
   color: #8E8B83;
 }
+
+.passkey-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--muted-light);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.passkey-divider::before,
+.passkey-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--field-border);
+}
+
+.btn--passkey {
+  width: 100%;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--field-border);
+  background: #FFFFFF;
+  color: var(--ink);
+}
+
+.btn--passkey:hover:not(:disabled) {
+  border-color: #111111;
+  background: #F8F8F5;
+}
+
+.btn--passkey:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.passkey-btn__busy {
+  display: none;
+}
+
+.btn--passkey[aria-busy="true"] .passkey-btn__idle {
+  display: none;
+}
+
+.btn--passkey[aria-busy="true"] .passkey-btn__busy {
+  display: inline;
+}
+
+.btn--passkey:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+html[data-theme="dark"] .btn--passkey {
+  background: #16181A;
+  border-color: #32363C;
+  color: #F1F0EB;
+}
+
+html[data-theme="dark"] .btn--passkey:hover:not(:disabled) {
+  background: #202327;
+  border-color: var(--color-accent-lime, #C6F135);
+}

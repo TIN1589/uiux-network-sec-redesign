@@ -35,7 +35,7 @@
 
   <div class="auth-utilities">
     <label class="auth-checkbox-label">
-      <input type="checkbox" name="remember" class="auth-checkbox" checked>
+      <input type="checkbox" id="remember-session" name="remember" class="auth-checkbox" checked>
       <span>Keep me signed in (8h shift)</span>
     </label>
     <a href="{{ url_for('auth.forgot') }}" class="auth-link">
@@ -53,5 +53,20 @@
     </svg>
   </button>
 </form>
+
+<div class="passkey-divider" role="separator" aria-label="Alternative sign-in method">
+  <span>or</span>
+</div>
+
+<button type="button" id="passkey-signin-btn" class="btn btn--passkey">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="8" cy="15" r="4"></circle>
+    <path d="M11 12l8-8"></path>
+    <path d="M15 8l2 2"></path>
+    <path d="M17 6l2 2"></path>
+  </svg>
+  <span class="passkey-btn__idle">Sign in with a passkey</span>
+  <span class="passkey-btn__busy">Waiting for your passkey...</span>
+</button>
 
 {% include 'auth/_demo_accounts.html' %}

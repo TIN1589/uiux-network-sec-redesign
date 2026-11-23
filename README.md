@@ -54,7 +54,9 @@ User và session Dynamic được lưu trong SQLite (`data/auth.sqlite3` mặc �
    .\.venv\Scripts\python.exe scripts/manage_auth.py disable admin
    ```
 
-Đổi mật khẩu, đổi role hoặc khóa tài khoản đều thu hồi toàn bộ session hiện tại. Production từ chối khởi động nếu thiếu `AUTH_SECRET_KEY`, và luôn đặt cờ `Secure` cho auth cookie.
+Đổi mật khẩu hoặc khóa tài khoản đều thu hồi toàn bộ session, Passkey và challenge hiện tại; đổi role thu hồi toàn bộ session. Production từ chối khởi động nếu thiếu `AUTH_SECRET_KEY`, và luôn đặt cờ `Secure` cho auth cookie.
+
+Passkey hỗ trợ đầy đủ đăng ký, đăng nhập discoverable không cần username và quản lý thiết bị trong menu tài khoản. Việc thêm hoặc thu hồi Passkey yêu cầu session, CSRF và xác thực lại mật khẩu; challenge hết hạn sau 5 phút, chỉ dùng một lần, còn đăng nhập yêu cầu user verification và kiểm tra sign counter. Cấu hình RP/origin nằm trong `.env.example`. Khi phát triển cục bộ, mở ứng dụng bằng `http://localhost:8000`; production phải đặt `WEBAUTHN_RP_ID` theo hostname thật và `WEBAUTHN_ORIGINS` thành origin HTTPS chính xác. Mật khẩu vẫn là phương thức recovery; reset mật khẩu hoặc khóa tài khoản sẽ thu hồi toàn bộ Passkey hiện tại.
 
 ---
 
