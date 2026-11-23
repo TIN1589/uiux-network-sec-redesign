@@ -55,6 +55,15 @@ def assert_clean_worktree() -> None:
         )
 
 
+def sign_in_admin(page) -> None:
+    """Create a real server session before capturing protected Dynamic pages."""
+    page.goto(f"{LOCAL_URL}/login", wait_until="networkidle")
+    page.fill("#field-username", "admin")
+    page.fill("#field-password", "vnpt-soc-2026")
+    page.click("#signin-btn")
+    page.wait_for_url(f"{LOCAL_URL}/", timeout=10000)
+
+
 def save_artifact(source_path: str, filename: str) -> None:
     """Sync evidence file to local evidence directory and artifact directory."""
     dest_local = os.path.join(OUTPUT_DIR, filename)
@@ -164,14 +173,18 @@ def run_evidence_pipeline():
         page_dt = context_dt.new_page()
 
         routes = [
-            ("overview", f"{LOCAL_URL}/?guest=1"),
-            ("alerts", f"{LOCAL_URL}/alerts?guest=1"),
-            ("scenarios", f"{LOCAL_URL}/scenarios?guest=1"),
-            ("devices", f"{LOCAL_URL}/devices?guest=1"),
-            ("signin", f"{LOCAL_URL}/login")
+            ("signin", f"{LOCAL_URL}/login"),
+            ("overview", f"{LOCAL_URL}/"),
+            ("alerts", f"{LOCAL_URL}/alerts"),
+            ("scenarios", f"{LOCAL_URL}/scenarios"),
+            ("devices", f"{LOCAL_URL}/devices"),
         ]
+        authenticated = False
 
         for name, url in routes:
+            if name != "signin" and not authenticated:
+                sign_in_admin(page_dt)
+                authenticated = True
             page_dt.goto(url, wait_until="networkidle")
             page_dt.wait_for_timeout(300)
             if name != "signin":
@@ -214,7 +227,7 @@ def run_evidence_pipeline():
         # 2. DRAWER & ACTIVITY TRAIL (Scrolled View with CONTAINMENT_EXECUTED)
         # -----------------------------------------------------------------
         print("Capturing Alert Drawer & Activity Trail (with full containment lifecycle)...")
-        page_dt.goto(f"{LOCAL_URL}/alerts?guest=1", wait_until="networkidle")
+        page_dt.goto(f"{LOCAL_URL}/alerts", wait_until="networkidle")
         page_dt.evaluate("() => { const m = document.getElementById('signin-modal'); if (m) m.classList.remove('active'); }")
         page_dt.click("tr.clickable:first-child")
         page_dt.wait_for_selector("#alert-drawer-backdrop.active", timeout=5000)
@@ -263,7 +276,7 @@ def run_evidence_pipeline():
         # 3. KEYBOARD INTERACTION & FOCUS EVIDENCE
         # -----------------------------------------------------------------
         print("Capturing Keyboard Controller active focus...")
-        page_dt.goto(f"{LOCAL_URL}/alerts?guest=1", wait_until="networkidle")
+        page_dt.goto(f"{LOCAL_URL}/alerts", wait_until="networkidle")
         page_dt.evaluate("() => { const m = document.getElementById('signin-modal'); if (m) m.classList.remove('active'); }")
         page_dt.keyboard.press("j")
         page_dt.wait_for_timeout(100)
@@ -289,9 +302,10 @@ def run_evidence_pipeline():
         print("Capturing Tablet 1024x768 matrix...")
         context_tab = browser.new_context(viewport={"width": 1024, "height": 768}, device_scale_factor=1.0)
         page_tab = context_tab.new_page()
+        sign_in_admin(page_tab)
 
         for name in ["overview", "alerts", "devices", "scenarios"]:
-            page_tab.goto(f"{LOCAL_URL}/{name if name != 'overview' else ''}?guest=1", wait_until="networkidle")
+            page_tab.goto(f"{LOCAL_URL}/{name if name != 'overview' else ''}", wait_until="networkidle")
             page_tab.wait_for_timeout(300)
             page_tab.evaluate("() => { const m = document.getElementById('signin-modal'); if (m) m.classList.remove('active'); }")
 
@@ -335,9 +349,10 @@ def run_evidence_pipeline():
         print("Capturing Mobile 390x844 matrix (Remediated Dark Contrast)...")
         context_mob = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2.0, is_mobile=True, has_touch=True)
         page_mob = context_mob.new_page()
+        sign_in_admin(page_mob)
 
         for name in ["overview", "alerts", "devices", "scenarios"]:
-            page_mob.goto(f"{LOCAL_URL}/{name if name != 'overview' else ''}?guest=1", wait_until="networkidle")
+            page_mob.goto(f"{LOCAL_URL}/{name if name != 'overview' else ''}", wait_until="networkidle")
             page_mob.wait_for_timeout(300)
             page_mob.evaluate("() => { const m = document.getElementById('signin-modal'); if (m) m.classList.remove('active'); }")
 
@@ -375,7 +390,7 @@ def run_evidence_pipeline():
             print(f"Captured 390 {name} (Light & Dark)")
 
         # Mobile Bottom Sheet Drawer
-        page_mob.goto(f"{LOCAL_URL}/alerts?guest=1", wait_until="networkidle")
+        page_mob.goto(f"{LOCAL_URL}/alerts", wait_until="networkidle")
         page_mob.wait_for_timeout(300)
         page_mob.evaluate("() => { const m = document.getElementById('signin-modal'); if (m) m.classList.remove('active'); }")
         page_mob.evaluate("openAlertDrawer('EVT-2610-099')")
@@ -422,7 +437,8 @@ def run_evidence_pipeline():
         print("Capturing Cold-load FOUC check...")
         context_fouc = browser.new_context(viewport={"width": 1440, "height": 900})
         page_fouc = context_fouc.new_page()
-        page_fouc.goto(f"{LOCAL_URL}/?guest=1", wait_until="networkidle")
+        sign_in_admin(page_fouc)
+        page_fouc.goto(f"{LOCAL_URL}/", wait_until="networkidle")
         page_fouc.evaluate("() => localStorage.setItem('soc-theme', 'dark')")
         page_fouc.reload(wait_until="domcontentloaded")
         early_theme = page_fouc.evaluate("() => document.documentElement.getAttribute('data-theme')")

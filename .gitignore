@@ -67,6 +67,7 @@ graphify-out/
 scripts/*
 !scripts/generate_sprint2_evidence.py
 !scripts/run_manual_acceptance.py
+!scripts/manage_auth.py
 evidence/
 .evidence/
 test-results/
@@ -77,6 +78,10 @@ playwright-report/
 *_evidence.webp
 *.test.log
 scratch
+
+# Runtime authentication database and SQLite sidecars
+data/*.sqlite3
+data/*.sqlite3-*
 
 # Directory junctions in app package
 app/static

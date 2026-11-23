@@ -44,6 +44,116 @@ def client() -> TestClient:
         yield test_client
 
 
+@pytest.mark.parametrize("path", ["/", "/alerts", "/devices", "/scenarios"])
+def test_anonymous_full_pages_redirect_to_login(client: TestClient, path: str):
+    """Every Dynamic dashboard page must reject an anonymous navigation."""
+    response = client.get(path, follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/login"
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/views/overview",
+        "/views/alerts",
+        "/views/devices",
+        "/views/scenarios",
+        "/api/overview/stats",
+        "/api/alerts/filter",
+        f"/api/alerts/{alerts_store[0]['eventId']}/drawer",
+        "/api/live-status",
+    ],
+)
+def test_anonymous_htmx_reads_receive_login_redirect_header(
+    client: TestClient,
+    path: str,
+):
+    """Protected HTMX reads fail with a machine-actionable login redirect."""
+    response = client.get(path, headers={"HX-Request": "true"})
+
+    assert response.status_code == 401
+    assert response.headers["HX-Redirect"] == "/login"
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/audit-logs",
+        "/api/mitre/matrix",
+        "/api/scenarios/calculate-delta?linked_id=EVT-2610-099",
+        f"/api/scenarios/{scenarios_store[0]['id']}/edit",
+        f"/api/alerts/{alerts_store[0]['eventId']}/drawer",
+        "/api/export/alerts.csv",
+        "/api/export/scenarios.csv",
+    ],
+)
+def test_anonymous_read_apis_return_json_401(client: TestClient, path: str):
+    """Direct API reads must not disclose SOC data to anonymous clients."""
+    response = client.get(path)
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Authentication required"}
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/",
+        "/alerts",
+        "/devices",
+        "/scenarios",
+        "/views/overview",
+        "/views/alerts",
+        "/views/devices",
+        "/views/scenarios",
+        "/api/overview/stats",
+        "/api/alerts/filter",
+        f"/api/alerts/{alerts_store[0]['eventId']}/drawer",
+        "/api/mitre/matrix",
+        "/api/scenarios/calculate-delta?linked_id=EVT-2610-099",
+        "/api/live-status",
+    ],
+)
+def test_authenticated_tier1_can_read_dashboard_surfaces(
+    client: TestClient,
+    path: str,
+):
+    """A real authenticated session retains read access across the dashboard."""
+    _authenticate(client, "tier1")
+
+    assert client.get(path).status_code == 200
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/login",
+        "/auth/forgot",
+        "/api/auth/csrf-token",
+        "/api/auth/me",
+        "/ui/log-feed",
+        "/manifest.webmanifest",
+    ],
+)
+def test_auth_bootstrap_and_static_shell_routes_remain_public(
+    client: TestClient,
+    path: str,
+):
+    """The narrow authentication/bootstrap allowlist remains reachable."""
+    assert client.get(path).status_code == 200
+
+
+def test_removed_dynamic_guest_entry_cannot_open_dashboard(client: TestClient):
+    """The former guest endpoint may not mint or bypass a Dynamic session."""
+    response = client.post("/auth/guest", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/login"
+    assert "session_id" not in response.cookies
+
+
 def test_anonymous_request_cannot_mutate_alert_state(client: TestClient):
     """An anonymous POST must return 401 and leave the alert unchanged."""
     alert = alerts_store[0]
@@ -132,3 +242,21 @@ def test_admin_can_read_audit_log_and_manage_scenarios(client: TestClient):
         assert len(scenarios_store) == len(original) + 1
     finally:
         scenarios_store[:] = original
+
+
+def test_logout_revokes_server_session_before_clearing_cookies(client: TestClient):
+    """Logout must invalidate the persisted session, not only the browser cookie."""
+    from app.main import _AUTH_STORE
+
+    _authenticate(client, "admin")
+    session_id = client.cookies.get("session_id")
+    assert session_id
+    assert _AUTH_STORE.get_session(session_id) is not None
+
+    response = client.post("/api/auth/logout")
+
+    assert response.status_code == 200
+    assert _AUTH_STORE.get_session(session_id) is None
+    dashboard = client.get("/", follow_redirects=False)
+    assert dashboard.status_code == 303
+    assert dashboard.headers["location"] == "/login"

@@ -25,7 +25,7 @@ STANDALONE_URL = Path("index.html").resolve().as_uri()
 LOCAL_HOSTS = {"127.0.0.1", "localhost", None}
 
 ROUTES = {
-    "overview": ("/", "Overview"),
+    "overview": ("/", "SOC Command Center"),
     "alerts": ("/alerts", "Alert queue"),
     "devices": ("/devices", "Devices"),
     "scenarios": ("/scenarios", "Attack scenarios"),
@@ -60,7 +60,7 @@ def _browser_page(
         if message.type == "error"
         else None,
     )
-    page.on("pageerror", lambda error: issues["page"].append(str(error)))
+    page.on("pageerror", lambda error: issues["page"].append(error.stack or str(error)))
 
     def guard_external_requests(route) -> None:
         parsed = urlparse(route.request.url)
@@ -74,14 +74,17 @@ def _browser_page(
     return context, page, issues
 
 
-def _guest_init(context: BrowserContext, theme: str = "light") -> None:
+def _theme_init(context: BrowserContext, theme: str = "light") -> None:
     context.add_init_script(
         f"""
-        sessionStorage.setItem('soc_guest_mode', 'true');
         localStorage.setItem('soc-theme', {theme!r});
-        document.documentElement.setAttribute('data-theme', {theme!r});
         """
     )
+
+
+def _preview_init(context: BrowserContext, theme: str = "light") -> None:
+    _theme_init(context, theme)
+    context.add_init_script("sessionStorage.setItem('soc_preview_mode', 'true');")
 
 
 def _wait_dashboard(page: Page) -> None:
@@ -92,8 +95,7 @@ def _wait_dashboard(page: Page) -> None:
 
 
 def _goto_dashboard(page: Page, path: str) -> None:
-    separator = "&" if "?" in path else "?"
-    page.goto(f"{BASE_URL}{path}{separator}guest=1", wait_until="domcontentloaded")
+    page.goto(f"{BASE_URL}{path}", wait_until="domcontentloaded")
     _wait_dashboard(page)
 
 
@@ -124,7 +126,7 @@ def _assert_no_horizontal_scroll(page: Page) -> None:
     assert not overflow, "The page has unexpected horizontal scrolling."
 
 
-def test_invalid_demo_admin_history_and_guest_login(browser_instance: Browser) -> None:
+def test_invalid_demo_admin_history_and_anonymous_gate(browser_instance: Browser) -> None:
     context, page, issues = _browser_page(browser_instance)
     page.goto(f"{BASE_URL}/login", wait_until="domcontentloaded")
 
@@ -134,6 +136,9 @@ def test_invalid_demo_admin_history_and_guest_login(browser_instance: Browser) -
     expect(page.locator(".auth-alert")).to_be_visible(timeout=10000)
     expect(page.locator("#signin-btn")).to_be_enabled()
     assert page.locator("#signin-btn").get_attribute("aria-busy") is None
+    expected_login_errors = [message for message in issues["console"] if "422" in message]
+    assert len(expected_login_errors) == 1
+    issues["console"].remove(expected_login_errors[0])
 
     page.locator("details.demo summary").click()
     page.locator('.demo__chip[data-demo-user="admin"]').click()
@@ -155,37 +160,37 @@ def test_invalid_demo_admin_history_and_guest_login(browser_instance: Browser) -
     _assert_runtime_clean(issues)
     context.close()
 
-    guest_context, guest_page, guest_issues = _browser_page(browser_instance)
-    guest_page.goto(f"{BASE_URL}/login", wait_until="domcontentloaded")
-    guest_page.locator(".auth-guest-form button").click()
-    guest_page.wait_for_url(re.compile(rf"^{re.escape(BASE_URL)}/\?guest=1"), timeout=10000)
-    _wait_dashboard(guest_page)
-    expect(guest_page.locator("#topbar-analyst-name")).to_have_text("Guest")
-    _capture(guest_page, "auth-guest")
-    _assert_runtime_clean(guest_issues)
-    guest_context.close()
+    anonymous_context, anonymous_page, anonymous_issues = _browser_page(browser_instance)
+    anonymous_page.goto(f"{BASE_URL}/alerts", wait_until="domcontentloaded")
+    anonymous_page.wait_for_url(f"{BASE_URL}/login", timeout=10000)
+    expect(anonymous_page.locator("#signin-btn")).to_be_visible()
+    assert anonymous_page.locator("#main-content").count() == 0
+    _capture(anonymous_page, "auth-anonymous-gate")
+    _assert_runtime_clean(anonymous_issues)
+    anonymous_context.close()
 
 
-def test_guest_is_read_only_in_ui_and_server(browser_instance: Browser) -> None:
+def test_client_storage_cannot_bypass_server_auth_gate(browser_instance: Browser) -> None:
     context, page, issues = _browser_page(browser_instance)
-    _guest_init(context)
-    _goto_dashboard(page, "/alerts")
-
-    visible_privileged = page.locator(
-        '[data-min-role="tier2"]:visible, [data-min-role="admin"]:visible'
-    ).count()
+    context.add_init_script(
+        """
+        sessionStorage.setItem('soc_auth_user', 'admin');
+        sessionStorage.setItem('soc_auth_role', 'admin');
+        sessionStorage.setItem('soc_guest_mode', 'true');
+        """
+    )
+    page.goto(f"{BASE_URL}/alerts", wait_until="domcontentloaded")
+    page.wait_for_url(f"{BASE_URL}/login", timeout=10000)
+    expect(page.locator("#signin-btn")).to_be_visible()
     response = page.request.post(
         f"{BASE_URL}/api/alerts/DOES-NOT-EXIST/state",
         form={"state": "New"},
     )
-    _capture(page, "guest-read-only-gate")
+    _capture(page, "anonymous-storage-gate")
     _assert_runtime_clean(issues)
     context.close()
 
-    assert visible_privileged == 0, (
-        f"Guest can see {visible_privileged} Tier-2/Admin mutation controls."
-    )
-    assert response.status in {401, 403}, (
+    assert response.status == 401, (
         "Unauthenticated mutation was not rejected; "
         f"POST returned HTTP {response.status}."
     )
@@ -203,7 +208,8 @@ def test_dynamic_route_theme_responsive_matrix(
     viewport = VIEWPORTS[viewport_name]
     path, heading = ROUTES[route_name]
     context, page, issues = _browser_page(browser_instance, viewport)
-    _guest_init(context, theme)
+    _theme_init(context, theme)
+    _login_admin(page)
     _goto_dashboard(page, path)
 
     expect(page.get_by_role("heading", name=heading, exact=True)).to_be_visible()
@@ -245,7 +251,9 @@ def test_alert_filters_drawer_actions_bulk_keyboard_and_csv(browser_instance: Br
     assert first_event
     page.fill("#al-search", first_event)
     page.wait_for_timeout(500)
-    expect(page.locator("#al-table-body")).to_contain_text(first_event)
+    expect(
+        page.locator(f'.alert-row-checkbox[data-event-id="{first_event}"]').first
+    ).to_be_visible()
 
     page.get_by_role("button", name=re.compile(r"^New\b")).click()
     page.wait_for_timeout(400)
@@ -276,7 +284,7 @@ def test_alert_filters_drawer_actions_bulk_keyboard_and_csv(browser_instance: Br
     page.locator(".drawer-btn-investigate").click()
     expect(page.locator(".drawer-btn-resolve")).to_be_visible()
     page.locator("#dw-disposition-trigger").click()
-    page.locator('#dw-disposition-menu [data-value="False Positive - Benign"]').click()
+    page.locator('#dw-disposition-menu [data-value="False Positive - Tuning Needed"]').click()
     page.locator(".drawer-btn-resolve").click()
     expect(page.locator(".drawer-resolved-banner")).to_be_visible()
     expect(page.locator(".soc-activity-trail")).to_be_visible()
@@ -307,7 +315,8 @@ def test_mobile_bulk_bar_floats_without_shifting_content(
         browser_instance,
         {"width": width, "height": 844},
     )
-    _guest_init(context)
+    _theme_init(context)
+    _login_admin(page)
     _goto_dashboard(page, "/alerts")
     card = page.locator(".mobile-alert-card").first
     checkbox = card.locator(".alert-row-checkbox")
@@ -319,7 +328,7 @@ def test_mobile_bulk_bar_floats_without_shifting_content(
     positions = page.evaluate(
         """() => ({
           bulkBottom: document.getElementById('bulk-action-bar').getBoundingClientRect().bottom,
-          navTop: document.getElementById('mobile-bottom-nav').getBoundingClientRect().top
+          navTop: document.getElementById('mobile-bottom-bar').getBoundingClientRect().top
         })"""
     )
     assert abs(after - before) <= 1
@@ -331,7 +340,8 @@ def test_mobile_bulk_bar_floats_without_shifting_content(
 
 def test_devices_status_layout_and_alert_link(browser_instance: Browser) -> None:
     context, page, issues = _browser_page(browser_instance, VIEWPORTS["mobile360"])
-    _guest_init(context)
+    _theme_init(context)
+    _login_admin(page)
     _goto_dashboard(page, "/devices")
     expect(page.locator(".badge-reporting").first).to_be_visible()
     expect(page.locator(".badge-silent").first).to_be_visible()
@@ -397,7 +407,7 @@ def test_standalone_tab_theme_responsive_offline_assets(
     theme: str,
 ) -> None:
     context, page, issues = _browser_page(browser_instance, VIEWPORTS[viewport_name])
-    _guest_init(context, theme)
+    _preview_init(context, theme)
     page.goto(STANDALONE_URL, wait_until="domcontentloaded")
     page.wait_for_function("typeof window.switchTab === 'function'")
     page.evaluate(
@@ -427,7 +437,8 @@ def test_pwa_offline_reload_has_local_shell_and_query_cache(
     path: str,
 ) -> None:
     context, page, issues = _browser_page(browser_instance, VIEWPORTS["mobile390"])
-    _guest_init(context)
+    _theme_init(context)
+    _login_admin(page)
     _goto_dashboard(page, path)
     service_worker = page.evaluate(
         """async () => {

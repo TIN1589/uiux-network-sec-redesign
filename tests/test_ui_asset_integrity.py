@@ -38,6 +38,17 @@ def test_dashboard_and_standalone_have_no_runtime_cdn_dependencies():
             assert host not in content, f"{path.name} still depends on {host}"
 
 
+def test_dynamic_client_does_not_embed_demo_credentials_or_guest_bypass():
+    """Keep authentication proof and demo secrets on the server side."""
+    dynamic_sources = [ROOT / "static/js/app.js"]
+    dynamic_sources.extend((ROOT / "templates").rglob("*.html"))
+    combined = "\n".join(path.read_text(encoding="utf-8") for path in dynamic_sources)
+
+    assert "vnpt-soc-2026" not in combined
+    assert "?guest=1" not in combined
+    assert "auth/guest" not in combined
+
+
 def test_theme_toggle_and_navigation_icons_have_valid_svg_geometry():
     """Ensure key icons (moon, sun, border-all, triangle-exclamation) have valid SVG geometry."""
     icon_script = (ROOT / "static/js/icons.js").read_text(encoding="utf-8")

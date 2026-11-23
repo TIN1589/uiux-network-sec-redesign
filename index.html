@@ -4631,19 +4631,19 @@
 
           <div class="signin-demo-pills">
 
-            <button type="button" onclick="fillDemoCredentials('admin')" class="signin-demo-pill" title="Fill SecOps Admin credentials">
+            <button type="button" onclick="fillDemoCredentials('admin')" class="signin-demo-pill" data-demo-role="admin" data-demo-user="admin" data-demo-pwd="vnpt-soc-2026" title="Fill SecOps Admin credentials">
 
               Admin
 
             </button>
 
-            <button type="button" onclick="fillDemoCredentials('tier2')" class="signin-demo-pill" title="Fill Tier-2 Analyst credentials">
+            <button type="button" onclick="fillDemoCredentials('tier2')" class="signin-demo-pill" data-demo-role="tier2" data-demo-user="tier2" data-demo-pwd="vnpt-soc-2026" title="Fill Tier-2 Analyst credentials">
 
               Tier-2
 
             </button>
 
-            <button type="button" onclick="fillDemoCredentials('tier1')" class="signin-demo-pill" title="Fill Tier-1 Responder credentials">
+            <button type="button" onclick="fillDemoCredentials('tier1')" class="signin-demo-pill" data-demo-role="tier1" data-demo-user="tier1" data-demo-pwd="vnpt-soc-2026" title="Fill Tier-1 Responder credentials">
 
               Tier-1
 
@@ -4749,7 +4749,7 @@
 
           <button type="button" onclick="continueAsGuest()" class="soc-btn soc-btn-outline" style="width: 100%; min-height: 40px;">
 
-            Continue as Guest (Read-only)
+            Continue to Preview demo
 
           </button>
 
@@ -5326,19 +5326,19 @@
 
           window.continueAsGuest = function() {
 
-            sessionStorage.setItem('soc_guest_mode', 'true');
+            sessionStorage.setItem('soc_preview_mode', 'true');
 
             window.closeSignInModal();
 
             const analystNameEl = document.getElementById('topbar-analyst-name');
 
-            if (analystNameEl) analystNameEl.textContent = 'Guest';
+            if (analystNameEl) analystNameEl.textContent = 'Preview demo';
 
             const avatarCircle = document.getElementById('analyst-avatar-circle');
 
-            if (avatarCircle) avatarCircle.textContent = 'G';
+            if (avatarCircle) avatarCircle.textContent = 'P';
 
-            if (window.showToast) window.showToast('light', 'Viewing as Guest (Read-only mode)');
+            if (window.showToast) window.showToast('light', 'Viewing simulated Preview demo data');
 
           };
 
@@ -5578,7 +5578,7 @@
 
             const assignedRole = user.toLowerCase().includes('tier2') ? 'tier2' : (user.toLowerCase().includes('tier1') ? 'tier1' : 'admin');
 
-            sessionStorage.removeItem('soc_guest_mode');
+            sessionStorage.removeItem('soc_preview_mode');
 
             sessionStorage.setItem('soc_auth_user', user);
 
@@ -5610,15 +5610,15 @@
 
             sessionStorage.removeItem('soc_auth_role');
 
-            sessionStorage.removeItem('soc_guest_mode');
+            sessionStorage.removeItem('soc_preview_mode');
 
             const nameEl = document.getElementById('topbar-analyst-name');
 
-            if (nameEl) nameEl.textContent = 'Guest';
+            if (nameEl) nameEl.textContent = 'Preview demo';
 
             const avatarEl = document.getElementById('analyst-avatar-circle');
 
-            if (avatarEl) avatarEl.textContent = 'G';
+            if (avatarEl) avatarEl.textContent = 'P';
 
             if (window.showToast) window.showToast('light', 'Signed out successfully');
 
@@ -5701,7 +5701,7 @@
 
           const savedUser = sessionStorage.getItem('soc_auth_user');
 
-          const isGuestMode = sessionStorage.getItem('soc_guest_mode') === 'true';
+          const isPreviewMode = sessionStorage.getItem('soc_preview_mode') === 'true';
 
           if (savedUser) {
 
@@ -5713,7 +5713,7 @@
 
             if (avatarCircle) avatarCircle.textContent = savedUser.charAt(0).toUpperCase();
 
-          } else if (!isGuestMode) {
+          } else if (!isPreviewMode) {
 
             window.openSignInModal();
 
@@ -5721,11 +5721,11 @@
 
             const analystNameEl = document.getElementById('topbar-analyst-name');
 
-            if (analystNameEl) analystNameEl.textContent = 'Guest';
+            if (analystNameEl) analystNameEl.textContent = 'Preview demo';
 
             const avatarCircle = document.getElementById('analyst-avatar-circle');
 
-            if (avatarCircle) avatarCircle.textContent = 'G';
+            if (avatarCircle) avatarCircle.textContent = 'P';
 
           }
 
