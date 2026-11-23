@@ -1,0 +1,54 @@
+<div id="passkey-manager-modal" class="passkey-manager" role="dialog" aria-modal="true"
+  aria-labelledby="passkey-manager-title" aria-hidden="true" hidden>
+  <section class="passkey-manager__panel" tabindex="-1">
+    <header class="passkey-manager__header">
+      <div>
+        <p class="passkey-manager__eyebrow">Account security</p>
+        <h2 id="passkey-manager-title">Passkeys &amp; trusted devices</h2>
+        <p>Use biometric, PIN, or a security key. Password remains available for recovery.</p>
+      </div>
+      <button type="button" id="passkey-manager-close" class="soc-btn soc-btn-outline soc-btn-icon"
+        aria-label="Close passkey manager">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    <div id="passkey-manager-feedback" class="passkey-manager__feedback" role="status" aria-live="polite"></div>
+
+    <section class="passkey-manager__section" aria-labelledby="registered-passkeys-heading">
+      <div class="passkey-manager__section-heading">
+        <div>
+          <h3 id="registered-passkeys-heading">Registered passkeys</h3>
+          <p>Removing a passkey takes effect immediately.</p>
+        </div>
+        <span id="passkey-count" class="soc-badge">0</span>
+      </div>
+      <div id="passkey-credential-list" class="passkey-list" aria-live="polite">
+        <p class="passkey-list__empty">Loading passkeys...</p>
+      </div>
+    </section>
+
+    <form id="passkey-registration-form" class="passkey-manager__form">
+      <div class="passkey-manager__section-heading">
+        <div>
+          <h3>Add a passkey</h3>
+          <p>Confirm your current password, then follow the browser prompt.</p>
+        </div>
+      </div>
+      <label for="passkey-device-label">Device label <span>(optional)</span></label>
+      <input id="passkey-device-label" class="soc-input" maxlength="128"
+        autocomplete="off" placeholder="e.g. SOC workstation" />
+
+      <label for="passkey-current-password">Current password</label>
+      <input id="passkey-current-password" class="soc-input" type="password" maxlength="1024"
+        required autocomplete="current-password" placeholder="Required to add or remove" />
+
+      <div class="passkey-manager__actions">
+        <button type="button" id="passkey-manager-cancel" class="soc-btn soc-btn-outline">Close</button>
+        <button type="submit" id="passkey-register-btn" class="soc-btn soc-btn-primary">
+          Add passkey
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

@@ -8,6 +8,45 @@ import { initPasswordToggle } from './password-toggle.js';
 import { initCapsLockHint } from './caps-lock.js';
 import { initDemoAccounts } from './demo-accounts.js';
 import { startFeeds } from './feed-scheduler.js';
+import { authenticateWithPasskey, isWebAuthnAvailable } from './webauthn-client.js';
+
+function showPasskeyFeedback(message) {
+  const feedback = document.getElementById('auth-feedback');
+  if (!feedback) return;
+  const alert = document.createElement('div');
+  alert.className = 'auth-alert';
+  alert.setAttribute('role', 'alert');
+  alert.textContent = message;
+  feedback.replaceChildren(alert);
+}
+
+async function signInWithPasskey() {
+  const button = document.getElementById('passkey-signin-btn');
+  if (!button || button.disabled) return;
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+  document.getElementById('auth-feedback')?.replaceChildren();
+  try {
+    const remember = document.getElementById('remember-session')?.checked ?? true;
+    await authenticateWithPasskey(remember);
+    window.location.assign('/');
+  } catch (error) {
+    showPasskeyFeedback(error.message || 'Passkey sign-in failed');
+    button.disabled = false;
+    button.removeAttribute('aria-busy');
+  }
+}
+
+function initPasskeySignIn() {
+  const button = document.getElementById('passkey-signin-btn');
+  if (!button) return;
+  if (!isWebAuthnAvailable()) {
+    button.disabled = true;
+    button.title = 'Passkeys are not supported by this browser';
+    return;
+  }
+  button.addEventListener('click', () => void signInWithPasskey());
+}
 
 /**
  * Khôi phục trạng thái tương tác của form sau khi trình duyệt phục hồi trang từ BFCache.
@@ -76,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCapsLockHint();
   initDemoAccounts();
   startFeeds();
+  initPasskeySignIn();
 });
 
 window.addEventListener('pageshow', (event) => {

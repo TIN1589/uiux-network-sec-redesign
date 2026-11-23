@@ -61,12 +61,14 @@ def test_service_worker_endpoint():
     assert response.headers.get("Service-Worker-Allowed") == "/"
     assert "CACHE_NAME" in response.text
     assert "PRECACHE_ASSETS" in response.text
-    assert "v1.0.4-local-icons" in response.text
+    assert "v1.0.5-passkeys" in response.text
     assert "/static/css/charts.css" in response.text
     assert "/static/css/variables.css" in response.text
     assert "/static/vendor/htmx.min.js" in response.text
     assert "/static/vendor/chart.umd.min.js" in response.text
     assert "/static/js/icons.js" in response.text
+    assert "/static/js/passkey-manager.js" in response.text
+    assert "/static/js/webauthn-client.js" in response.text
     assert "ignoreSearch: true" in response.text
 
 

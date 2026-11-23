@@ -5,6 +5,7 @@
 
 import { showToast } from './toast.js';
 import { initOverviewCharts, destroyOverviewCharts } from './charts.js';
+import { initPasskeyManager } from './passkey-manager.js';
 
 // Application State
 export const state = {
@@ -1285,6 +1286,7 @@ function handleUnauthenticatedState(isHashSignIn) {
 
 // Initialize when DOM is ready
 window.addEventListener('DOMContentLoaded', () => {
+  initPasskeyManager();
   // Ghi nhận cờ guest nếu được chuyển hướng từ /login
   const urlParams = new URLSearchParams(window.location.search);
   if (window.location.protocol === 'file:' && urlParams.get('preview') === '1') {

@@ -630,7 +630,7 @@ def test_service_worker_offline_cache_match_with_query_params(browser_instance):
     Kịch bản:
         1. Đăng nhập rồi mở trang / trên Chromium để kích hoạt đăng ký Service Worker /sw.js.
         2. Chờ Service Worker sẵn sàng (navigator.serviceWorker.ready) và precache hoàn tất
-           vào đúng cache 'vnpt-soc-pwa-v1.0.4-local-icons'.
+           vào đúng cache 'vnpt-soc-pwa-v1.0.5-passkeys'.
         3. Chuyển context trình duyệt sang chế độ OFFLINE (context.set_offline(True)).
         4. Thực hiện fetch('/static/js/icons.js?v=1.0.0'):
            - Service Worker intercept request trong mạng offline.
@@ -648,7 +648,7 @@ def test_service_worker_offline_cache_match_with_query_params(browser_instance):
     sw_status = page.evaluate("""async () => {
         if (!('serviceWorker' in navigator)) return { supported: false };
         await navigator.serviceWorker.ready;
-        const cacheName = 'vnpt-soc-pwa-v1.0.4-local-icons';
+        const cacheName = 'vnpt-soc-pwa-v1.0.5-passkeys';
         const cache = await caches.open(cacheName);
         for (let i = 0; i < 20; i++) {
             const keys = await cache.keys();
