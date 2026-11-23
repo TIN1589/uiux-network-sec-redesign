@@ -57,7 +57,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     reset = commands.add_parser(
         "reset-password",
-        help="Set a new password and revoke every session for the account.",
+        help="Set a new password and revoke sessions and passkeys for the account.",
     )
     reset.add_argument("username")
 
@@ -70,7 +70,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     for command, help_text in (
         ("enable", "Enable an account and invalidate old sessions."),
-        ("disable", "Disable an account and revoke its sessions."),
+        ("disable", "Disable an account and revoke its sessions and passkeys."),
         ("revoke-sessions", "Revoke every session for an account."),
     ):
         item = commands.add_parser(command, help=help_text)
@@ -116,7 +116,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Created {user['username']} ({user['role']}).")
         elif args.command == "reset-password":
             store.set_password(args.username, _read_new_password())
-            print(f"Password reset for {args.username}; all sessions revoked.")
+            print(
+                f"Password reset for {args.username}; "
+                "all sessions and passkeys revoked."
+            )
         elif args.command == "set-role":
             store.set_role(args.username, args.role)
             print(f"Role updated for {args.username}; all sessions revoked.")
@@ -125,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Enabled {args.username}; old sessions remain invalid.")
         elif args.command == "disable":
             store.set_active(args.username, False)
-            print(f"Disabled {args.username}; all sessions revoked.")
+            print(f"Disabled {args.username}; all sessions and passkeys revoked.")
         elif args.command == "revoke-sessions":
             count = store.revoke_user_sessions(args.username)
             print(f"Revoked {count} session(s) for {args.username}.")
