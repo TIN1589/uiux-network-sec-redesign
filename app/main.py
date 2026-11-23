@@ -4,8 +4,6 @@ Backend Architecture: FastAPI + Jinja2 + HTMX
 """
 
 import csv
-import hashlib
-import hmac
 import io
 import json
 import os
@@ -28,6 +26,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
+from app.auth_store import AuthStore
+
 BASE_DIR = Path(__file__).resolve().parents[1]
 STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -41,10 +41,48 @@ SHOW_BUILD_VERSION = os.getenv("SHOW_BUILD_VERSION", "false").lower() in ("1", "
 if DEMO_MODE and ENV == "production":
     raise RuntimeError("Security violation: DEMO_MODE cannot be enabled in production environment.")
 
-# Auth config — ASSUMPTION-02
-_SECRET_KEY = secrets.token_hex(32)          # Random mỗi lần khởi động (demo mode)
-_SESSION_MAX_AGE = 8 * 3600                  # 8 hours in seconds
-_CSRF_MAX_AGE = 3600                         # 1 hour
+def _positive_env_int(name: str, default: int, *, minimum: int = 1) -> int:
+    """Read a bounded positive integer from the process environment."""
+    raw_value = os.getenv(name, str(default))
+    try:
+        value = int(raw_value)
+    except ValueError as exc:
+        raise RuntimeError(f"{name} must be an integer.") from exc
+    if value < minimum:
+        raise RuntimeError(f"{name} must be at least {minimum}.")
+    return value
+
+
+# Auth config — persistent users, revocable server sessions, managed secrets.
+_CONFIGURED_SECRET_KEY = os.getenv("AUTH_SECRET_KEY", "")
+if ENV == "production" and len(_CONFIGURED_SECRET_KEY) < 32:
+    raise RuntimeError(
+        "Security violation: AUTH_SECRET_KEY must contain at least 32 characters in production."
+    )
+_SECRET_KEY = _CONFIGURED_SECRET_KEY or secrets.token_urlsafe(48)
+_SESSION_MAX_AGE = _positive_env_int("AUTH_SESSION_ABSOLUTE_SECONDS", 8 * 3600)
+_SESSION_IDLE_AGE = _positive_env_int("AUTH_SESSION_IDLE_SECONDS", 30 * 60)
+if _SESSION_IDLE_AGE > _SESSION_MAX_AGE:
+    raise RuntimeError(
+        "AUTH_SESSION_IDLE_SECONDS cannot exceed AUTH_SESSION_ABSOLUTE_SECONDS."
+    )
+_SESSION_TOUCH_INTERVAL = _positive_env_int("AUTH_SESSION_TOUCH_SECONDS", 60)
+_CSRF_MAX_AGE = _positive_env_int("AUTH_CSRF_MAX_AGE_SECONDS", 3600)
+_PASSWORD_ITERATIONS = _positive_env_int(
+    "AUTH_PBKDF2_ITERATIONS",
+    600_000,
+    minimum=100_000,
+)
+_AUTH_DB_PATH = os.getenv(
+    "AUTH_DB_PATH",
+    ":memory:" if ENV == "test" else str(BASE_DIR / "data" / "auth.sqlite3"),
+).strip()
+if not _AUTH_DB_PATH:
+    raise RuntimeError("AUTH_DB_PATH must not be empty.")
+_COOKIE_SECURE = ENV == "production" or os.getenv(
+    "AUTH_COOKIE_SECURE",
+    "false",
+).lower() in ("1", "true", "yes")
 _SERIALIZER = URLSafeTimedSerializer(_SECRET_KEY)
 _PUBLIC_AUTH_CSRF_SESSION = "public_auth_session"
 _ROLE_LEVELS = {"tier1": 1, "tier2": 2, "admin": 3}
@@ -59,8 +97,15 @@ _DEMO_ACCOUNTS = {
 _ADMIN_USERNAME = "admin"
 _ADMIN_PWD_PLAIN = "vnpt-soc-2026"          # Backward compatibility
 
-# In-memory session store: {session_id: {username, role, created_at}}
-_sessions: dict = {}
+_AUTH_STORE = AuthStore(
+    _AUTH_DB_PATH,
+    idle_timeout_seconds=_SESSION_IDLE_AGE,
+    absolute_timeout_seconds=_SESSION_MAX_AGE,
+    touch_interval_seconds=_SESSION_TOUCH_INTERVAL,
+    password_iterations=_PASSWORD_ITERATIONS,
+)
+if DEMO_MODE:
+    _AUTH_STORE.ensure_demo_users(_DEMO_ACCOUNTS)
 
 _PUBLIC_ROUTE_PATHS = {
     "/favicon.ico",
@@ -1246,37 +1291,33 @@ def db_flags_to_state(acknowledged: int, suppressed: bool) -> str:
     return "Acknowledged" if acknowledged else "New"
 
 # --- Auth helper functions (ASSUMPTION-02) ---
-def _verify_password(plain: str, stored_plain: str) -> bool:
-    """Xác thực mật khẩu người dùng theo chuẩn PBKDF2-HMAC-SHA256 với cơ chế so sánh an toàn thời gian.
-
-    Chống Timing Attack: Dùng hmac.compare_digest với thời gian so sánh hằng số O(1)
-    thay cho toán tử '==' thông thường nhằm ngăn chặn hacker đoán mật khẩu qua độ trễ phản hồi.
-
-    Args:
-        plain: Mật khẩu dạng văn bản gốc do người dùng nhập từ form đăng nhập.
-        stored_plain: Mật khẩu dạng văn bản gốc chuẩn của tài khoản quản trị demo.
-
-    Returns:
-        bool: True nếu khớp mật khẩu, False nếu không hợp lệ.
-    """
-    return hmac.compare_digest(
-        hashlib.pbkdf2_hmac('sha256', plain.encode(), b'vnpt-soc-salt', 260000).hex(),
-        hashlib.pbkdf2_hmac('sha256', stored_plain.encode(), b'vnpt-soc-salt', 260000).hex()
+def _authenticate_account(username: str, password: str) -> dict | None:
+    """Authenticate a persistent account without enabling demo users implicitly."""
+    account = _AUTH_STORE.authenticate_user(
+        username,
+        password,
+        allow_demo=DEMO_MODE,
     )
-
-
-def _authenticate_demo_account(username: str, password: str) -> dict | None:
-    """Authenticate a demo account only when demo mode is explicitly enabled."""
-    if not DEMO_MODE:
+    if not account:
         return None
-    account = _DEMO_ACCOUNTS.get(username)
-    if not account or not _verify_password(password, account["password"]):
-        return None
+    if account["is_demo"]:
+        account["label"] = _DEMO_ACCOUNTS[account["username"]]["label"]
+    else:
+        account["label"] = {
+            "admin": "SecOps Admin",
+            "tier2": "Tier-2 Analyst",
+            "tier1": "Tier-1 Responder",
+        }[account["role"]]
     return account
 
 
-def _create_session(username: str, role: str = "admin") -> str:
-    """Khởi tạo phiên làm việc (Session) mới và lưu vào in-memory session store.
+def _create_session(
+    username: str,
+    role: str = "admin",
+    *,
+    remember: bool = False,
+) -> str:
+    """Create a revocable server-side session in the persistent auth store.
 
     Args:
         username: Tên tài khoản người dùng đăng nhập.
@@ -1284,14 +1325,12 @@ def _create_session(username: str, role: str = "admin") -> str:
 
     Returns:
         str: Session ID ngẫu nhiên an toàn dưới dạng URL-safe token.
+
+    The role argument remains for compatibility with existing callers; role
+    authorization is always loaded from the current user record.
     """
-    session_id = secrets.token_urlsafe(32)
-    _sessions[session_id] = {
-        "username": username,
-        "role": role,
-        "created_at": datetime.now(UTC).isoformat()
-    }
-    return session_id
+    del role
+    return _AUTH_STORE.create_session(username, remember=remember)
 
 def _get_session(session_id: str | None) -> dict | None:
     """Kiểm tra và truy xuất thông tin phiên làm việc từ cookie session_id.
@@ -1304,7 +1343,7 @@ def _get_session(session_id: str | None) -> dict | None:
     """
     if not session_id:
         return None
-    return _sessions.get(session_id)
+    return _AUTH_STORE.get_session(session_id)
 
 def _generate_csrf_token(session_id: str) -> str:
     """Tạo mã xác thực CSRF Token ký bằng HMAC gắn liền với session_id.
@@ -1393,7 +1432,7 @@ def _set_session_cookies(
         max_age=max_age,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=_COOKIE_SECURE,
     )
     response.set_cookie(
         key="csrf_token",
@@ -1401,7 +1440,7 @@ def _set_session_cookies(
         max_age=max_age,
         httponly=False,
         samesite="lax",
-        secure=False,
+        secure=_COOKIE_SECURE,
     )
 
 def get_window_max_minutes(win: str) -> int:
@@ -2426,7 +2465,7 @@ async def get_csrf_token(response: Response, session_id: str | None = Cookie(Non
         max_age=_CSRF_MAX_AGE,
         httponly=False,
         samesite="lax",
-        secure=False,
+        secure=_COOKIE_SECURE,
     )
     return {"csrf_token": token}
 
@@ -2458,13 +2497,13 @@ async def login(
         raise HTTPException(status_code=403, detail="Invalid CSRF token")
 
     normalized_user = username.strip().lower()
-    account = _authenticate_demo_account(normalized_user, password)
+    account = _authenticate_account(normalized_user, password)
 
     if not account:
         return JSONResponse({"success": False, "error": "Invalid username or password"}, status_code=401)
 
     role = account["role"]
-    session_id = _create_session(normalized_user, role=role)
+    session_id = _create_session(normalized_user, role=role, remember=True)
 
     _set_session_cookies(response, session_id, _SESSION_MAX_AGE)
 
@@ -2479,8 +2518,7 @@ async def logout(
     """Invalidate session and clear cookie."""
     if _get_session(session_id):
         _require_csrf(request, session_id)
-    if session_id and session_id in _sessions:
-        del _sessions[session_id]
+    _AUTH_STORE.revoke_session(session_id)
     response.delete_cookie("session_id")
     response.delete_cookie("csrf_token")
     return {"success": True}
@@ -2566,7 +2604,7 @@ async def login_post(
         raise HTTPException(status_code=403, detail="Invalid CSRF token")
 
     normalized_user = username.strip().lower()
-    account = _authenticate_demo_account(normalized_user, password)
+    account = _authenticate_account(normalized_user, password)
     is_htmx = request.headers.get("hx-request") == "true"
 
     if not account:
@@ -2594,7 +2632,11 @@ async def login_post(
         )
 
     role = account["role"]
-    session_id = _create_session(normalized_user, role=role)
+    session_id = _create_session(
+        normalized_user,
+        role=role,
+        remember=bool(remember),
+    )
     cookie_max_age = _SESSION_MAX_AGE if remember else None
 
     if is_htmx:

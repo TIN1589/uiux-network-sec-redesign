@@ -242,3 +242,21 @@ def test_admin_can_read_audit_log_and_manage_scenarios(client: TestClient):
         assert len(scenarios_store) == len(original) + 1
     finally:
         scenarios_store[:] = original
+
+
+def test_logout_revokes_server_session_before_clearing_cookies(client: TestClient):
+    """Logout must invalidate the persisted session, not only the browser cookie."""
+    from app.main import _AUTH_STORE
+
+    _authenticate(client, "admin")
+    session_id = client.cookies.get("session_id")
+    assert session_id
+    assert _AUTH_STORE.get_session(session_id) is not None
+
+    response = client.post("/api/auth/logout")
+
+    assert response.status_code == 200
+    assert _AUTH_STORE.get_session(session_id) is None
+    dashboard = client.get("/", follow_redirects=False)
+    assert dashboard.status_code == 303
+    assert dashboard.headers["location"] == "/login"

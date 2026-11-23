@@ -27,7 +27,7 @@ Bạn có thể chạy dự án bằng **1 trong 2 cách** tùy vào nhu cầu:
    ```powershell
    $env:ENV="development"
    $env:DEMO_MODE="true"
-   python run.py
+   .\.venv\Scripts\python.exe run.py
    ```
    `DEMO_MODE` mặc định tắt và bị từ chối hoàn toàn khi `ENV=production`. Cấu hình trên chỉ dùng cho môi trường phát triển/nghiệm thu có tài khoản mẫu.
    *Script `run.py` sẽ tự động xác định địa chỉ IP mạng nội bộ (LAN IPv4) và khởi chạy trên `0.0.0.0:8000`, cho phép kiểm thử đồng thời trên máy tính và thiết bị di động (iPhone / iPad / Android) cùng mạng Wi-Fi.*
@@ -35,6 +35,26 @@ Bạn có thể chạy dự án bằng **1 trong 2 cách** tùy vào nhu cầu:
    - Máy tính cá nhân (Localhost): **[http://127.0.0.1:8000/login](http://127.0.0.1:8000/login)**
    - Thiết bị di động / LAN: **`http://<LAN-IP>:8000/login`**
    - Toàn bộ trang dashboard Dynamic, HTMX partial và read API đều yêu cầu session hợp lệ phía server.
+
+### Tài khoản thật và cấu hình production
+
+User và session Dynamic được lưu trong SQLite (`data/auth.sqlite3` mặc định). Session có timeout idle 30 phút, timeout tuyệt đối 8 giờ và có thể bị thu hồi phía server. Mật khẩu chỉ lưu dưới dạng PBKDF2-HMAC-SHA256 với salt riêng; session ID trong cookie cũng chỉ được lưu dạng SHA-256 trong database.
+
+1. Tạo secret production riêng (tối thiểu 32 ký tự), đặt `ENV=production`, `DEMO_MODE=false`, `AUTH_SECRET_KEY` và `AUTH_DB_PATH` theo `.env.example`.
+2. Tạo tài khoản vận hành đầu tiên; mật khẩu được nhập ẩn, không truyền trên command line:
+   ```powershell
+   .\.venv\Scripts\python.exe scripts/manage_auth.py create admin --role admin
+   ```
+3. Các lệnh vòng đời credential:
+   ```powershell
+   .\.venv\Scripts\python.exe scripts/manage_auth.py list
+   .\.venv\Scripts\python.exe scripts/manage_auth.py reset-password admin
+   .\.venv\Scripts\python.exe scripts/manage_auth.py set-role admin tier2
+   .\.venv\Scripts\python.exe scripts/manage_auth.py revoke-sessions admin
+   .\.venv\Scripts\python.exe scripts/manage_auth.py disable admin
+   ```
+
+Đổi mật khẩu, đổi role hoặc khóa tài khoản đều thu hồi toàn bộ session hiện tại. Production từ chối khởi động nếu thiếu `AUTH_SECRET_KEY`, và luôn đặt cờ `Secure` cho auth cookie.
 
 ---
 
@@ -355,7 +375,7 @@ Hệ thống được thiết kế theo nguyên lý **Minimal Footprint Architec
 ### 3. Danh mục 5 Giả định Kỹ thuật (Assumptions Reference)
 
 - **ASSUMPTION-01 (4-State SOC FE <-> 2-Flag DB Bridge)**: Giao diện hỗ trợ 4 trạng thái sự cố nghiệp vụ chuẩn (`New`, `Investigating`, `Acknowledged`, `Resolved`) đồng thời duy trì tầng cầu nối chuyển đổi 2 chiều tương thích với schema SQLite 2 cờ (`is_investigating`, `is_acknowledged`).
-- **ASSUMPTION-02 (Authentication & Session Architecture)**: Dashboard Dynamic xác thực bằng session phía server; demo credential chỉ hoạt động khi chủ động bật `DEMO_MODE` ngoài production. CSRF/RBAC tiếp tục bảo vệ mutation và export. Persistence, timeout/revocation và account recovery thuộc giai đoạn tiếp theo.
+- **ASSUMPTION-02 (Authentication & Session Architecture)**: Dashboard Dynamic xác thực bằng user/session SQLite phía server; demo credential chỉ hoạt động khi chủ động bật `DEMO_MODE` ngoài production. Session có idle/absolute timeout và revocation; secret production bắt buộc lấy từ môi trường; CLI quản trị hỗ trợ provisioning, reset password, đổi role, khóa tài khoản và thu hồi session. CSRF/RBAC tiếp tục bảo vệ mutation và export.
 - **ASSUMPTION-03 (RBAC 3-Tier & Standalone Preview)**: Phân quyền Dynamic gồm SecOps Admin, Tier-2 Analyst và Tier-1 Responder; không có guest bypass. File `index.html` vẫn là **Preview demo** công khai với dữ liệu mô phỏng và không được xem là bằng chứng xác thực.
 - **ASSUMPTION-04 (CSV Formula Injection Guard - REQ-FR-11)**: Toàn bộ dữ liệu xuất báo cáo CSV được làm sạch bằng cách tự động chèn tiền tố dấu nháy đơn (`'`) trước các ô bắt đầu bằng `=`, `+`, `-`, `@`, `|`, `%`, ngăn chặn phần mềm bảng tính thực thi mã độc máy tính.
 - **ASSUMPTION-05 (Audit Trail for Acknowledgements)**: Ghi nhận định danh người tiếp nhận sự cố (`ackedBy`) và mốc thời gian ISO UTC (`ackedAt`) phục vụ công tác thanh tra và hậu kiểm an toàn thông tin.

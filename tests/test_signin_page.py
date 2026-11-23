@@ -158,6 +158,34 @@ def test_demo_credentials_cannot_create_session_when_demo_mode_is_disabled(
     assert "session_id" not in client.cookies
 
 
+def test_persistent_non_demo_account_can_login_when_demo_mode_is_disabled(
+    client,
+    monkeypatch,
+):
+    """Production-style users authenticate from the database without demo mode."""
+    import app.main as main_module
+
+    username = "persistent.operator"
+    password = "persistent-operator-2026"
+    if not main_module._AUTH_STORE.get_user(username):
+        main_module._AUTH_STORE.create_user(username, password, "tier2")
+    monkeypatch.setattr(main_module, "DEMO_MODE", False)
+
+    response = client.post(
+        "/login",
+        data={
+            "username": username,
+            "password": password,
+            "csrf_token": _public_csrf_token(client),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/"
+    assert "session_id" in response.cookies
+
+
 def test_production_fails_to_start_if_demo_mode_enabled():
     """Mục tiêu: Ngăn chặn tuyệt đối việc bật DEMO_MODE trên môi trường production.
 
@@ -179,3 +207,44 @@ def test_production_fails_to_start_if_demo_mode_enabled():
 
     assert result.returncode != 0
     assert "DEMO_MODE cannot be enabled in production" in (result.stdout + result.stderr)
+
+
+def test_production_fails_to_start_without_managed_auth_secret():
+    """Production may not silently generate a new CSRF signing secret."""
+    env = os.environ.copy()
+    env["DEMO_MODE"] = "false"
+    env["ENV"] = "production"
+    env.pop("AUTH_SECRET_KEY", None)
+    result = subprocess.run(
+        [sys.executable, "-c", "import app.main"],
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "AUTH_SECRET_KEY must contain at least 32 characters" in (
+        result.stdout + result.stderr
+    )
+
+
+def test_production_starts_with_managed_secret_and_persistent_database(tmp_path):
+    """A complete production auth configuration passes startup validation."""
+    env = os.environ.copy()
+    env["DEMO_MODE"] = "false"
+    env["ENV"] = "production"
+    env["AUTH_SECRET_KEY"] = "production-test-secret-that-is-long-enough-2026"
+    env["AUTH_DB_PATH"] = str(tmp_path / "production-auth.sqlite3")
+    result = subprocess.run(
+        [sys.executable, "-c", "import app.main"],
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert (tmp_path / "production-auth.sqlite3").is_file()
