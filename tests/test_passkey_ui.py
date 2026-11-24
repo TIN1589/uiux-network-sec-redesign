@@ -34,6 +34,17 @@ def test_signin_page_exposes_username_less_passkey_action(client: TestClient):
     assert response.status_code == 200
     assert 'id="passkey-signin-btn"' in response.text
     assert "Sign in with a passkey" in response.text
+    button_markup = re.search(
+        r'<button[^>]+id="passkey-signin-btn"[^>]*>(.*?)</button>',
+        response.text,
+        re.DOTALL,
+    )
+    assert button_markup
+    assert "Waiting for your passkey" not in button_markup.group(1)
+    assert 'aria-describedby="passkey-status"' in response.text
+    assert re.search(
+        r'<div[^>]+id="passkey-status"[^>]+hidden>', response.text
+    )
     assert 'id="remember-session"' in response.text
     assert re.search(r'src="[^"]*/static/js/signin\.js"', response.text)
 

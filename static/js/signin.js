@@ -20,11 +20,26 @@ function showPasskeyFeedback(message) {
   feedback.replaceChildren(alert);
 }
 
+function setPasskeyRequestState(isPending) {
+  const button = document.getElementById('passkey-signin-btn');
+  const status = document.getElementById('passkey-status');
+
+  if (button) {
+    button.disabled = isPending || button.dataset.passkeyUnavailable === 'true';
+    if (isPending) {
+      button.setAttribute('aria-busy', 'true');
+    } else {
+      button.removeAttribute('aria-busy');
+    }
+  }
+
+  if (status) status.hidden = !isPending;
+}
+
 async function signInWithPasskey() {
   const button = document.getElementById('passkey-signin-btn');
   if (!button || button.disabled) return;
-  button.disabled = true;
-  button.setAttribute('aria-busy', 'true');
+  setPasskeyRequestState(true);
   document.getElementById('auth-feedback')?.replaceChildren();
   try {
     const remember = document.getElementById('remember-session')?.checked ?? true;
@@ -32,8 +47,7 @@ async function signInWithPasskey() {
     window.location.assign('/');
   } catch (error) {
     showPasskeyFeedback(error.message || 'Passkey sign-in failed');
-    button.disabled = false;
-    button.removeAttribute('aria-busy');
+    setPasskeyRequestState(false);
   }
 }
 
@@ -41,6 +55,7 @@ function initPasskeySignIn() {
   const button = document.getElementById('passkey-signin-btn');
   if (!button) return;
   if (!isWebAuthnAvailable()) {
+    button.dataset.passkeyUnavailable = 'true';
     button.disabled = true;
     button.title = 'Passkeys are not supported by this browser';
     return;
@@ -66,6 +81,8 @@ function resetSignInRequestState() {
     button.removeAttribute('aria-disabled');
     button.removeAttribute('aria-busy');
   }
+
+  setPasskeyRequestState(false);
 }
 
 /**

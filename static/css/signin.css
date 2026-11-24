@@ -1094,21 +1094,46 @@ html[data-theme="dark"] .auth-panel__footer {
   outline-offset: 2px;
 }
 
-.passkey-btn__busy {
-  display: none;
-}
-
-.btn--passkey[aria-busy="true"] .passkey-btn__idle {
-  display: none;
-}
-
-.btn--passkey[aria-busy="true"] .passkey-btn__busy {
-  display: inline;
-}
-
 .btn--passkey:disabled {
   cursor: not-allowed;
   opacity: 0.62;
+}
+
+.passkey-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 20px;
+  margin-top: 8px;
+  color: var(--muted-light);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.passkey-status[hidden] {
+  display: none;
+}
+
+.passkey-status__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: passkey-spin 0.7s linear infinite;
+}
+
+@keyframes passkey-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .passkey-status__spinner {
+    animation: none;
+  }
 }
 
 html[data-theme="dark"] .btn--passkey {
@@ -1120,4 +1145,8 @@ html[data-theme="dark"] .btn--passkey {
 html[data-theme="dark"] .btn--passkey:hover:not(:disabled) {
   background: #202327;
   border-color: var(--color-accent-lime, #C6F135);
+}
+
+html[data-theme="dark"] .passkey-status {
+  color: #9E9B93;
 }

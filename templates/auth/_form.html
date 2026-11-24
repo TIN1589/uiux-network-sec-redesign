@@ -58,15 +58,24 @@
   <span>or</span>
 </div>
 
-<button type="button" id="passkey-signin-btn" class="btn btn--passkey">
+<button
+  type="button"
+  id="passkey-signin-btn"
+  class="btn btn--passkey"
+  aria-describedby="passkey-status"
+>
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <circle cx="8" cy="15" r="4"></circle>
     <path d="M11 12l8-8"></path>
     <path d="M15 8l2 2"></path>
     <path d="M17 6l2 2"></path>
   </svg>
-  <span class="passkey-btn__idle">Sign in with a passkey</span>
-  <span class="passkey-btn__busy">Waiting for your passkey...</span>
+  <span>Sign in with a passkey</span>
 </button>
+
+<div id="passkey-status" class="passkey-status" role="status" aria-live="polite" hidden>
+  <span class="passkey-status__spinner" aria-hidden="true"></span>
+  <span>Waiting for your passkey...</span>
+</div>
 
 {% include 'auth/_demo_accounts.html' %}
